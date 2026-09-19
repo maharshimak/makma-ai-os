@@ -85,3 +85,18 @@ def test_telemetry_endpoint_exposes_runtime_measurements() -> None:
     assert payload["operation"] == "runtime.run"
     assert payload["count"] == 1
     assert payload["successes"] == 1
+
+
+def test_github_pages_origin_is_allowed_by_cors() -> None:
+    client = build_test_client()
+    response = client.options(
+        "/v1/chat",
+        headers={
+            "Origin": "https://maharshimak.github.io",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://maharshimak.github.io"
