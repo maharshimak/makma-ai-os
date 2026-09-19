@@ -135,10 +135,13 @@ def memory_search_tool(memory: SQLiteMemory) -> ToolHandler:
         query = str(arguments.get("query", "")).strip()
         if not query:
             raise ValueError("A memory search query is required.")
-        messages = await memory.search(session_id, query, limit=5)
-        if not messages:
+        matches = await memory.recall(session_id, query, limit=5)
+        if not matches:
             return "No matching memories found."
-        return " | ".join(f"{message.role}: {message.content}" for message in messages)
+        return " | ".join(
+            f"[score={match.score:.3f}] {match.role}: {match.content}"
+            for match in matches
+        )
 
     return search_memory
 
@@ -155,7 +158,7 @@ def build_default_registry(memory: SQLiteMemory) -> ToolRegistry:
     registry.register(
         ToolDefinition(
             name="memory_search",
-            description="Search the current session's persisted conversational memory.",
+            description="Recall relevance-ranked memories from the current persisted session.",
             handler=memory_search_tool(memory),
         )
     )
