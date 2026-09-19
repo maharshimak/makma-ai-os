@@ -1,4 +1,4 @@
-# 🦾 Mak'ma AI OS
+# Mak'ma AI OS
 
 Mak'ma is a **tool-using personal AI runtime** built as an engineering portfolio project. The runtime can route to local or OpenAI-compatible models, persist conversation state, build auditable multi-step plans for explicit tool intents, enforce permissions, rank relevant session memories, expose execution metrics, and serve the system through FastAPI.
 
@@ -38,6 +38,17 @@ flowchart LR
     O --> A[(Run Audit History)]
     O --> X[Telemetry + Execution Metrics]
 ```
+
+## Live runtime console
+
+The repository includes a deployable browser console in `demo/`. It exposes the runtime's planning, tool results, ranked session memory and telemetry through a restrained engineering interface.
+
+The hosted console has two explicit modes:
+
+- **Browser Demo Mode** — an in-browser deterministic simulation of supported calculator and memory flows, intended for immediate portfolio exploration.
+- **Connected Runtime** — verifies a real Mak'ma FastAPI `/health` endpoint and then sends requests to the backend.
+
+The browser demo is deliberately labeled and does not present simulated results as backend execution.
 
 ## Quick start
 
@@ -119,7 +130,7 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 - voice and vision adapters
 - task scheduler and background workers
 - OpenTelemetry export for the existing runtime telemetry surface
-- dedicated web UI
+- authenticated multi-user web sessions
 
 ## Scope and limitations
 
@@ -178,7 +189,9 @@ docker run --rm -p 127.0.0.1:8000:8000 -v makma-data:/app/data makma-ai-os
 | `src/makma/` | Implementation |
 | `tests/` | Offline unit and regression tests |
 | `docs/DESIGN.md` | Architecture and trust boundaries |
+| `demo/` | Professional browser runtime console |
 | `.github/workflows/ci.yml` | Install, lint, tests, wheel and container build |
+| `.github/workflows/pages.yml` | Static console deployment to GitHub Pages |
 | `pyproject.toml` | Dependencies and package configuration |
 
 ## Next engineering work
