@@ -6,6 +6,13 @@ The format follows the intent of [Keep a Changelog](https://keepachangelog.com/)
 
 ## [Unreleased]
 
+### Runtime intelligence
+- Added relevance-ranked session memory recall while preserving strict session isolation.
+- Added ordered multi-intent deterministic planning for explicit memory and calculator requests.
+- Wired runtime, provider and tool execution into bounded telemetry.
+- Added per-response execution metrics and telemetry/recall API endpoints.
+- Prevented memory-search requests from retrieving the current search prompt itself.
+
 ### Engineering
 - Added repository ownership and structured contribution workflows.
 - Added Dependabot coverage for Python and GitHub Actions dependencies.
