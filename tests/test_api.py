@@ -51,3 +51,37 @@ def test_history_endpoint_reads_persisted_conversation() -> None:
     response = client.get("/v1/sessions/history-demo/history")
     assert response.status_code == 200
     assert [item["role"] for item in response.json()] == ["user", "assistant"]
+
+
+def test_recall_endpoint_returns_ranked_matches() -> None:
+    client = build_test_client()
+    client.post(
+        "/v1/chat",
+        json={
+            "message": "project atlas budget is 500 euros",
+            "session_id": "recall-api",
+            "tools_enabled": False,
+        },
+    )
+    response = client.get(
+        "/v1/sessions/recall-api/recall",
+        params={"q": "project atlas budget"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload
+    assert "score" in payload[0]
+    assert payload[0]["content"] == "project atlas budget is 500 euros"
+
+
+def test_telemetry_endpoint_exposes_runtime_measurements() -> None:
+    client = build_test_client()
+    client.post("/v1/chat", json={"message": "calculate 4 * 5", "session_id": "metrics"})
+    response = client.get("/v1/telemetry", params={"operation": "runtime.run"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["operation"] == "runtime.run"
+    assert payload["count"] == 1
+    assert payload["successes"] == 1

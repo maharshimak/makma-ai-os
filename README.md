@@ -1,21 +1,23 @@
 # 🦾 Mak'ma AI OS
 
-Mak'ma is a **tool-using personal AI runtime** built as an engineering portfolio project. V2 replaces the original single-file echo demo with a modular runtime that can route to local or OpenAI-compatible models, persist conversation state, plan auditable tool calls, enforce permissions, and expose the system through a FastAPI service.
+Mak'ma is a **tool-using personal AI runtime** built as an engineering portfolio project. The runtime can route to local or OpenAI-compatible models, persist conversation state, build auditable multi-step plans for explicit tool intents, enforce permissions, rank relevant session memories, expose execution metrics, and serve the system through FastAPI.
 
-## What V2 actually implements
+## What the runtime actually implements
 
 - provider routing for:
   - zero-config deterministic local mode
   - OpenAI-compatible `/chat/completions` servers such as vLLM or compatible gateways
   - Ollama `/api/chat`
 - persistent SQLite conversation memory
+- relevance-ranked lexical memory recall scoped to the current session
 - persisted run/audit history with latency and provider metadata
-- deterministic planner for auditable tool use
+- deterministic ordered multi-intent planning for explicit tool requests
 - safe calculator tool with AST validation instead of `eval`
-- persisted-memory search tool
+- relevance-ranked persisted-memory recall tool
 - allow-list tool permission policy and approval hooks
-- plan traces and tool-result traces returned with every chat run
-- FastAPI chat, tools, history, search, runs, and SSE streaming endpoints
+- plan traces, tool-result traces and per-run execution metrics
+- bounded runtime/provider/tool telemetry with latency and failure summaries
+- FastAPI chat, tools, history, search, recall, runs, telemetry, and SSE streaming endpoints
 - Docker support with a persistent `/app/data` volume
 - offline tests that do not require API keys or external models
 
@@ -34,6 +36,7 @@ flowchart LR
     R --> V[vLLM / OpenAI-compatible]
     R --> OL[Ollama]
     O --> A[(Run Audit History)]
+    O --> X[Telemetry + Execution Metrics]
 ```
 
 ## Quick start
@@ -87,6 +90,8 @@ export MAKMA_API_KEY=optional-if-your-server-requires-it
 - `GET /v1/sessions/{session_id}/history`
 - `GET /v1/sessions/{session_id}/runs`
 - `GET /v1/sessions/{session_id}/search?q=...`
+- `GET /v1/sessions/{session_id}/recall?q=...`
+- `GET /v1/telemetry?operation=runtime.run`
 
 Example:
 
@@ -99,7 +104,7 @@ Example:
 }
 ```
 
-The response includes the final answer, the plan, tool execution results, provider, run id, and measured latency.
+The response includes the final answer, ordered plan, tool execution results, provider, run id, total latency, provider latency, aggregate tool latency and tool success/failure counts.
 
 ## Security model
 
@@ -113,12 +118,12 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 - browser and filesystem tools behind approval gates and sandboxes
 - voice and vision adapters
 - task scheduler and background workers
-- OpenTelemetry traces and metrics
+- OpenTelemetry export for the existing runtime telemetry surface
 - dedicated web UI
 
 ## Scope and limitations
 
-The default local provider is deterministic, not an LLM. SSE replays a completed answer rather than streaming model tokens. Sessions are identifiers, not authentication boundaries. API-provided approvals are intended for a trusted local client, not multi-user authorization. Run history persists responses and metadata; full tool traces are returned with the response, not persisted. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
+The default local provider is deterministic, not an LLM. Ranked memory recall is lexical relevance scoring, not semantic/vector memory. SSE replays a completed answer rather than streaming model tokens. Sessions are identifiers, not authentication boundaries. API-provided approvals are intended for a trusted local client, not multi-user authorization. Run history persists responses and metadata; full tool traces are returned with the response, not persisted. Telemetry is bounded and in-memory. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
 
 ## Installation and development
 
@@ -178,7 +183,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v makma-data:/app/data makma-ai-os
 
 ## Next engineering work
 
-Authenticated sessions; durable tool traces; native provider streaming; structured model planning; isolated workers for any future higher-risk tools. These are planned work, not current capabilities.
+Authenticated sessions; semantic/vector memory; durable tool traces; native provider streaming; schema-validated model planning; OpenTelemetry export; isolated workers for any future higher-risk tools. These are planned work, not current capabilities.
 
 ## Contributing and security
 

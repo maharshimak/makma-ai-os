@@ -10,6 +10,13 @@ class ChatMessage(BaseModel):
     content: str
 
 
+class MemoryMatch(BaseModel):
+    role: Literal["system", "user", "assistant", "tool"]
+    content: str
+    score: float = Field(ge=0)
+    created_at: str
+
+
 class PlanStep(BaseModel):
     id: str
     kind: Literal["tool", "respond"]
@@ -23,6 +30,15 @@ class ToolResult(BaseModel):
     ok: bool
     output: str
     error: str | None = None
+    latency_ms: float = Field(default=0.0, ge=0)
+
+
+class ExecutionMetrics(BaseModel):
+    provider_latency_ms: float = Field(ge=0)
+    tool_latency_ms: float = Field(ge=0)
+    tool_calls: int = Field(ge=0)
+    successful_tool_calls: int = Field(ge=0)
+    failed_tool_calls: int = Field(ge=0)
 
 
 class ChatResponse(BaseModel):
@@ -33,6 +49,7 @@ class ChatResponse(BaseModel):
     latency_ms: float
     plan: list[PlanStep] = Field(default_factory=list)
     tool_results: list[ToolResult] = Field(default_factory=list)
+    metrics: ExecutionMetrics
 
 
 class RunRecord(BaseModel):

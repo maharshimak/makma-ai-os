@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "makma-ai-os"
-description = "Personal AI runtime with SQLite memory, deterministic tool planning, permission checks and local/model-server adapters."
+description = "Agentic AI runtime with ranked persistent memory, auditable multi-intent planning, permissioned tools, telemetry and local/model-server adapters."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-version = "1.0.0"
+version = "1.1.0"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.141.1,<1",

@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import sqlite3
 from pathlib import Path
 
-from makma.models import ChatMessage, RunRecord
+from makma.models import ChatMessage, MemoryMatch, RunRecord
+
+_TOKEN_RE = re.compile(r"\w+", flags=re.UNICODE)
+
+
+def _tokens(text: str) -> set[str]:
+    return {token.casefold() for token in _TOKEN_RE.findall(text) if token}
 
 
 class SQLiteMemory:
@@ -70,20 +77,66 @@ class SQLiteMemory:
         rows = list(reversed(rows))
         return [ChatMessage(role=row["role"], content=row["content"]) for row in rows]
 
-    async def search(self, session_id: str, query: str, limit: int = 5) -> list[ChatMessage]:
-        pattern = f"%{query.strip()}%"
+    async def recall(
+        self,
+        session_id: str,
+        query: str,
+        limit: int = 5,
+        *,
+        candidate_limit: int = 500,
+    ) -> list[MemoryMatch]:
+        """Return relevance-ranked memories while preserving strict session isolation."""
+
+        normalized_query = query.strip().casefold()
+        if not normalized_query:
+            return []
+        if limit <= 0 or candidate_limit <= 0:
+            raise ValueError("Memory recall limits must be positive.")
+
+        query_tokens = _tokens(normalized_query)
         async with self._lock:
             rows = self._connection.execute(
                 """
-                SELECT role, content
+                SELECT role, content, created_at
                 FROM messages
-                WHERE session_id = ? AND content LIKE ?
+                WHERE session_id = ?
                 ORDER BY id DESC
                 LIMIT ?
                 """,
-                (session_id, pattern, limit),
+                (session_id, candidate_limit),
             ).fetchall()
-        return [ChatMessage(role=row["role"], content=row["content"]) for row in rows]
+
+        ranked: list[MemoryMatch] = []
+        for recency_rank, row in enumerate(rows):
+            content = str(row["content"])
+            normalized_content = content.casefold()
+            content_tokens = _tokens(normalized_content)
+            overlap = query_tokens & content_tokens
+            phrase_match = normalized_query in normalized_content
+            if not phrase_match and not overlap:
+                continue
+
+            coverage = len(overlap) / max(len(query_tokens), 1)
+            phrase_bonus = 1.0 if phrase_match else 0.0
+            provenance_bonus = 0.25 if row["role"] == "user" else 0.0
+            recency_bonus = 0.15 / (recency_rank + 1)
+            score = phrase_bonus + coverage + provenance_bonus + recency_bonus
+
+            ranked.append(
+                MemoryMatch(
+                    role=row["role"],
+                    content=content,
+                    score=round(score, 6),
+                    created_at=row["created_at"],
+                )
+            )
+
+        ranked.sort(key=lambda match: match.score, reverse=True)
+        return ranked[:limit]
+
+    async def search(self, session_id: str, query: str, limit: int = 5) -> list[ChatMessage]:
+        matches = await self.recall(session_id, query, limit=limit)
+        return [ChatMessage(role=match.role, content=match.content) for match in matches]
 
     async def record_run(
         self,

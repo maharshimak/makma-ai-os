@@ -24,3 +24,17 @@ async def test_memory_search_is_session_scoped() -> None:
     matches = await memory.search("a", "atlas")
     assert [message.content for message in matches] == ["project atlas"]
     memory.close()
+
+
+@pytest.mark.asyncio
+async def test_memory_recall_ranks_more_relevant_context_first() -> None:
+    memory = SQLiteMemory(":memory:")
+    await memory.append("a", "user", "project atlas budget is 500 euros")
+    await memory.append("a", "assistant", "atlas is also a mythology reference")
+
+    matches = await memory.recall("a", "project atlas budget", limit=5)
+
+    assert len(matches) == 2
+    assert matches[0].content == "project atlas budget is 500 euros"
+    assert matches[0].score > matches[1].score
+    memory.close()
