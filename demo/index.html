@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mak'ma AI OS runtime console: inspect plans, tool execution, memory recall and telemetry.">
+  <meta name="theme-color" content="#0a0b0d">
+  <title>Mak'ma Runtime Console</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">M</div>
+        <div>
+          <div class="brand-name">MAK'MA</div>
+          <div class="brand-subtitle">Agent Runtime Console</div>
+        </div>
+      </div>
+
+      <div class="runtime-status" aria-live="polite">
+        <div class="status-copy">
+          <span id="status-dot" class="status-dot"></span>
+          <div>
+            <div id="mode-label" class="status-title">Browser Demo Mode</div>
+            <div id="runtime-label" class="status-detail">Deterministic runtime simulation</div>
+          </div>
+        </div>
+        <button id="connect-button" class="button button-secondary" type="button">Connect Runtime</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar" aria-label="Runtime controls">
+        <section>
+          <div class="eyebrow">Runtime</div>
+          <div class="metric-grid">
+            <div class="metric-card">
+              <span class="metric-label">Provider</span>
+              <strong id="provider-value">browser-demo</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Version</span>
+              <strong id="version-value">1.1.0</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Latency</span>
+              <strong id="latency-value">0 ms</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Tool calls</span>
+              <strong id="tool-count-value">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="eyebrow">Session</div>
+          <div class="session-card">
+            <span class="session-label">Session ID</span>
+            <code id="session-id"></code>
+            <button id="new-session-button" class="text-button" type="button">Start new session</button>
+          </div>
+        </section>
+
+        <section>
+          <div class="eyebrow">Test scenarios</div>
+          <div class="scenario-list">
+            <button class="scenario-button" data-prompt="calculate 19 * 23" type="button">
+              <span>Tool execution</span>
+              <small>Safe calculator with an auditable plan</small>
+            </button>
+            <button class="scenario-button" data-prompt="Remember that project Atlas has a launch budget of 500 euros." type="button">
+              <span>Persist context</span>
+              <small>Add a fact to session memory</small>
+            </button>
+            <button class="scenario-button" data-prompt="search my memory for project Atlas" type="button">
+              <span>Memory recall</span>
+              <small>Rank relevant prior session context</small>
+            </button>
+            <button class="scenario-button" data-prompt="search my memory for project Atlas and calculate 6 * 7" type="button">
+              <span>Multi-intent plan</span>
+              <small>Recall context, execute a second tool, then respond</small>
+            </button>
+          </div>
+        </section>
+
+        <section class="boundary-note">
+          <div class="eyebrow">Trust boundary</div>
+          <p>Browser Demo Mode emulates the public runtime contract. Connect a running Mak'ma API to inspect real backend responses.</p>
+        </section>
+      </aside>
+
+      <section class="conversation-panel" aria-label="Conversation">
+        <div class="panel-header">
+          <div>
+            <div class="eyebrow">Conversation</div>
+            <h1>Inspectable agent execution</h1>
+          </div>
+          <button id="clear-button" class="text-button" type="button">Clear conversation</button>
+        </div>
+
+        <div id="messages" class="messages" aria-live="polite">
+          <article class="message message-system">
+            <div class="message-meta">Runtime</div>
+            <div class="message-body">
+              Mak'ma is ready. Run a scenario or send a request. Every supported tool action is exposed through the execution inspector.
+            </div>
+          </article>
+        </div>
+
+        <form id="composer" class="composer">
+          <label class="sr-only" for="message-input">Message Mak'ma</label>
+          <textarea id="message-input" rows="3" maxlength="20000" placeholder="Ask Mak'ma to calculate, recall session memory, or respond..." required></textarea>
+          <div class="composer-footer">
+            <div id="composer-hint" class="composer-hint">Enter to send · Shift+Enter for a new line</div>
+            <button id="send-button" class="button button-primary" type="submit">Run request</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="inspector" aria-label="Execution inspector">
+        <div class="inspector-header">
+          <div>
+            <div class="eyebrow">Execution Inspector</div>
+            <h2>Runtime trace</h2>
+          </div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Inspector views">
+          <button class="tab is-active" id="tab-plan" data-tab="plan" role="tab" aria-selected="true" type="button">Plan</button>
+          <button class="tab" id="tab-tools" data-tab="tools" role="tab" aria-selected="false" type="button">Tools</button>
+          <button class="tab" id="tab-memory" data-tab="memory" role="tab" aria-selected="false" type="button">Memory</button>
+          <button class="tab" id="tab-telemetry" data-tab="telemetry" role="tab" aria-selected="false" type="button">Telemetry</button>
+        </div>
+
+        <div class="inspector-body">
+          <section id="view-plan" class="inspector-view is-active" role="tabpanel" aria-labelledby="tab-plan">
+            <div id="plan-content" class="empty-state">
+              <span>NO ACTIVE PLAN</span>
+              <p>Run a request to inspect ordered planning steps.</p>
+            </div>
+          </section>
+
+          <section id="view-tools" class="inspector-view" role="tabpanel" aria-labelledby="tab-tools">
+            <div id="tools-content" class="empty-state">
+              <span>NO TOOL EXECUTION</span>
+              <p>Tool results, status and latency will appear here.</p>
+            </div>
+          </section>
+
+          <section id="view-memory" class="inspector-view" role="tabpanel" aria-labelledby="tab-memory">
+            <div class="memory-toolbar">
+              <label for="memory-query">Recall query</label>
+              <div class="inline-form">
+                <input id="memory-query" type="text" maxlength="1000" placeholder="project Atlas">
+                <button id="memory-search-button" class="button button-secondary" type="button">Recall</button>
+              </div>
+            </div>
+            <div id="memory-content" class="empty-state">
+              <span>SESSION MEMORY</span>
+              <p>Search the current session to inspect ranked memory matches.</p>
+            </div>
+          </section>
+
+          <section id="view-telemetry" class="inspector-view" role="tabpanel" aria-labelledby="tab-telemetry">
+            <div id="telemetry-content" class="telemetry-grid">
+              <div class="telemetry-stat">
+                <span>Runtime P50</span>
+                <strong>0 ms</strong>
+              </div>
+              <div class="telemetry-stat">
+                <span>Runtime P95</span>
+                <strong>0 ms</strong>
+              </div>
+              <div class="telemetry-stat">
+                <span>Success rate</span>
+                <strong>100%</strong>
+              </div>
+              <div class="telemetry-stat">
+                <span>Runs observed</span>
+                <strong>0</strong>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="run-footer">
+          <span>Run ID</span>
+          <code id="run-id-value">not-started</code>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <span>Mak'ma AI OS</span>
+      <span>Inspectable planning. Permissioned tools. Ranked memory. Runtime telemetry.</span>
+      <a href="https://github.com/maharshimak/makma-ai-os" rel="noreferrer">Source repository</a>
+    </footer>
+  </div>
+
+  <dialog id="connection-dialog" class="connection-dialog">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-header">
+        <div>
+          <div class="eyebrow">Runtime Connection</div>
+          <h2>Connect a Mak'ma API</h2>
+        </div>
+        <button id="dialog-close" class="icon-button" value="cancel" aria-label="Close connection dialog" type="submit">×</button>
+      </div>
+      <p>Enter the base URL of a running Mak'ma FastAPI service. The console will verify <code>/health</code> before switching out of demo mode.</p>
+      <label for="api-base">API base URL</label>
+      <input id="api-base" type="url" placeholder="https://api.example.com" autocomplete="url">
+      <div id="connection-feedback" class="connection-feedback" aria-live="polite"></div>
+      <div class="dialog-actions">
+        <button id="disconnect-button" class="button button-secondary" type="button">Use Browser Demo</button>
+        <button id="test-connection-button" class="button button-primary" type="button">Verify and connect</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
