@@ -23,6 +23,12 @@ jobs:
         run: python -m ruff check .
       - name: Regression tests
         run: python -m pytest -q
+      - name: Validate runtime console
+        run: |
+          node --check demo/app.js
+          test -s demo/index.html
+          test -s demo/styles.css
+          test -s demo/favicon.svg
       - name: Build distributable wheel
         run: python -m pip wheel --no-deps . -w dist
       - name: Build container
