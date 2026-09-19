@@ -14,6 +14,8 @@ The planner recognizes explicit supported intents and can emit multiple ordered 
 
 Implementation lives in `src/makma/`. Public examples in the README use its Python API. FastAPI exposes the same local capabilities; `/openapi.json` is the endpoint schema. Ranked recall is available separately from the compatibility search endpoint, and telemetry summaries can be queried by operation.
 
+The static runtime console in `demo/` is intentionally split into two modes. Browser Demo Mode reproduces the public request/response contract for supported calculator and lexical-memory flows without claiming backend execution. Connected Runtime mode verifies a real `/health` endpoint before sending requests to the FastAPI service. Cross-origin access is restricted to configured origins through `MAKMA_CORS_ORIGINS`.
+
 ## Validation
 
 Tests include synthetic regression fixtures. Package and container checks verify installation separately from source-tree imports. Tests do not certify general model quality, clinical correctness or multi-tenant isolation.
