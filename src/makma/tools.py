@@ -1,0 +1,162 @@
+from __future__ import annotations
+
+import ast
+import math
+import operator
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from typing import Any
+
+from makma.memory import SQLiteMemory
+from makma.models import ToolResult
+
+ToolHandler = Callable[[dict[str, Any], str], Awaitable[str]]
+
+
+class ToolPermissionError(PermissionError):
+    pass
+
+
+@dataclass(frozen=True)
+class ToolDefinition:
+    name: str
+    description: str
+    handler: ToolHandler
+    requires_approval: bool = False
+
+
+@dataclass(frozen=True)
+class PermissionPolicy:
+    allowed_tools: frozenset[str]
+    approval_required_tools: frozenset[str] = frozenset()
+
+    def check(self, tool_name: str, approvals: set[str]) -> None:
+        if tool_name not in self.allowed_tools:
+            raise ToolPermissionError(f"Tool '{tool_name}' is not allowed.")
+        if tool_name in self.approval_required_tools and tool_name not in approvals:
+            raise ToolPermissionError(f"Tool '{tool_name}' requires explicit approval.")
+
+
+class ToolRegistry:
+    def __init__(self) -> None:
+        self._tools: dict[str, ToolDefinition] = {}
+
+    def register(self, definition: ToolDefinition) -> None:
+        if definition.name in self._tools:
+            raise ValueError(f"Tool '{definition.name}' is already registered.")
+        self._tools[definition.name] = definition
+
+    @property
+    def names(self) -> list[str]:
+        return sorted(self._tools)
+
+    def describe(self) -> list[dict[str, object]]:
+        return [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "requires_approval": tool.requires_approval,
+            }
+            for tool in sorted(self._tools.values(), key=lambda item: item.name)
+        ]
+
+    async def execute(
+        self,
+        name: str,
+        arguments: dict[str, Any],
+        *,
+        session_id: str,
+        policy: PermissionPolicy,
+        approvals: set[str] | None = None,
+    ) -> ToolResult:
+        approvals = approvals or set()
+        tool = self._tools.get(name)
+        if tool is None:
+            return ToolResult(tool_name=name, ok=False, output="", error="Unknown tool.")
+        try:
+            policy.check(name, approvals)
+            if tool.requires_approval and name not in approvals:
+                raise ToolPermissionError(f"Tool '{name}' requires explicit approval.")
+            output = await tool.handler(arguments, session_id)
+            return ToolResult(tool_name=name, ok=True, output=output)
+        except (ToolPermissionError, ValueError) as error:
+            return ToolResult(tool_name=name, ok=False, output="", error=str(error))
+
+
+_BINARY_OPERATORS: dict[type[ast.operator], Callable[[float, float], float]] = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+}
+_UNARY_OPERATORS: dict[type[ast.unaryop], Callable[[float], float]] = {
+    ast.UAdd: operator.pos,
+    ast.USub: operator.neg,
+}
+
+
+def _evaluate_math(node: ast.AST) -> float:
+    if isinstance(node, ast.Expression):
+        return _evaluate_math(node.body)
+    if isinstance(node, ast.Constant) and isinstance(node.value, int | float):
+        return float(node.value)
+    if isinstance(node, ast.UnaryOp) and type(node.op) in _UNARY_OPERATORS:
+        return _UNARY_OPERATORS[type(node.op)](_evaluate_math(node.operand))
+    if isinstance(node, ast.BinOp) and type(node.op) in _BINARY_OPERATORS:
+        left = _evaluate_math(node.left)
+        right = _evaluate_math(node.right)
+        if isinstance(node.op, ast.Pow) and abs(right) > 10:
+            raise ValueError("Exponent is too large.")
+        return _BINARY_OPERATORS[type(node.op)](left, right)
+    raise ValueError("Expression contains unsupported syntax.")
+
+
+async def calculator(arguments: dict[str, Any], session_id: str) -> str:
+    del session_id
+    expression = str(arguments.get("expression", "")).strip()
+    if not expression or len(expression) > 200:
+        raise ValueError("A short arithmetic expression is required.")
+    try:
+        tree = ast.parse(expression, mode="eval")
+        value = _evaluate_math(tree)
+        if not isinstance(value, float) or not math.isfinite(value):
+            raise ValueError("Result must be a finite real number.")
+    except (SyntaxError, ArithmeticError, RecursionError) as error:
+        raise ValueError("Invalid or out-of-range arithmetic expression.") from error
+    rendered = int(value) if value.is_integer() else round(value, 10)
+    return f"{expression} = {rendered}"
+
+
+def memory_search_tool(memory: SQLiteMemory) -> ToolHandler:
+    async def search_memory(arguments: dict[str, Any], session_id: str) -> str:
+        query = str(arguments.get("query", "")).strip()
+        if not query:
+            raise ValueError("A memory search query is required.")
+        messages = await memory.search(session_id, query, limit=5)
+        if not messages:
+            return "No matching memories found."
+        return " | ".join(f"{message.role}: {message.content}" for message in messages)
+
+    return search_memory
+
+
+def build_default_registry(memory: SQLiteMemory) -> ToolRegistry:
+    registry = ToolRegistry()
+    registry.register(
+        ToolDefinition(
+            name="calculator",
+            description="Safely evaluate arithmetic expressions without arbitrary code execution.",
+            handler=calculator,
+        )
+    )
+    registry.register(
+        ToolDefinition(
+            name="memory_search",
+            description="Search the current session's persisted conversational memory.",
+            handler=memory_search_tool(memory),
+        )
+    )
+    return registry
