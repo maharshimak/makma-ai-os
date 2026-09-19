@@ -118,8 +118,9 @@ class SQLiteMemory:
 
             coverage = len(overlap) / max(len(query_tokens), 1)
             phrase_bonus = 1.0 if phrase_match else 0.0
+            provenance_bonus = 0.25 if row["role"] == "user" else 0.0
             recency_bonus = 0.15 / (recency_rank + 1)
-            score = phrase_bonus + coverage + recency_bonus
+            score = phrase_bonus + coverage + provenance_bonus + recency_bonus
 
             ranked.append(
                 MemoryMatch(
