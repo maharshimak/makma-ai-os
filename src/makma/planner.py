@@ -14,53 +14,72 @@ _MEMORY_COMMAND = re.compile(
     r"\b(?:search|check|look in|find in)\s+(?:my\s+)?memory(?:\s+for)?\s*(.*)",
     flags=re.IGNORECASE,
 )
+_NEXT_TOOL_COMMAND = re.compile(
+    r"\s+and\s+(?=(?:calculate|compute|evaluate)\b)",
+    flags=re.IGNORECASE,
+)
 
 
 class Planner:
-    """Deterministic planner that turns obvious intents into auditable tool steps."""
+    """Deterministic planner that turns explicit intents into auditable tool steps."""
 
     def plan(self, message: str) -> list[PlanStep]:
         text = message.strip()
-        math_match = _MATH_COMMAND.search(text)
-        if math_match:
-            return [
-                PlanStep(
-                    id=str(uuid4()),
-                    kind="tool",
-                    description="Calculate the requested arithmetic expression.",
-                    tool_name="calculator",
-                    arguments={"expression": math_match.group(1).strip()},
-                ),
-                self._respond_step(),
-            ]
+        candidates: list[tuple[int, PlanStep]] = []
 
-        if _PURE_MATH.fullmatch(text) and any(character.isdigit() for character in text):
-            return [
-                PlanStep(
-                    id=str(uuid4()),
-                    kind="tool",
-                    description="Evaluate the arithmetic expression.",
-                    tool_name="calculator",
-                    arguments={"expression": text},
-                ),
-                self._respond_step(),
-            ]
+        math_matches = list(_MATH_COMMAND.finditer(text))
+        for match in math_matches:
+            expression = match.group(1).strip()
+            if expression:
+                candidates.append(
+                    (
+                        match.start(),
+                        PlanStep(
+                            id=str(uuid4()),
+                            kind="tool",
+                            description="Calculate the requested arithmetic expression.",
+                            tool_name="calculator",
+                            arguments={"expression": expression},
+                        ),
+                    )
+                )
+
+        if not math_matches and _PURE_MATH.fullmatch(text) and any(
+            character.isdigit() for character in text
+        ):
+            candidates.append(
+                (
+                    0,
+                    PlanStep(
+                        id=str(uuid4()),
+                        kind="tool",
+                        description="Evaluate the arithmetic expression.",
+                        tool_name="calculator",
+                        arguments={"expression": text},
+                    ),
+                )
+            )
 
         memory_match = _MEMORY_COMMAND.search(text)
         if memory_match:
-            query = memory_match.group(1).strip() or text
-            return [
-                PlanStep(
-                    id=str(uuid4()),
-                    kind="tool",
-                    description="Search persisted session memory.",
-                    tool_name="memory_search",
-                    arguments={"query": query},
-                ),
-                self._respond_step(),
-            ]
+            raw_query = memory_match.group(1).strip()
+            query = _NEXT_TOOL_COMMAND.split(raw_query, maxsplit=1)[0].strip() or text
+            candidates.append(
+                (
+                    memory_match.start(),
+                    PlanStep(
+                        id=str(uuid4()),
+                        kind="tool",
+                        description="Recall relevant persisted session memories.",
+                        tool_name="memory_search",
+                        arguments={"query": query},
+                    ),
+                )
+            )
 
-        return [self._respond_step()]
+        candidates.sort(key=lambda item: item[0])
+        tool_steps = [step for _, step in candidates[:4]]
+        return [*tool_steps, self._respond_step()]
 
     @staticmethod
     def _respond_step() -> PlanStep:
