@@ -1,5 +1,7 @@
 # Mak'ma AI OS
 
+[Live Runtime Console](https://maharshimak.github.io/makma-ai-os/) · [Architecture](docs/DESIGN.md) · [API Reference](#api)
+
 Mak'ma is a **tool-using personal AI runtime** built as an engineering portfolio project. The runtime can route to local or OpenAI-compatible models, persist conversation state, build auditable multi-step plans for explicit tool intents, enforce permissions, rank relevant session memories, expose execution metrics, and serve the system through FastAPI.
 
 ## What the runtime actually implements
@@ -40,6 +42,8 @@ flowchart LR
 ```
 
 ## Live runtime console
+
+**Public console:** https://maharshimak.github.io/makma-ai-os/
 
 The repository includes a deployable browser console in `demo/`. It exposes the runtime's planning, tool results, ranked session memory and telemetry through a restrained engineering interface.
 
