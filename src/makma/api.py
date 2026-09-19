@@ -4,6 +4,7 @@ import json
 from dataclasses import asdict
 
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -27,6 +28,13 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         ),
     )
     app.state.runtime = runtime
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=runtime.settings.allowed_cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
 
     @app.get("/health")
     async def health() -> dict[str, object]:
