@@ -14,3 +14,16 @@ class Settings(BaseSettings):
     database_path: str = "./data/makma.db"
     request_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
     max_history_messages: int = Field(default=20, ge=1, le=200)
+    cors_origins: str = (
+        "http://localhost:3000,"
+        "http://127.0.0.1:5500,"
+        "https://maharshimak.github.io"
+    )
+
+    @property
+    def allowed_cors_origins(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.cors_origins.split(",")
+            if origin.strip()
+        ]
