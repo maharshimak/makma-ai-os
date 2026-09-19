@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 
 from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
@@ -20,7 +21,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     runtime = runtime or build_runtime()
     app = FastAPI(
         title="Mak'ma AI OS",
-        version="1.0.0",
+        version="1.1.0",
         description=(
             "Tool-using AI runtime with persistent memory, provider routing, and audit traces."
         ),
@@ -31,9 +32,15 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     async def health() -> dict[str, object]:
         return {
             "status": "ok",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "provider": runtime.provider.name,
             "tools": runtime.registry.names,
+            "capabilities": [
+                "multi_intent_planning",
+                "ranked_memory_recall",
+                "execution_metrics",
+                "runtime_telemetry",
+            ],
         }
 
     @app.get("/v1/tools")
@@ -89,6 +96,21 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     ) -> list[dict[str, str]]:
         matches = await runtime.memory.search(session_id, q, limit=limit)
         return [message.model_dump() for message in matches]
+
+    @app.get("/v1/sessions/{session_id}/recall")
+    async def recall_memory(
+        session_id: str,
+        q: str = Query(min_length=1, max_length=1000),
+        limit: int = Query(default=5, ge=1, le=50),
+    ) -> list[dict[str, object]]:
+        matches = await runtime.memory.recall(session_id, q, limit=limit)
+        return [match.model_dump() for match in matches]
+
+    @app.get("/v1/telemetry")
+    async def telemetry_summary(
+        operation: str | None = Query(default=None, min_length=1, max_length=200),
+    ) -> dict[str, object]:
+        return asdict(runtime.telemetry.summarize(operation))
 
     return app
 
