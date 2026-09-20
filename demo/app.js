@@ -651,7 +651,7 @@ function disconnect() {
   state.apiBase = '';
   localStorage.removeItem('makma-api-base');
   els.apiBase.value = '';
-  els.version.textContent = '1.1.0';
+  els.version.textContent = '1.2.0';
   applyMode();
   els.feedback.className = 'connection-feedback';
   els.feedback.textContent = 'Browser Demo Mode is active.';
