@@ -43,6 +43,43 @@ jobs:
           for f in demo/projects/assets/tools/*.js; do node --check "$f"; done
           for page in demo/projects/*/index.html; do test -s "$page"; done
 
+      - name: Smoke-test functional product pages
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+
+          check_page() {
+            local slug="$1"
+            local marker="$2"
+            local output
+            output="$(mktemp)"
+            "$CHROME" \
+              --headless=new \
+              --no-sandbox \
+              --disable-gpu \
+              --allow-file-access-from-files \
+              --virtual-time-budget=3000 \
+              --dump-dom \
+              "file://${GITHUB_WORKSPACE}/demo/projects/${slug}/index.html" \
+              > "$output" 2>/tmp/makma-chrome.log
+            grep -q "$marker" "$output"
+            if grep -q "Could not run this workflow" "$output"; then
+              echo "Runtime error detected in ${slug}"
+              cat "$output"
+              exit 1
+            fi
+          }
+
+          check_page agentic-rag-engine "Grounded evidence"
+          check_page multimodal-ai-studio "Validated edit plan"
+          check_page knowledge-twin "Resolved entity"
+          check_page clinical-document-intelligence "Structured record"
+          check_page secure-data-copilot "Executed result"
+          check_page llm-eval-observability "Reliability confidence"
+          check_page mlops-control-plane "Promotion decision"
+          check_page mlops-production-pipeline "Held-out predictions"
+
       - name: Upload console
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
