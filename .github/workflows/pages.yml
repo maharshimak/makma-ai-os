@@ -71,6 +71,18 @@ jobs:
             fi
           }
 
+          main_output="$(mktemp)"
+          "$CHROME" \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --allow-file-access-from-files \
+            --virtual-time-budget=3000 \
+            --dump-dom \
+            "file://${GITHUB_WORKSPACE}/demo/index.html?smoke=1" \
+            > "$main_output" 2>/tmp/makma-main-chrome.log
+          grep -q "19 \* 23 = 437" "$main_output"
+
           check_page agentic-rag-engine "Grounded evidence"
           check_page multimodal-ai-studio "Validated edit plan"
           check_page knowledge-twin "Resolved entity"
