@@ -3,12 +3,21 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
+function readLocalJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 const state = {
   mode: 'demo',
   apiBase: '',
-  sessionId: newSessionId(),
-  memory: [],
-  telemetry: [],
+  sessionId: localStorage.getItem('makma-session-id') || newSessionId(),
+  memory: readLocalJson('makma-demo-memory', []),
+  telemetry: readLocalJson('makma-demo-telemetry', []),
   lastResult: null,
   busy: false,
 };
@@ -41,6 +50,7 @@ const els = {
   feedback: $('#connection-feedback'),
   testConnection: $('#test-connection-button'),
   disconnect: $('#disconnect-button'),
+  exportSession: $('#export-session-button'),
 };
 
 function newSessionId() {
@@ -54,6 +64,35 @@ function newRunId() {
   if (globalThis.crypto && crypto.randomUUID) return crypto.randomUUID();
   return 'run-' + Date.now().toString(36);
 }
+
+function persistDemoState() {
+  try {
+    localStorage.setItem('makma-session-id', state.sessionId);
+    localStorage.setItem('makma-demo-memory', JSON.stringify(state.memory.slice(-200)));
+    localStorage.setItem('makma-demo-telemetry', JSON.stringify(state.telemetry.slice(-200)));
+  } catch {
+    // Browser storage is optional; runtime functionality must not depend on it.
+  }
+}
+
+function exportSession() {
+  const payload = {
+    exported_at: new Date().toISOString(),
+    mode: state.mode,
+    session_id: state.sessionId,
+    memory: state.memory,
+    telemetry: state.telemetry,
+    last_result: state.lastResult,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'makma-session-' + state.sessionId + '.json';
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 
 function escapeHtml(value) {
   return String(value)
@@ -429,6 +468,7 @@ async function runDemo(message) {
   };
 
   state.telemetry.push({ latency_ms: latency, success: results.every((item) => item.ok) });
+  persistDemoState();
   return result;
 }
 
@@ -506,6 +546,7 @@ async function recall(query) {
 
 function updateRun(result) {
   state.lastResult = result;
+  persistDemoState();
   els.runId.textContent = result.run_id || 'unknown';
   els.provider.textContent = result.provider || (state.mode === 'connected' ? 'remote' : 'browser-demo');
   els.latency.textContent = formatNumber(result.latency_ms || 0, 2) + ' ms';
@@ -621,6 +662,7 @@ function resetSession() {
   state.memory = [];
   state.telemetry = [];
   state.lastResult = null;
+  persistDemoState();
   els.sessionId.textContent = state.sessionId;
   els.runId.textContent = 'not-started';
   els.latency.textContent = '0 ms';
@@ -692,6 +734,7 @@ els.connect.addEventListener('click', () => {
 
 els.testConnection.addEventListener('click', verifyConnection);
 els.disconnect.addEventListener('click', disconnect);
+if (els.exportSession) els.exportSession.addEventListener('click', exportSession);
 
 const savedApiBase = localStorage.getItem('makma-api-base');
 if (savedApiBase) {
@@ -700,5 +743,11 @@ if (savedApiBase) {
 }
 
 els.sessionId.textContent = state.sessionId;
+persistDemoState();
 applyMode();
 renderTelemetry(demoTelemetrySummary());
+
+const smokeMode = new URLSearchParams(window.location.search).get('smoke');
+if (smokeMode === '1') {
+  setTimeout(() => submitMessage('calculate 19 * 23'), 0);
+}
