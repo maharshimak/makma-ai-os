@@ -26,15 +26,21 @@ jobs:
       - name: Validate runtime console
         run: |
           node --check demo/app.js
-          node --check demo/projects/assets/app.js
+          node --check demo/projects/assets/core.js
+          for f in demo/projects/assets/tools/*.js; do node --check "$f"; done
           test -s demo/index.html
           test -s demo/styles.css
           test -s demo/favicon.svg
           test -s demo/projects/index.html
           test -s demo/projects/assets/styles.css
           test -s demo/projects/agentic-rag-engine/index.html
+          test -s demo/projects/multimodal-ai-studio/index.html
+          test -s demo/projects/knowledge-twin/index.html
+          test -s demo/projects/clinical-document-intelligence/index.html
           test -s demo/projects/secure-data-copilot/index.html
+          test -s demo/projects/llm-eval-observability/index.html
           test -s demo/projects/mlops-control-plane/index.html
+          test -s demo/projects/mlops-production-pipeline/index.html
       - name: Build distributable wheel
         run: python -m pip wheel --no-deps . -w dist
       - name: Build container
