@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-  const M=window.MAKMA,{ $,num,clamp,tokens,metrics,badge,setHTML,trace,error,shell,finish}=M;
+  const M=window.MAKMA,{ $,num,clamp,tokens,metrics,badge,setHTML,trace,error,shell,finish,esc}=M;
   function wilson(successes,total,z=1.96){const p=successes/total,z2=z*z,den=1+z2/total,center=(p+z2/(2*total))/den,margin=z*Math.sqrt(p*(1-p)/total+z2/(4*total*total))/den;return {lower:Math.max(0,center-margin),upper:Math.min(1,center+margin)};}
   function run(){
     const started=performance.now();
@@ -12,7 +12,7 @@
       setHTML('#result',metrics([['Relevance',(rel*100).toFixed(0)+'%',rel>=minRel?'good':'bad'],['Citation coverage',(cov*100).toFixed(0)+'%'],['Estimated cost','$'+cost.toFixed(6)],['Latency',lat+' ms',lat<=maxLat?'good':'bad']])+
         '<div class="row" style="margin:12px 0">'+badge(gate?'REGRESSION GATE PASS':'REGRESSION GATE BLOCK',gate?'ok':'bad')+' '+badge(casePass?'case pass':'case fail',casePass?'ok':'bad')+'</div>'+
         '<div class="section-title">Reliability confidence</div>'+metrics([['Samples',samples],['Pass rate',(passRate*100).toFixed(1)+'%'],['Wilson 95% lower',(ci.lower*100).toFixed(1)+'%',ci.lower>=.8?'good':'warn'],['Wilson 95% upper',(ci.upper*100).toFixed(1)+'%']])+
-        (reasons.length?'<div class="error-box"><strong>Gate reasons</strong><p>'+reasons.join(' · ')+'</p></div>':'<div class="success-box"><strong>Candidate is inside the configured evaluation budget.</strong></div>')+
+        (reasons.length?'<div class="error-box"><strong>Gate reasons</strong><p>'+esc(reasons.join(' · '))+'</p></div>':'<div class="success-box"><strong>Candidate is inside the configured evaluation budget.</strong></div>')+
         '<div class="section-title">Observed citations</div>'+([...seenCites].length?[...seenCites].map(c=>badge(c,'ok')).join(' '):'<div class="empty-note">No [citation] markers found.</div>'));
       trace([{label:'metrics',title:'Case evaluation',text:'Relevance '+(rel*100).toFixed(1)+'%, citation coverage '+(cov*100).toFixed(1)+'%, forbidden outputs '+foundForbidden.length+'.'},{label:'cost',title:'Token-cost estimate',text:inputTok+' input + '+outputTok+' output tokens → $'+cost.toFixed(6)+' at configured pricing.'},{label:'reliability',title:'Wilson confidence interval',text:successes+'/'+samples+' successes → 95% interval '+(ci.lower*100).toFixed(1)+'–'+(ci.upper*100).toFixed(1)+'%.'},{label:'gate',title:'Regression gate',text:gate?'All configured thresholds passed.':reasons.join(' · ')}]);
     }catch(e){error(e.message);}
