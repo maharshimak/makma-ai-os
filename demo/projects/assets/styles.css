@@ -8,3 +8,23 @@ a{color:inherit;text-decoration:none}button,input,textarea{font:inherit}button{c
 .brand strong{color:#fff}
 .product-origin{display:inline-flex;align-items:center;gap:7px;margin-bottom:12px;padding:6px 9px;border:1px solid rgba(217,255,99,.24);border-radius:999px;background:rgba(217,255,99,.035);color:var(--accent);font:800 9px var(--mono);letter-spacing:.12em;text-transform:uppercase}
 .product-origin:before{content:"M'";display:grid;place-items:center;width:18px;height:18px;border:1px solid rgba(217,255,99,.35);border-radius:4px;font-size:7px}
+
+/* MAK'MA Labs functional tool workspace */
+.tool-layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(340px,.95fr);gap:16px}
+.tool-input{align-self:start}.result{min-height:520px}.result-content{display:grid;gap:10px}
+.control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.control-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.control-grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+textarea.tall{min-height:230px}.metric-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mini-metric{padding:12px;border:1px solid var(--border);background:#0b0d10;border-radius:9px}
+.mini-metric span{display:block;color:var(--muted);font-size:10px}.mini-metric strong{display:block;margin-top:6px;font:800 15px var(--mono);overflow-wrap:anywhere}
+.mini-metric.good{border-color:rgba(111,227,166,.32)}.mini-metric.warn{border-color:rgba(240,195,108,.32)}.mini-metric.bad{border-color:rgba(255,124,124,.36)}
+.row.split{justify-content:space-between}.score-line{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font:10px var(--mono)}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:9px}.data-table{width:100%;border-collapse:collapse;min-width:440px}
+.data-table th,.data-table td{padding:9px 10px;border-bottom:1px solid var(--border);text-align:left;font-size:11px}.data-table th{color:var(--muted);font:750 10px var(--mono);background:#0b0d10}
+.data-table tr:last-child td{border-bottom:0}.error-box,.success-box,.empty-note{padding:13px;border-radius:9px;font-size:12px}
+.error-box{border:1px solid rgba(255,124,124,.35);background:rgba(255,124,124,.05)}.success-box{border:1px solid rgba(111,227,166,.3);background:rgba(111,227,166,.04)}
+.empty-note{border:1px dashed var(--border);color:var(--muted)}.muted{color:var(--muted);font-size:11px}.compact{padding:9px 11px}
+.quick-actions{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 14px}.product-hero{padding-bottom:26px}
+@media(max-width:1050px){.tool-layout{grid-template-columns:1fr}.control-grid.four{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.control-grid,.control-grid.three,.control-grid.four,.metric-row{grid-template-columns:1fr}}
