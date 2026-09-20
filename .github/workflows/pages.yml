@@ -39,7 +39,9 @@ jobs:
           test -f demo/favicon.svg
           test -f demo/projects/index.html
           test -f demo/projects/assets/styles.css
-          node --check demo/projects/assets/app.js
+          node --check demo/projects/assets/core.js
+          for f in demo/projects/assets/tools/*.js; do node --check "$f"; done
+          for page in demo/projects/*/index.html; do test -s "$page"; done
 
       - name: Upload console
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
