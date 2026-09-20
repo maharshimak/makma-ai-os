@@ -1,0 +1,23 @@
+'use strict';
+(() => {
+  const M=window.MAKMA,{ $,num,clamp,parseNums,psi,mean,fmt,fingerprint,metrics,badge,setHTML,trace,error,shell,finish,table,esc,copyText}=M;
+  function parseXY(text){const rows=String(text).trim().split(/\n+/).map(x=>x.trim()).filter(Boolean).map(line=>line.split(/[\s,;]+/).map(Number));if(rows.some(r=>r.length<2||!Number.isFinite(r[0])||!Number.isFinite(r[1])))throw new Error('Each row must contain finite x,y numbers.');return {x:rows.map(r=>r[0]),y:rows.map(r=>r[1])};}
+  function train(xs,ys){if(xs.length!==ys.length||xs.length<2)throw new Error('Need at least two paired training observations.');const xb=mean(xs),yb=mean(ys),den=xs.reduce((s,x)=>s+(x-xb)**2,0);if(!den)throw new Error('Feature variance must be non-zero.');const slope=xs.reduce((s,x,i)=>s+(x-xb)*(ys[i]-yb),0)/den;return {slope,intercept:yb-slope*xb,version:'1.0.0'};}
+  async function run(){
+    const started=performance.now();
+    try{
+      const tr=parseXY($('#train').value),ev=parseXY($('#eval').value),model=train(tr.x,tr.y),pred=ev.x.map(x=>model.slope*x+model.intercept),mae=mean(pred.map((p,i)=>Math.abs(p-ev.y[i]))),drift=psi(parseNums($('#expected').value),parseNums($('#actual').value)),maxMae=num($('#maxmae').value),maxPsi=num($('#maxpsi').value),minRows=clamp(parseInt($('#minrows').value||'2',10),1,10000),reasons=[];
+      if(ev.x.length<minRows)reasons.push('eval_rows '+ev.x.length+' < required '+minRows);if(mae>maxMae)reasons.push('mae '+fmt(mae,6)+' > maximum '+fmt(maxMae,6));if(drift>maxPsi)reasons.push('psi '+fmt(drift,6)+' > maximum '+fmt(maxPsi,6));
+      const fp=await fingerprint(model),allowed=!reasons.length,manifest={model_version:model.version,model_fingerprint:fp,train_rows:tr.x.length,eval_rows:ev.x.length,mae,drift_psi:drift},json=JSON.stringify(manifest,null,2),rows=ev.x.map((x,i)=>({x,y_actual:ev.y[i],y_pred:Number(pred[i].toFixed(4)),abs_error:Number(Math.abs(pred[i]-ev.y[i]).toFixed(4))}));
+      setHTML('#result',metrics([['Slope',fmt(model.slope,4)],['Intercept',fmt(model.intercept,4)],['MAE',fmt(mae,4),mae<=maxMae?'good':'bad'],['PSI',fmt(drift,4),drift<=maxPsi?'good':'bad']])+
+        '<div class="row" style="margin:12px 0">'+badge(allowed?'DEPLOYMENT ALLOWED':'DEPLOYMENT BLOCKED',allowed?'ok':'bad')+' '+badge('model '+fp.slice(0,12)+'…')+'</div>'+
+        '<div class="section-title">Held-out predictions</div>'+table(rows)+'<div class="section-title">Run manifest</div><code id="manifest-json" class="code">'+esc(json)+'</code><div class="row"><button id="copy-manifest" class="btn">Copy manifest</button></div>'+
+        (reasons.length?'<div class="error-box"><strong>Deployment gate reasons</strong><p>'+esc(reasons.join(' · '))+'</p></div>':''));
+      $('#copy-manifest').onclick=e=>copyText(json,e.currentTarget);
+      trace([{label:'train',title:'Ordinary least squares',text:'Trained on '+tr.x.length+' rows; y = '+fmt(model.slope,4)+'x + '+fmt(model.intercept,4)+'.'},{label:'evaluate',title:'Held-out MAE',text:ev.x.length+' evaluation rows → MAE '+fmt(mae,6)+'.'},{label:'drift',title:'PSI drift',text:'Expected vs actual bins → PSI '+fmt(drift,6)+'.'},{label:'artifact',title:'Model fingerprint + manifest',text:'SHA-256 '+fp.slice(0,20)+'… binds model coefficients/version to the run manifest.'},{label:'gate',title:'Fail-closed deployment gate',text:allowed?'All configured thresholds passed.':reasons.join(' · ')}]);
+    }catch(e){error(e.message);}
+    finish(started);
+  }
+  shell('<div class="field"><label>Training data · x,y per line</label><textarea id="train">1,2.1\n2,3.9\n3,6.2\n4,8.1\n5,10.0\n6,12.2</textarea></div><div class="field"><label>Held-out evaluation data · x,y per line</label><textarea id="eval">7,14.1\n8,16.2\n9,17.9\n10,20.1</textarea></div><div class="control-grid"><div class="field"><label>Expected distribution bins</label><input id="expected" value="25,25,25,25"></div><div class="field"><label>Actual distribution bins</label><input id="actual" value="24,26,27,23"></div></div><div class="control-grid three"><div class="field"><label>Max MAE</label><input id="maxmae" type="number" value="0.5" step="0.05"></div><div class="field"><label>Max PSI</label><input id="maxpsi" type="number" value="0.25" step="0.01"></div><div class="field"><label>Min eval rows</label><input id="minrows" type="number" value="4"></div></div><button id="run" class="btn primary">Train + evaluate + build deployment manifest</button>');
+  $('#run').onclick=run;run();
+})();
