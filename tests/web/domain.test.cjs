@@ -27,6 +27,7 @@ for (const value of ["", null, undefined, NaN, Infinity, true, [], [1], {}])
         assert.throws(() => D.number(value, "value")),
     );
 test("probability, counts and distribution boundaries", () => {
+    assert.equal(D.normalize("constructor"), "constructor");
     assert.throws(() => D.probability(1.1, "rate"));
     assert.throws(() => D.integer(2.5, "count"));
     assert.throws(() => D.psi([1], [1, 2]));

@@ -96,6 +96,7 @@
             ?.map(
                 (t) =>
                     ({
+                        __proto__: null,
                         corporation: "corp",
                         company: "co",
                         limited: "ltd",

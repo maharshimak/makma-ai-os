@@ -267,7 +267,7 @@
         return [];
     }
     function summarize(rows) {
-        const out = { row_count: rows.length, numeric: {} };
+        const out = { row_count: rows.length, numeric: Object.create(null) };
         if (!rows.length) return out;
         const values = Object.create(null);
         rows.forEach((r) =>
