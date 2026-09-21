@@ -13,6 +13,28 @@
   const uniq = (arr) => [...new Set(arr)];
   const mean = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
   const parseNums = (v) => String(v).split(/[\s,]+/).filter(Boolean).map(Number);
+  const readNumber = (selector, label, {min=-Infinity,max=Infinity,integer=false}={}) => {
+    const el=$(selector);
+    if(!el) throw new Error(label+' control is missing.');
+    const raw=String(el.value).trim();
+    if(!raw) throw new Error(label+' is required.');
+    const value=Number(raw);
+    if(!Number.isFinite(value)) throw new Error(label+' must be a finite number.');
+    if(integer && !Number.isInteger(value)) throw new Error(label+' must be an integer.');
+    if(value<min || value>max) throw new Error(label+' must be between '+min+' and '+max+'.');
+    return value;
+  };
+  const parseNumberList = (value,label,{min=0}={}) => {
+    const values=String(value).split(/[\s,]+/).filter(Boolean).map(Number);
+    if(!values.length) throw new Error(label+' must contain at least one number.');
+    if(values.some(v=>!Number.isFinite(v))) throw new Error(label+' contains a non-numeric value.');
+    if(values.some(v=>v<min)) throw new Error(label+' values must be at least '+min+'.');
+    return values;
+  };
+  const parseJson = (value,label='JSON') => {
+    try { return JSON.parse(String(value)); }
+    catch { throw new Error(label+' is not valid JSON.'); }
+  };
   const fnv1a = (text) => {
     let h = 0x811c9dc5;
     for (let i = 0; i < text.length; i++) {
@@ -92,6 +114,6 @@
       return sum + (a-e)*Math.log(a/e);
     },0);
   };
-  window.MAKMA = {$,$$,esc,clamp,finite,num,fmt,tokens,uniq,mean,parseNums,fnv1a,fingerprint,table,metrics,code,badge,setHTML,trace,error,shell,finish,copyText,psi};
+  window.MAKMA = {$,$,esc,clamp,finite,num,fmt,tokens,uniq,mean,parseNums,readNumber,parseNumberList,parseJson,fnv1a,fingerprint,table,metrics,code,badge,setHTML,trace,error,shell,finish,copyText,psi};
 })();
 
