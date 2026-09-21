@@ -41,7 +41,13 @@
                 ),
                 payload = D.canonical(r.model),
                 fp = await D.digest(payload);
-            artifactOrigin = { ...r, artifact: payload, expectedDigest: fp };
+            artifactOrigin = {
+                ...r,
+                originalArtifact: payload,
+                artifact: payload,
+                trainingDigest: fp,
+                expectedDigest: fp,
+            };
             M.setHTML(
                 "#result",
                 S("Held-out predictions", M.table(r.rows)) +
@@ -62,12 +68,25 @@
                             F("expected-digest", "Expected SHA-256", fp) +
                             '<button id="verify-artifact" class="btn primary">Verify artifact + deployment gate</button><div id="integrity-status" role="status" aria-live="polite"></div>',
                     ) +
-                    S("Run manifest", W.json({ ...r, model_fingerprint: fp })) +
+                    S(
+                        "Run manifest",
+                        '<div id="current-run-manifest">' +
+                            W.json(artifactOrigin) +
+                            "</div>",
+                    ) +
                     '<p class="notice">Compact browser OLS lifecycle. Artifact verification hashes the exact UTF-8 payload bytes. The expected digest is a user-controlled reference, not a digital signature or trusted registry.</p>',
             );
             const verify = async () => {
-                const actual = await D.digest(R("artifact")),
-                    expected = D.text(R("expected-digest"), "Expected digest");
+                const candidatePayload = R("artifact"),
+                    expected = D.text(R("expected-digest"), "Expected digest"),
+                    actual = await D.digest(candidatePayload);
+                if (
+                    candidatePayload !== R("artifact") ||
+                    expected !== R("expected-digest").trim()
+                )
+                    throw Error(
+                        "Artifact changed during verification; verify again.",
+                    );
                 if (!/^[a-f0-9]{64}$/i.test(expected))
                     throw Error(
                         "Expected digest must be 64 hexadecimal characters.",
@@ -98,14 +117,22 @@
                         W.reasons(reasons),
                 );
                 Object.assign(artifactOrigin, {
+                    artifact: candidatePayload,
+                    expectedDigest: expected,
                     actualDigest: actual,
                     integrity: valid && sameTrainingArtifact,
                     allowed,
                     reasons,
                 });
+                renderManifest();
             };
+            const renderManifest = () =>
+                M.setHTML("#current-run-manifest", W.json(artifactOrigin));
             const invalidate = () => {
                 Object.assign(artifactOrigin, {
+                    artifact: R("artifact"),
+                    expectedDigest: R("expected-digest"),
+                    actualDigest: null,
                     integrity: false,
                     allowed: false,
                     reasons: ["Artifact verification required after editing"],
@@ -114,17 +141,22 @@
                     "#integrity-status",
                     W.status(false, "", "VERIFICATION REQUIRED"),
                 );
+                renderManifest();
             };
             M.$("#artifact").oninput = invalidate;
             M.$("#expected-digest").oninput = invalidate;
             M.$("#verify-artifact").onclick = () =>
                 verify().catch((e) => {
                     Object.assign(artifactOrigin, {
+                        artifact: R("artifact"),
+                        expectedDigest: R("expected-digest"),
+                        actualDigest: null,
                         integrity: false,
                         allowed: false,
                         reasons: [e.message],
                     });
                     M.setHTML("#integrity-status", M.esc(e.message));
+                    renderManifest();
                 });
             await verify();
             M.trace([

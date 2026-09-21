@@ -423,7 +423,7 @@
         )
             throw Error("Corrections must be a JSON object.");
         for (const key of Object.keys(overrides))
-            if (!(key in patterns))
+            if (!Object.hasOwn(patterns, key))
                 throw Error("Unknown correction field: " + key);
         const record = { ...original, ...overrides };
         const errors = [];
@@ -546,7 +546,10 @@
             const latency = nonnegative(c.latency_ms, "Case latency"),
                 input = integer(c.input_tokens, "Input tokens"),
                 output = integer(c.output_tokens, "Output tokens"),
-                cost = (input * inPrice + output * outPrice) / 1e6,
+                cost = number(
+                    (input * inPrice + output * outPrice) / 1e6,
+                    "Estimated cost",
+                ),
                 relevance = terms.length
                     ? 1 - missing.length / terms.length
                     : 1,

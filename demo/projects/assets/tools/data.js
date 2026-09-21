@@ -518,6 +518,22 @@
             }),
     );
     $("#result").setAttribute("aria-live", "polite");
+    const initialDataset = JSON.stringify(
+        { customers: CUSTOMERS, orders: ORDERS },
+        null,
+        2,
+    );
+    $("#dataset").parentElement.insertAdjacentHTML(
+        "beforebegin",
+        '<div class="field"><label for="sample-dataset">Choose dataset</label><select id="sample-dataset"><option value="retail">Synthetic retail sample</option><option value="empty">Empty dataset starter</option></select></div>',
+    );
+    $("#sample-dataset").onchange = () => {
+        $("#dataset").value =
+            $("#sample-dataset").value === "retail"
+                ? initialDataset
+                : JSON.stringify({ customers: [], orders: [] }, null, 2);
+        run();
+    };
     $("#run").onclick = run;
     run();
 })();

@@ -107,7 +107,19 @@
                 .map(
                     (r) =>
                         "<tr>" +
-                        cols.map((c) => "<td>" + esc(r[c]) + "</td>").join("") +
+                        cols
+                            .map(
+                                (c) =>
+                                    "<td>" +
+                                    esc(
+                                        typeof r[c] === "number" &&
+                                            Number.isFinite(r[c])
+                                            ? Number(r[c].toPrecision(10))
+                                            : r[c],
+                                    ) +
+                                    "</td>",
+                            )
+                            .join("") +
                         "</tr>",
                 )
                 .join("") +

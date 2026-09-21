@@ -920,7 +920,7 @@ function disconnect() {
         localStorage.removeItem("makma-api-base");
     } catch {}
     els.apiBase.value = "";
-    els.version.textContent = "1.2.0";
+    els.version.textContent = "2.0.0";
     applyMode();
     els.feedback.className = "connection-feedback";
     els.feedback.textContent = "Browser Demo Mode is active.";

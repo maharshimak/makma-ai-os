@@ -202,23 +202,21 @@ test("data executes editable data, privacy and CSV export", async ({
     await expect(page.locator("#result")).toContainText(
         "Column name matches contact",
     );
-    await page
-        .locator("#dataset")
-        .fill(
-            JSON.stringify({
-                customers: [
-                    { id: 1, name: "Test", email: "synthetic@example.test" },
-                ],
-                orders: [
-                    {
-                        id: 1,
-                        customer_id: 1,
-                        amount: 42,
-                        created_at: "2026-09-20",
-                    },
-                ],
-            }),
-        );
+    await page.locator("#dataset").fill(
+        JSON.stringify({
+            customers: [
+                { id: 1, name: "Test", email: "synthetic@example.test" },
+            ],
+            orders: [
+                {
+                    id: 1,
+                    customer_id: 1,
+                    amount: 42,
+                    created_at: "2026-09-20",
+                },
+            ],
+        }),
+    );
     await page.locator("#question").fill("total revenue");
     await run(page);
     await expect(page.locator("#result .data-table").first()).toContainText(
@@ -306,6 +304,10 @@ test("pipeline clean artifact passes, modified artifact fails", async ({
     await expect(page.locator("#integrity-status")).toContainText(
         "DEPLOYMENT BLOCKED",
     );
+    await expect(page.locator("#current-run-manifest")).toContainText(
+        '"allowed": false',
+    );
+    await expect(page.locator("#current-run-manifest")).toContainText("999");
 });
 for (const [name, id, value, message] of [
     ["high error", "eval", "5,90\n6,90\n7,90\n8,90", "MAE exceeds"],
@@ -331,4 +333,21 @@ test("hub groups all nine products with distinct source and tool links", async (
     await expect(
         page.getByRole("link", { name: "Open tool →", exact: true }),
     ).toHaveCount(9);
+});
+
+test("data treats hostile cell markup as text", async ({ page }) => {
+    await open(page, "secure-data-copilot");
+    await fillJson(page, "dataset", (d) => ({
+        ...d,
+        customers: d.customers.map((c) => ({
+            ...c,
+            name: "<img src=x onerror=alert(1)>",
+        })),
+    }));
+    await page.locator("#question").fill("customers");
+    await run(page);
+    await expect(page.locator("#result")).toContainText(
+        "<img src=x onerror=alert(1)>",
+    );
+    await expect(page.locator("#result img")).toHaveCount(0);
 });
