@@ -60,6 +60,12 @@
       '<aside class="panel result"><div class="panel-head"><div><small>Computed output</small><h2>Results</h2></div>'+
       '<span id="run-latency" class="pill">ready</span></div><div class="body"><div id="result" class="result-content"></div>'+
       '<div class="section-title">Execution trace</div><div id="trace" class="trace"></div></div></aside>';
+    $$('.field', root).forEach((field, index) => {
+      const label=$('label',field),control=$('input, textarea, select',field);
+      if(!label||!control)return;
+      if(!control.id)control.id='makma-field-'+index;
+      label.htmlFor=control.id;
+    });
   };
   const finish = (started) => {
     const el = $('#run-latency');
@@ -88,3 +94,4 @@
   };
   window.MAKMA = {$,$$,esc,clamp,finite,num,fmt,tokens,uniq,mean,parseNums,fnv1a,fingerprint,table,metrics,code,badge,setHTML,trace,error,shell,finish,copyText,psi};
 })();
+
