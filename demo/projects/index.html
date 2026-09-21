@@ -1,1 +1,306 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090a0c"><meta name="description" content="Maharshi Patel AI engineering portfolio — interactive systems demos."><title>MAK'MA Labs · AI Products by MAK'MA Studio</title><link rel="stylesheet" href="./assets/styles.css"></head><body><div class="shell"><header class="top"><a class="brand" href="../"><span class="mark">M'</span><span><strong>MAK'MA LABS</strong><small>Products by MAK'MA Studio</small></span></a><nav class="nav"><a class="btn hide-mobile" href="https://github.com/maharshimak">GitHub</a><a class="btn primary" href="https://maharshipatel-portfolio.vercel.app/">Portfolio</a></nav></header><section class="hero"><div><div class="eyebrow">MAK'MA LABS · PRODUCT ECOSYSTEM</div><h1>AI products built to be inspected, tested and understood.</h1><p>MAK'MA Labs is the home of a growing family of AI systems designed and built by MAK'MA Studio — spanning agent runtimes, RAG, document intelligence, safe data agents, LLM evaluation and MLOps.</p></div><div class="meta"><div class="metric"><span>Systems</span><strong>09 live showcases</strong></div><div class="metric"><span>Focus</span><strong>AI / ML / GenAI</strong></div><div class="metric"><span>Engineering</span><strong>CI · tests · Docker</strong></div><div class="metric"><span>Author</span><strong>Maharshi Patel</strong></div></div></section><div class="cards"><a class="project-card" href="../"><span class="num">01 · FLAGSHIP</span><h2>Mak'ma AI OS</h2><p>Agent runtime console with planning, permissioned tools, ranked memory and telemetry.</p><div class="tags"><span class="pill ok">live console</span><span class="pill">agent runtime</span></div></a><a class="project-card" href="./agentic-rag-engine/"><span class="num">02</span><h2>Agentic RAG Engine</h2><p>Inspectable retrieval, fusion, reranking and citations.</p><div class="tags"><span class="pill ok">functional tool</span><span class="pill">engine-backed demo</span></div></a><a class="project-card" href="./multimodal-ai-studio/"><span class="num">03</span><h2>Multimodal AI Studio</h2><p>Prompt-to-edit planning for structured media workflows.</p><div class="tags"><span class="pill ok">functional tool</span><span class="pill">engine-backed demo</span></div></a><a class="project-card" href="./knowledge-twin/"><span class="num">04</span><h2>Knowledge Twin</h2><p>Evidence-bearing entity graph and directed traversal.</p><div class="tags"><span class="pill ok">functional tool</span><span class="pill">engine-backed demo</span></div></a><a class="project-card" href="./clinical-document-intelligence/"><span class="num">05</span><h2>Clinical Document Intelligence</h2><p>Structured extraction and validation from synthetic study text.</p><div class="tags"><span class="pill ok">functional tool</span><span class="pill">engine-backed demo</span></div></a><a class="project-card" href="./secure-data-copilot/"><span class="num">06</span><h2>Secure Data Copilot</h2><p>Read-only analytics with explicit SQL safety boundaries.</p><div class="tags"><span class="pill ok">functional tool</span><span class="pill">engine-backed demo</span></div></a><a class="project-card" href="./llm-eval-observability/"><span class="num">07</span><h2>LLM Eval & Observability</h2><p>Evaluation signals and regression gates for LLM / RAG systems.</p><div class="tags"><span class="pill ok">functional tool</span><span class="pill">engine-backed demo</span></div></a><a class="project-card" href="./mlops-control-plane/"><span class="num">08</span><h2>MLOps Control Plane</h2><p>Model registry concepts, promotion gates and drift decisions.</p><div class="tags"><span class="pill ok">functional tool</span><span class="pill">engine-backed demo</span></div></a><a class="project-card" href="./mlops-production-pipeline/"><span class="num">09</span><h2>MLOps Production Pipeline</h2><p>Deterministic training, held-out MAE and fail-closed quality gates.</p><div class="tags"><span class="pill ok">functional tool</span><span class="pill">engine-backed demo</span></div></a></div><footer class="footer"><span>MAK'MA Labs · Products designed and built by MAK'MA Studio</span><span><a href="https://github.com/maharshimak">github.com/maharshimak ↗</a></span></footer></div></body></html>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="theme-color" content="#090a0c" />
+        <meta
+            name="description"
+            content="Maharshi Patel AI engineering portfolio — interactive systems demos."
+        />
+        <title>MAK'MA Labs · AI Products by MAK'MA Studio</title>
+        <link rel="stylesheet" href="./assets/styles.css" />
+    </head>
+    <body>
+        <div class="shell">
+            <header class="top">
+                <a class="brand" href="../"
+                    ><span class="mark">M'</span
+                    ><span
+                        ><strong>MAK'MA LABS</strong
+                        ><small>Products by MAK'MA Studio</small></span
+                    ></a
+                >
+                <nav class="nav">
+                    <a
+                        class="btn hide-mobile"
+                        href="https://github.com/maharshimak"
+                        >GitHub</a
+                    ><a
+                        class="btn primary"
+                        href="https://maharshipatel-portfolio.vercel.app/"
+                        >Portfolio</a
+                    >
+                </nav>
+            </header>
+            <section class="hero">
+                <div>
+                    <div class="eyebrow">MAK'MA LABS · PRODUCT ECOSYSTEM</div>
+                    <h1>
+                        Useful engineering tools. Decisions you can inspect.
+                    </h1>
+                    <p>
+                        MAK'MA Labs is the home of a growing family of AI
+                        systems designed and built by MAK'MA Studio — spanning
+                        agent runtimes, RAG, document intelligence, safe data
+                        agents, LLM evaluation and MLOps.
+                    </p>
+                </div>
+                <div class="meta">
+                    <div class="metric">
+                        <span>Systems</span><strong>09 working tools</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Focus</span><strong>AI / ML / GenAI</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Engineering</span
+                        ><strong>CI · tests · Docker</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Author</span><strong>Maharshi Patel</strong>
+                    </div>
+                </div>
+            </section>
+            <section class="hub-group">
+                <h2>Agent Systems</h2>
+                <div class="cards">
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>MAK’MA AI OS</h3>
+                        <p>
+                            Plan multistep requests, inspect tool execution,
+                            remember facts and export a session.
+                        </p>
+                        <div class="tags">
+                            <span class="pill"
+                                >Browser tools + optional FastAPI
+                                connection</span
+                            >
+                        </div>
+                        <div class="product-links">
+                            <a href="../">Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/makma-ai-os"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>Agentic RAG Engine</h3>
+                        <p>
+                            Tune retrieval against your corpus and relevance
+                            judgments; compare rankings and export cited
+                            context.
+                        </p>
+                        <div class="tags">
+                            <span class="pill"
+                                >Deterministic browser retrieval</span
+                            >
+                        </div>
+                        <div class="product-links">
+                            <a href="./agentic-rag-engine/">Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/agentic-rag-engine"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                </div>
+            </section>
+            <section class="hub-group">
+                <h2>Knowledge & Intelligence</h2>
+                <div class="cards">
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>Knowledge Twin</h3>
+                        <p>
+                            Resolve entity names, inspect evidence, find
+                            directed paths and block incomplete graphs.
+                        </p>
+                        <div class="tags">
+                            <span class="pill">Browser graph analysis</span>
+                        </div>
+                        <div class="product-links">
+                            <a href="./knowledge-twin/">Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/knowledge-twin"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>Clinical Document Intelligence</h3>
+                        <p>
+                            Extract study metadata, inspect source spans and
+                            review human corrections.
+                        </p>
+                        <div class="tags">
+                            <span class="pill"
+                                >Labeled-text extraction; synthetic
+                                documents</span
+                            >
+                        </div>
+                        <div class="product-links">
+                            <a href="./clinical-document-intelligence/"
+                                >Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/clinical-document-intelligence"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                </div>
+            </section>
+            <section class="hub-group">
+                <h2>Data & LLM Operations</h2>
+                <div class="cards">
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>Secure Data Copilot</h3>
+                        <p>
+                            Explore editable business data with safe query
+                            plans, privacy findings and CSV export.
+                        </p>
+                        <div class="tags">
+                            <span class="pill"
+                                >Structured local query engine</span
+                            >
+                        </div>
+                        <div class="product-links">
+                            <a href="./secure-data-copilot/">Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/secure-data-copilot"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>LLM Eval & Observability</h3>
+                        <p>
+                            Evaluate a case dataset and decide whether a
+                            candidate meets release and regression budgets.
+                        </p>
+                        <div class="tags">
+                            <span class="pill"
+                                >Offline evaluation of supplied
+                                observations</span
+                            >
+                        </div>
+                        <div class="product-links">
+                            <a href="./llm-eval-observability/">Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/llm-eval-observability"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                </div>
+            </section>
+            <section class="hub-group">
+                <h2>ML Operations</h2>
+                <div class="cards">
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>MLOps Control Plane</h3>
+                        <p>
+                            Combine model evidence, drift and canary snapshots
+                            into an explainable rollout decision.
+                        </p>
+                        <div class="tags">
+                            <span class="pill"
+                                >Policy evaluator; no infrastructure
+                                changes</span
+                            >
+                        </div>
+                        <div class="product-links">
+                            <a href="./mlops-control-plane/">Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/mlops-control-plane"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>MLOps Production Pipeline</h3>
+                        <p>
+                            Train a compact model, test held-out data and
+                            demonstrate artifact tamper rejection.
+                        </p>
+                        <div class="tags">
+                            <span class="pill"
+                                >Browser OLS and SHA-256 integrity gate</span
+                            >
+                        </div>
+                        <div class="product-links">
+                            <a href="./mlops-production-pipeline/"
+                                >Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/mlops-production-pipeline"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                </div>
+            </section>
+            <section class="hub-group">
+                <h2>Media Intelligence</h2>
+                <div class="cards">
+                    <article class="project-card">
+                        <span class="num"
+                            >A MAK’MA Studio Product · MAK’MA Labs</span
+                        >
+                        <h3>Multimodal AI Studio</h3>
+                        <p>
+                            Plan ordered edits and estimate how output
+                            resolution and retiming affect workload before
+                            rendering.
+                        </p>
+                        <div class="tags">
+                            <span class="pill"
+                                >Media preflight; no rendering</span
+                            >
+                        </div>
+                        <div class="product-links">
+                            <a href="./multimodal-ai-studio/">Open tool →</a
+                            ><a
+                                href="https://github.com/maharshimak/multimodal-ai-studio"
+                                >Source ↗</a
+                            >
+                        </div>
+                    </article>
+                </div>
+            </section>
+            <footer class="footer">
+                <span
+                    >MAK'MA Labs · Products designed and built by MAK'MA
+                    Studio</span
+                ><span
+                    ><a href="https://github.com/maharshimak"
+                        >github.com/maharshimak ↗</a
+                    ></span
+                >
+            </footer>
+        </div>
+    </body>
+</html>

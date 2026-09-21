@@ -1,102 +1,72 @@
-name: Deploy Runtime Console
-
+name: Verify and deploy MAKMA Labs
 on:
   push:
     branches: [main]
-    paths:
-      - "demo/**"
-      - ".github/workflows/pages.yml"
+  pull_request:
   workflow_dispatch:
-
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
+  verify:
+    permissions:
+      contents: read
+      pages: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Python quality gate
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m ruff check .
+          python -m pytest -q
+      - name: Install locked browser test dependencies
+        run: npm ci --ignore-scripts
+      - name: Check shared domain contracts
+        run: |
+          python scripts/fetch_parity_backends.py
+          python scripts/generate_parity.py --backend-root parity-backends --check
+          npm test
+          node --check demo/app.js
+          for file in demo/projects/assets/*.js demo/projects/assets/tools/*.js; do node --check "$file"; done
+      - name: Build versioned static site
+        run: npm run build
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Product interaction and rejection tests
+        run: npm run test:e2e
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
+        with:
+          enablement: false
+      - name: Upload verified site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        with:
+          path: dist-site
   deploy:
+    if: github.event_name != 'pull_request'
+    needs: verify
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Configure Pages
-        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-
-      - name: Validate console assets
-        run: |
-          test -f demo/index.html
-          test -f demo/styles.css
-          test -f demo/app.js
-          test -f demo/favicon.svg
-          test -f demo/projects/index.html
-          test -f demo/projects/assets/styles.css
-          node --check demo/projects/assets/core.js
-          for f in demo/projects/assets/tools/*.js; do node --check "$f"; done
-          for page in demo/projects/*/index.html; do test -s "$page"; done
-
-      - name: Smoke-test functional product pages
-        shell: bash
-        run: |
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          test -n "$CHROME"
-
-          check_page() {
-            local slug="$1"
-            local marker="$2"
-            local output
-            output="$(mktemp)"
-            "$CHROME" \
-              --headless=new \
-              --no-sandbox \
-              --disable-gpu \
-              --allow-file-access-from-files \
-              --virtual-time-budget=3000 \
-              --dump-dom \
-              "file://${GITHUB_WORKSPACE}/demo/projects/${slug}/index.html" \
-              > "$output" 2>/tmp/makma-chrome.log
-            grep -q "$marker" "$output"
-            if grep -q "Could not run this workflow" "$output"; then
-              echo "Runtime error detected in ${slug}"
-              cat "$output"
-              exit 1
-            fi
-          }
-
-          main_output="$(mktemp)"
-          "$CHROME" \
-            --headless=new \
-            --no-sandbox \
-            --disable-gpu \
-            --allow-file-access-from-files \
-            --virtual-time-budget=3000 \
-            --dump-dom \
-            "file://${GITHUB_WORKSPACE}/demo/index.html?smoke=1" \
-            > "$main_output" 2>/tmp/makma-main-chrome.log
-          grep -q "19 \* 23 = 437" "$main_output"
-
-          check_page agentic-rag-engine "Grounded evidence"
-          check_page multimodal-ai-studio "Validated edit plan"
-          check_page knowledge-twin "Resolved entity"
-          check_page clinical-document-intelligence "Structured record"
-          check_page secure-data-copilot "Executed result"
-          check_page llm-eval-observability "Reliability confidence"
-          check_page mlops-control-plane "Promotion decision"
-          check_page mlops-production-pipeline "Held-out predictions"
-
-      - name: Upload console
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: demo
-
-      - name: Deploy to GitHub Pages
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Deploy verified site
         id: deployment
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
+      - name: Verify deployed release and all public URLs
+        run: python scripts/verify_live.py

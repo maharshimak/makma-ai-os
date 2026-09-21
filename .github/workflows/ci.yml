@@ -27,6 +27,8 @@ jobs:
         run: |
           node --check demo/app.js
           node --check demo/projects/assets/core.js
+          node --check demo/projects/assets/domain.js
+          node --check demo/projects/assets/workbench.js
           for f in demo/projects/assets/tools/*.js; do node --check "$f"; done
           test -s demo/index.html
           test -s demo/styles.css

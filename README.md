@@ -4,6 +4,28 @@
 
 Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **tool-using personal AI runtime** built as an engineering portfolio project. The runtime can route to local or OpenAI-compatible models, persist conversation state, build auditable multi-step plans for explicit tool intents, enforce permissions, rank relevant session memories, expose execution metrics, and serve the system through FastAPI.
 
+
+## Product contract — engineering upgrade
+
+**Problem and audience:** An inspectable tool runtime for engineers testing planning, permissions and session memory.
+
+**Live tool:** https://maharshimak.github.io/makma-ai-os/
+
+**Implemented browser workflow:** Browser: ordered remember/recall/calculator actions, measured tool latency, local approval for memory deletion, persistent conversations and run history, complete session JSON export. Connected mode retains FastAPI health verification and request timeouts.
+
+**Backend and parity contract:** Python: SQLite session memory, tool registry and permission policy, deterministic/provider routing, API and telemetry. Browser memory ranking and planning are separate offline implementations; no LLM is called in browser mode. The calculator follows Python arithmetic precedence and rejects unsupported syntax.
+
+**Architecture:** `makma-ai-os/demo` is the shared web product source and Pages deployment. This repository owns its Python domain package. The central `tests/e2e` suite exercises all nine products; `tests/fixtures/python-parity.json` plus `scripts/generate_parity.py` guard shared mathematical contracts. Backend revisions used for regeneration are pinned in the central `backend-lock.json`.
+
+**Safety and limitations:** Browser storage is local and unencrypted; use synthetic data. Backend authentication and deployment hosting are outside this static Pages release. Memory deletion approval is a browser demonstration, not a server authorization mechanism. Inputs are validated, rendered user values are escaped, and deterministic results are not presented as model inference.
+
+**Verification:** Run `python -m ruff check .` and `python -m pytest -q`. `tests/test_engineering_upgrade.py` protects the new rejection/correctness paths. Central web checks: `npm ci`, `npm test`, `npm run build`, `npx playwright install --with-deps chromium`, `npm run test:e2e`. CI gates publishing on browser interactions and validates all public URLs after deployment.
+
+**Highest-value next work:** Authenticated sessions, durable audit storage and integration tests against a real hosted provider.
+
+**Provenance:** Independent MAK’MA Studio engineering implementation; examples are synthetic and no employer code or data is included. Existing MIT license applies.
+
+
 ## What the runtime actually implements
 
 - provider routing for:

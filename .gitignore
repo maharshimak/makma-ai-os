@@ -19,3 +19,8 @@ data/
 *.pem
 *.key
 .DS_Store
+node_modules/
+dist-site/
+playwright-report/
+test-results/
+parity-backends/

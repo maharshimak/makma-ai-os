@@ -1,22 +1,162 @@
-'use strict';
+"use strict";
 (() => {
-  const M=window.MAKMA,{ $,num,clamp,parseNums,psi,fmt,metrics,badge,setHTML,trace,error,shell,finish}=M;
-  function run(){
-    const started=performance.now();
-    try{
-      const metric=num($('#metric').value),threshold=num($('#threshold').value),fp=$('#fingerprint').value.trim(),expected=parseNums($('#expected').value),actual=parseNums($('#actual').value),drift=psi(expected,actual),severity=drift<.1?'stable':drift<.25?'warning':'critical';
-      const prod={requests:num($('#preq').value),error:num($('#perr').value),lat:num($('#plat').value),quality:num($('#pqual').value)},cand={requests:num($('#creq').value),error:num($('#cerr').value),lat:num($('#clat').value),quality:num($('#cqual').value)},traffic=clamp(parseInt($('#traffic').value||'20',10),0,100);
-      const promoReasons=[];if(!fp)promoReasons.push('missing dataset fingerprint');if(metric<threshold)promoReasons.push('quality '+fmt(metric)+' < threshold '+fmt(threshold));const promo=!promoReasons.length;
-      let action='hold',next=traffic,canaryReasons=[];if(cand.requests<100)canaryReasons.push('insufficient candidate traffic');else{if(cand.error-prod.error>.01)canaryReasons.push('error-rate regression');if(cand.lat-prod.lat>250)canaryReasons.push('latency regression');if(prod.quality-cand.quality>.02)canaryReasons.push('quality regression');if(canaryReasons.length){action='rollback';next=0;}else{next=Math.min(100,traffic+20);action=next===100?'promote':'increase';}}
-      const latRatio=prod.lat?cand.lat/prod.lat:Infinity,rollback=cand.requests>=100&&(cand.error>.05||cand.error-prod.error>.02||latRatio>1.5),rollbackReasons=[];if(cand.requests<100)rollbackReasons.push('insufficient evidence');else{if(cand.error>.05)rollbackReasons.push('absolute error rate high');if(cand.error-prod.error>.02)rollbackReasons.push('error-rate increase high');if(latRatio>1.5)rollbackReasons.push('latency ratio high');}
-      setHTML('#result',metrics([['Promotion',promo?'allowed':'blocked',promo?'good':'bad'],['PSI',fmt(drift,4),severity==='stable'?'good':severity==='warning'?'warn':'bad'],['Canary',action,action==='rollback'?'bad':action==='hold'?'warn':'good'],['Rollback',rollback?'YES':'no',rollback?'bad':'good']])+
-        '<div class="section-title">Promotion decision</div><div class="card">'+badge(promo?'PROMOTION ALLOWED':'PROMOTION BLOCKED',promo?'ok':'bad')+'<p>'+(promoReasons.join(' · ')||'Evaluation passed and dataset fingerprint is present.')+'</p></div>'+
-        '<div class="section-title">Canary decision</div><div class="card"><div class="row split"><strong>'+action.toUpperCase()+'</strong><span>next traffic '+next+'%</span></div><p>'+(canaryReasons.join(' · ')||'Candidate is within configured canary regression budgets.')+'</p></div>'+
-        '<div class="section-title">Rollback guard</div><div class="card"><div class="row split"><strong>'+(rollback?'ROLLBACK':'CONTINUE')+'</strong><span>latency ratio '+fmt(latRatio,2)+'×</span></div><p>'+(rollbackReasons.join(' · ')||'No rollback threshold breached.')+'</p></div>');
-      trace([{label:'promotion',title:'Registry promotion policy',text:promo?'Candidate has evaluation evidence and dataset fingerprint.':promoReasons.join(' · ')},{label:'drift',title:'Population Stability Index',text:'PSI '+fmt(drift,4)+' → '+severity+'.'},{label:'canary',title:'Canary traffic controller',text:'Action '+action+'; traffic '+traffic+'% → '+next+'%. '+canaryReasons.join(' · ')},{label:'rollback',title:'Rollback policy',text:'Candidate error '+(cand.error*100).toFixed(2)+'%, baseline '+(prod.error*100).toFixed(2)+'%, latency ratio '+fmt(latRatio,2)+'× → '+(rollback?'ROLLBACK':'continue')+'.'}]);
-    }catch(e){error(e.message);}
-    finish(started);
-  }
-  shell('<div class="control-grid"><div class="field"><label>Candidate quality score</label><input id="metric" type="number" min="0" max="1" step="0.01" value="0.91"></div><div class="field"><label>Required threshold</label><input id="threshold" type="number" min="0" max="1" step="0.01" value="0.85"></div></div><div class="field"><label>Dataset fingerprint</label><input id="fingerprint" value="sha256:demo-dataset-2026-09"></div><div class="control-grid"><div class="field"><label>Expected distribution bins</label><input id="expected" value="20,30,30,20"></div><div class="field"><label>Actual distribution bins</label><input id="actual" value="18,31,32,19"></div></div><div class="section-title">Production vs candidate canary</div><div class="control-grid four"><div class="field"><label>Prod requests</label><input id="preq" type="number" value="2000"></div><div class="field"><label>Prod error rate</label><input id="perr" type="number" step="0.001" value="0.015"></div><div class="field"><label>Prod p95 ms</label><input id="plat" type="number" value="620"></div><div class="field"><label>Prod quality</label><input id="pqual" type="number" step="0.01" value="0.90"></div><div class="field"><label>Candidate requests</label><input id="creq" type="number" value="350"></div><div class="field"><label>Candidate error rate</label><input id="cerr" type="number" step="0.001" value="0.018"></div><div class="field"><label>Candidate p95 ms</label><input id="clat" type="number" value="710"></div><div class="field"><label>Candidate quality</label><input id="cqual" type="number" step="0.01" value="0.91"></div></div><div class="field"><label>Current candidate traffic %</label><input id="traffic" type="number" min="0" max="100" value="20"></div><button id="run" class="btn primary">Evaluate promotion + drift + canary + rollback</button>');
-  $('#run').onclick=run;run();
+    const M = window.MAKMA,
+        D = window.MAKMA_DOMAIN,
+        W = window.WORKBENCH,
+        { field: F, read: R, n: N, section: S } = W;
+    const metrics = [
+        {
+            metric: "auc",
+            value: 0.91,
+            threshold: 0.85,
+            higher_is_better: true,
+            baseline: 0.9,
+        },
+        {
+            metric: "loss",
+            value: 0.12,
+            threshold: 0.2,
+            higher_is_better: false,
+            baseline: 0.15,
+        },
+    ];
+    const prod = {
+            requests: 2000,
+            error_rate: 0.015,
+            p95_latency_ms: 620,
+            quality_score: 0.9,
+        },
+        cand = {
+            requests: 350,
+            error_rate: 0.018,
+            p95_latency_ms: 710,
+            quality_score: 0.91,
+        };
+    W.mount(
+        S(
+            "1 · Candidate artifact",
+            F("name", "Model name", "fraud-model") +
+                F("version", "Model version", "2.0") +
+                F(
+                    "uri",
+                    "Artifact URI",
+                    "s3://synthetic-models/fraud/2.0/model.json",
+                ) +
+                F("fingerprint", "Dataset fingerprint", "synthetic-dataset-v2"),
+        ) +
+            S(
+                "2 · Evaluation policy",
+                F(
+                    "evaluations",
+                    "Evaluation metrics JSON",
+                    JSON.stringify(metrics, null, 2),
+                    "textarea",
+                ) + F("require", "Required evaluation count", 2, "number"),
+            ) +
+            S(
+                "3 · Drift distributions",
+                F("expected", "Expected bins", "20,30,30,20") +
+                    F("actual", "Actual bins", "18,31,32,19"),
+            ) +
+            S(
+                "4 · Canary snapshots",
+                F(
+                    "production",
+                    "Production snapshot JSON",
+                    JSON.stringify(prod, null, 2),
+                    "textarea",
+                ) +
+                    F(
+                        "candidate",
+                        "Candidate snapshot JSON",
+                        JSON.stringify(cand, null, 2),
+                        "textarea",
+                    ) +
+                    F("traffic", "Candidate traffic percent", 20, "number"),
+            ),
+        async () => {
+            const r = D.control(
+                {
+                    name: R("name"),
+                    version: R("version"),
+                    artifact_uri: R("uri"),
+                    dataset_fingerprint: R("fingerprint"),
+                },
+                D.json(R("evaluations"), "Evaluations"),
+                D.json(R("production"), "Production"),
+                D.json(R("candidate"), "Candidate"),
+                N("traffic", "Traffic"),
+                W.list("expected"),
+                W.list("actual"),
+                N("require", "Required evaluations"),
+            );
+            const fp = await D.digest(r.manifest);
+            M.setHTML(
+                "#result",
+                S(
+                    "Promotion decision",
+                    W.status(
+                        r.promotion,
+                        "PROMOTION ALLOWED",
+                        "PROMOTION BLOCKED",
+                    ) + W.reasons(r.reasons),
+                ) +
+                    S(
+                        "Evaluation evidence and baseline regressions",
+                        M.table(r.rows),
+                    ) +
+                    S(
+                        "Drift and rollout",
+                        M.metrics([
+                            ["PSI", r.drift.toFixed(6)],
+                            ["Drift classification", r.severity],
+                            ["Canary decision", r.action],
+                            ["Next traffic", r.next + "%"],
+                        ]) + W.reasons(r.canaryReasons),
+                    ) +
+                    S(
+                        "Rollback guard",
+                        W.status(
+                            !r.rollbackReasons.length,
+                            "NO ROLLBACK TRIGGER",
+                            "ROLLBACK",
+                        ) + W.reasons(r.rollbackReasons),
+                    ) +
+                    S(
+                        "Governance manifest",
+                        W.json({ ...r.manifest, fingerprint: fp }),
+                    ) +
+                    '<p class="notice">Policy evaluation only. This tool does not deploy models or change traffic. Failed promotion or critical drift prevents advancement; rollback signals take precedence. Artifact URIs and dataset fingerprints are caller-supplied metadata, not verified remote assets.</p>',
+            );
+            M.trace([
+                {
+                    label: "candidate",
+                    title: "Artifact identity",
+                    text: r.manifest.model_key,
+                },
+                {
+                    label: "quality",
+                    title: "Promotion policy",
+                    text: r.rows.length + " evaluation records inspected.",
+                },
+                {
+                    label: "rollout",
+                    title: "Combined rollout decision",
+                    text:
+                        r.action +
+                        " → " +
+                        r.next +
+                        "% candidate traffic; no infrastructure operation executed.",
+                },
+                {
+                    label: "manifest",
+                    title: "SHA-256 governance record",
+                    text: fp,
+                },
+            ]);
+            return { ...r, fingerprint: fp };
+        },
+        "Evaluate lifecycle decision",
+        "control-workspace",
+    );
 })();

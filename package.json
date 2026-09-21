@@ -1,0 +1,14 @@
+{
+  "name": "makma-labs-web",
+  "private": true,
+  "version": "2.0.0",
+  "scripts": {
+    "test": "node --test tests/web/domain.test.cjs",
+    "test:e2e": "playwright test",
+    "build": "python scripts/build_site.py"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "prettier": "3.9.8"
+  }
+}

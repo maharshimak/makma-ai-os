@@ -101,7 +101,7 @@ _UNARY_OPERATORS: dict[type[ast.unaryop], Callable[[float], float]] = {
 def _evaluate_math(node: ast.AST) -> float:
     if isinstance(node, ast.Expression):
         return _evaluate_math(node.body)
-    if isinstance(node, ast.Constant) and isinstance(node.value, int | float):
+    if isinstance(node, ast.Constant) and type(node.value) in (int, float):
         return float(node.value)
     if isinstance(node, ast.UnaryOp) and type(node.op) in _UNARY_OPERATORS:
         return _UNARY_OPERATORS[type(node.op)](_evaluate_math(node.operand))
@@ -139,8 +139,7 @@ def memory_search_tool(memory: SQLiteMemory) -> ToolHandler:
         if not matches:
             return "No matching memories found."
         return " | ".join(
-            f"[score={match.score:.3f}] {match.role}: {match.content}"
-            for match in matches
+            f"[score={match.score:.3f}] {match.role}: {match.content}" for match in matches
         )
 
     return search_memory

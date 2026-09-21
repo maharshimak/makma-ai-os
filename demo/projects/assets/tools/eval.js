@@ -1,23 +1,222 @@
-'use strict';
+"use strict";
 (() => {
-  const M=window.MAKMA,{ $,num,clamp,tokens,metrics,badge,setHTML,trace,error,shell,finish,esc}=M;
-  function wilson(successes,total,z=1.96){const p=successes/total,z2=z*z,den=1+z2/total,center=(p+z2/(2*total))/den,margin=z*Math.sqrt(p*(1-p)/total+z2/(4*total*total))/den;return {lower:Math.max(0,center-margin),upper:Math.min(1,center+margin)};}
-  function run(){
-    const started=performance.now();
-    try{
-      const text=$('#answer').value,expected=$('#terms').value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean),expectedCites=$('#citations').value.split(',').map(x=>x.trim()).filter(Boolean),forbidden=$('#forbidden').value.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean),lat=num($('#latency').value),inputTok=num($('#inputtok').value),outputTok=num($('#outputtok').value),inPrice=num($('#inprice').value),outPrice=num($('#outprice').value),minRel=clamp(num($('#minrel').value,.75),0,1),maxLat=num($('#maxlat').value,5000),minPass=clamp(num($('#minpass').value,.9),0,1),samples=clamp(parseInt($('#samples').value||'30',10),1,10000),successes=clamp(parseInt($('#successes').value||'28',10),0,samples);
-      const outTerms=new Set(tokens(text)),rel=expected.length?expected.filter(t=>outTerms.has(t)).length/expected.length:1,seenCites=new Set(text.match(/\[[^\]]+\]/g)||[]),cov=expectedCites.length?expectedCites.filter(c=>seenCites.has(c)).length/expectedCites.length:1,foundForbidden=forbidden.filter(p=>text.toLowerCase().includes(p)),cost=(inputTok*inPrice+outputTok*outPrice)/1e6,passRate=successes/samples,ci=wilson(successes,samples),reasons=[];
-      if(passRate<minPass)reasons.push('pass_rate '+passRate.toFixed(3)+' < '+minPass.toFixed(3));if(rel<minRel)reasons.push('relevance '+rel.toFixed(3)+' < '+minRel.toFixed(3));if(lat>maxLat)reasons.push('latency '+lat+'ms > '+maxLat+'ms');if(foundForbidden.length)reasons.push('forbidden phrase(s): '+foundForbidden.join(', '));
-      const gate=!reasons.length,casePass=rel>=minRel&&!foundForbidden.length;
-      setHTML('#result',metrics([['Relevance',(rel*100).toFixed(0)+'%',rel>=minRel?'good':'bad'],['Citation coverage',(cov*100).toFixed(0)+'%'],['Estimated cost','$'+cost.toFixed(6)],['Latency',lat+' ms',lat<=maxLat?'good':'bad']])+
-        '<div class="row" style="margin:12px 0">'+badge(gate?'REGRESSION GATE PASS':'REGRESSION GATE BLOCK',gate?'ok':'bad')+' '+badge(casePass?'case pass':'case fail',casePass?'ok':'bad')+'</div>'+
-        '<div class="section-title">Reliability confidence</div>'+metrics([['Samples',samples],['Pass rate',(passRate*100).toFixed(1)+'%'],['Wilson 95% lower',(ci.lower*100).toFixed(1)+'%',ci.lower>=.8?'good':'warn'],['Wilson 95% upper',(ci.upper*100).toFixed(1)+'%']])+
-        (reasons.length?'<div class="error-box"><strong>Gate reasons</strong><p>'+esc(reasons.join(' · '))+'</p></div>':'<div class="success-box"><strong>Candidate is inside the configured evaluation budget.</strong></div>')+
-        '<div class="section-title">Observed citations</div>'+([...seenCites].length?[...seenCites].map(c=>badge(c,'ok')).join(' '):'<div class="empty-note">No [citation] markers found.</div>'));
-      trace([{label:'metrics',title:'Case evaluation',text:'Relevance '+(rel*100).toFixed(1)+'%, citation coverage '+(cov*100).toFixed(1)+'%, forbidden outputs '+foundForbidden.length+'.'},{label:'cost',title:'Token-cost estimate',text:inputTok+' input + '+outputTok+' output tokens → $'+cost.toFixed(6)+' at configured pricing.'},{label:'reliability',title:'Wilson confidence interval',text:successes+'/'+samples+' successes → 95% interval '+(ci.lower*100).toFixed(1)+'–'+(ci.upper*100).toFixed(1)+'%.'},{label:'gate',title:'Regression gate',text:gate?'All configured thresholds passed.':reasons.join(' · ')}]);
-    }catch(e){error(e.message);}
-    finish(started);
-  }
-  shell('<div class="field"><label>Candidate answer</label><textarea id="answer" class="tall">Retrieval augmented generation combines retrieval and generation [doc-1] and can expose supporting evidence [doc-2].</textarea></div><div class="control-grid"><div class="field"><label>Expected terms</label><input id="terms" value="retrieval,generation,evidence"></div><div class="field"><label>Expected citation markers</label><input id="citations" value="[doc-1],[doc-2]"></div></div><div class="field"><label>Forbidden phrases</label><input id="forbidden" value="password,secret key,api key"></div><div class="control-grid four"><div class="field"><label>Latency ms</label><input id="latency" type="number" value="850"></div><div class="field"><label>Input tokens</label><input id="inputtok" type="number" value="900"></div><div class="field"><label>Output tokens</label><input id="outputtok" type="number" value="180"></div><div class="field"><label>Max latency</label><input id="maxlat" type="number" value="5000"></div></div><div class="control-grid four"><div class="field"><label>Input $/1M</label><input id="inprice" type="number" value="0.15" step="0.01"></div><div class="field"><label>Output $/1M</label><input id="outprice" type="number" value="0.6" step="0.01"></div><div class="field"><label>Min relevance</label><input id="minrel" type="number" min="0" max="1" step="0.05" value="0.75"></div><div class="field"><label>Min pass rate</label><input id="minpass" type="number" min="0" max="1" step="0.05" value="0.9"></div></div><div class="control-grid"><div class="field"><label>Reliability samples</label><input id="samples" type="number" value="30"></div><div class="field"><label>Successful samples</label><input id="successes" type="number" value="28"></div></div><button id="run" class="btn primary">Evaluate candidate + reliability gate</button>');
-  $('#run').onclick=run;run();
+    const M = window.MAKMA,
+        D = window.MAKMA_DOMAIN,
+        W = window.WORKBENCH,
+        { field: F, read: R, n: N, section: S } = W;
+    const cases = [
+        {
+            id: "retrieval",
+            prompt: "How is evidence retrieved?",
+            output: "Hybrid retrieval combines lexical and vector search [doc-1].",
+            expected_terms: ["retrieval", "search"],
+            expected_citations: ["[doc-1]"],
+            forbidden: ["password"],
+            latency_ms: 850,
+            input_tokens: 900,
+            output_tokens: 180,
+        },
+        {
+            id: "safety",
+            prompt: "How are tools controlled?",
+            output: "Tool permissions enforce an allowlist [doc-2].",
+            expected_terms: ["permissions", "allowlist"],
+            expected_citations: ["[doc-2]"],
+            forbidden: ["secret key"],
+            latency_ms: 700,
+            input_tokens: 700,
+            output_tokens: 120,
+        },
+    ];
+    W.mount(
+        S(
+            "Baseline and candidate experiments",
+            F(
+                "baseline",
+                "Baseline cases JSON",
+                JSON.stringify(cases, null, 2),
+                "textarea",
+            ) +
+                F(
+                    "candidate",
+                    "Candidate cases JSON",
+                    JSON.stringify(cases, null, 2),
+                    "textarea",
+                ),
+        ) +
+            S(
+                "Release thresholds",
+                F("minrel", "Minimum relevance", 0.75, "number") +
+                    F("mincite", "Minimum citation coverage", 1, "number") +
+                    F(
+                        "maxlat",
+                        "Maximum p95 / case latency ms",
+                        5000,
+                        "number",
+                    ) +
+                    F("maxcost", "Maximum average cost USD", 0.01, "number") +
+                    F("minpass", "Minimum pass rate", 0.9, "number") +
+                    F("minsamples", "Minimum sample count", 2, "number") +
+                    F(
+                        "inprice",
+                        "Input USD per million tokens",
+                        0.15,
+                        "number",
+                    ) +
+                    F(
+                        "outprice",
+                        "Output USD per million tokens",
+                        0.6,
+                        "number",
+                    ),
+            ) +
+            S(
+                "Regression budgets",
+                F("passdrop", "Maximum pass-rate drop", 0.02, "number") +
+                    F("reldrop", "Maximum relevance drop", 0.03, "number") +
+                    F(
+                        "citedrop",
+                        "Maximum citation-coverage drop",
+                        0,
+                        "number",
+                    ) +
+                    F("latdelta", "Maximum p95 increase ms", 500, "number") +
+                    F(
+                        "costdelta",
+                        "Maximum mean cost increase USD",
+                        0.001,
+                        "number",
+                    ),
+            ) +
+            S(
+                "Separate reported reliability sample",
+                F("samples", "Reported sample count", 30, "number") +
+                    F("successes", "Reported successful samples", 28, "number"),
+            ),
+        async () => {
+            const baseCases = D.json(R("baseline"), "Baseline cases"),
+                candidateCases = D.json(R("candidate"), "Candidate cases");
+            const definitions = (cases) =>
+                D.array(cases, "Cases")
+                    .map((c) =>
+                        D.canonical({
+                            id: c.id,
+                            prompt: c.prompt,
+                            expected_terms: c.expected_terms || [],
+                            expected_citations: c.expected_citations || [],
+                            forbidden: c.forbidden || [],
+                        }),
+                    )
+                    .sort();
+            if (
+                D.canonical(definitions(baseCases)) !==
+                D.canonical(definitions(candidateCases))
+            )
+                throw Error(
+                    "Baseline and candidate must use the same case IDs, prompts and judgments.",
+                );
+            const p = {
+                minRelevance: N("minrel", "Min relevance"),
+                minCitation: N("mincite", "Min citation"),
+                maxLatency: N("maxlat", "Max latency"),
+                maxCost: N("maxcost", "Max cost"),
+                minPass: N("minpass", "Min pass rate"),
+                minSamples: N("minsamples", "Min samples"),
+                inPrice: N("inprice", "Input price"),
+                outPrice: N("outprice", "Output price"),
+            };
+            const base = D.evaluateCases(baseCases, p),
+                candidate = D.evaluateCases(candidateCases, p),
+                comparison = D.compare(base.summary, candidate.summary, {
+                    passDrop: N("passdrop", "Pass drop"),
+                    relevanceDrop: N("reldrop", "Relevance drop"),
+                    citationDrop: N("citedrop", "Citation drop"),
+                    latencyIncrease: N("latdelta", "Latency increase"),
+                    costIncrease: N("costdelta", "Cost increase"),
+                }),
+                reported = D.wilson(
+                    N("successes", "Successes"),
+                    N("samples", "Samples"),
+                ),
+                reasons = [...candidate.reasons, ...comparison.reasons],
+                allowed = !reasons.length;
+            M.setHTML(
+                "#result",
+                W.status(allowed, "ACCEPT CANDIDATE", "BLOCK CANDIDATE") +
+                    W.reasons(reasons) +
+                    S(
+                        "Baseline vs candidate",
+                        M.table(
+                            Object.keys(comparison.delta).map((metric) => ({
+                                metric,
+                                baseline: base.summary[metric],
+                                candidate: candidate.summary[metric],
+                                delta: comparison.delta[metric],
+                            })),
+                        ),
+                    ) +
+                    S(
+                        "Candidate case decisions",
+                        M.table(
+                            candidate.rows.map((r) => ({
+                                ...r,
+                                reasons: r.reasons.join(", "),
+                                missing: r.missing.join(", "),
+                                missingCites: r.missingCites.join(", "),
+                                forbidden: r.forbidden.join(", "),
+                            })),
+                        ),
+                    ) +
+                    S(
+                        "Reliability confidence",
+                        M.metrics([
+                            ["Evaluated cases", candidate.summary.samples],
+                            ["Successful cases", candidate.summary.successes],
+                            [
+                                "Pass rate",
+                                (100 * candidate.summary.passRate).toFixed(1) +
+                                    "%",
+                            ],
+                            [
+                                "Wilson lower",
+                                (100 * candidate.confidence.lower).toFixed(1) +
+                                    "%",
+                            ],
+                            [
+                                "Wilson upper",
+                                (100 * candidate.confidence.upper).toFixed(1) +
+                                    "%",
+                            ],
+                        ]),
+                    ) +
+                    S(
+                        "Reported reliability (separate population)",
+                        W.json(reported),
+                    ) +
+                    '<p class="notice">All latencies and token counts are supplied observations, not measurements made by this page. Release decisions use the case dataset; manually reported reliability is shown separately. Relevance uses phrase containment, while the Python legacy metric uses token membership. Neither is a semantic model judge.</p>',
+            );
+            M.trace([
+                {
+                    label: "evaluate",
+                    title: "Per-case evaluation",
+                    text: "Expected concepts, citations, forbidden phrases, latency and cost evaluated for every case.",
+                },
+                {
+                    label: "slo",
+                    title: "Observed experiment SLO",
+                    text: "p95 uses nearest rank; success rate and confidence derive from actual case decisions.",
+                },
+                {
+                    label: "compare",
+                    title: "Baseline regression gate",
+                    text: allowed
+                        ? "All release and regression policies passed."
+                        : reasons.join("; "),
+                },
+            ]);
+            return { base, candidate, comparison, reported, allowed, reasons };
+        },
+        "Evaluate release candidate",
+        "eval-workspace",
+    );
 })();
