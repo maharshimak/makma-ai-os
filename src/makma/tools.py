@@ -139,7 +139,12 @@ class ToolRegistry:
             )
         try:
             policy.check(name, approvals)
-            if tool.requires_approval and name not in approvals:
+            approval_required = (
+                tool.requires_approval
+                or tool.risk_level == "high"
+                or tool.side_effects
+            )
+            if approval_required and name not in approvals:
                 raise ToolPermissionError(f"Tool '{name}' requires explicit approval.")
             _validate_arguments(tool.input_schema, arguments)
             output = await tool.handler(arguments, session_id)
