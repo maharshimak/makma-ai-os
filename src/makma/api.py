@@ -159,6 +159,11 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         matches = await runtime.memory.recall(session_id, q, limit=limit)
         return [match.model_dump() for match in matches]
 
+    @app.get("/v1/runs/{run_id}/tools", dependencies=protected)
+    async def run_tools(run_id: str) -> list[dict[str, object]]:
+        records = await runtime.memory.tool_history(run_id)
+        return [record.model_dump() for record in records]
+
     @app.get("/v1/telemetry", dependencies=protected)
     async def telemetry_summary(
         operation: str | None = Query(default=None, min_length=1, max_length=200),
