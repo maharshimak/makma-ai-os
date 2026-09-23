@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import time
 from collections.abc import AsyncIterator
@@ -9,7 +10,7 @@ from uuid import uuid4
 from makma.config import Settings
 from makma.memory import SQLiteMemory
 from makma.models import ChatMessage, ChatResponse, ExecutionMetrics, PlanStep, ToolResult
-from makma.planner import Planner
+from makma.planner import Planner, StructuredModelPlanner
 from makma.providers import ModelProvider, build_provider
 from makma.telemetry import TelemetryCollector
 from makma.tools import PermissionPolicy, ToolRegistry, build_default_registry
@@ -44,7 +45,7 @@ class MakmaRuntime:
         memory: SQLiteMemory,
         provider: ModelProvider,
         registry: ToolRegistry,
-        planner: Planner | None = None,
+        planner: Planner | StructuredModelPlanner | None = None,
         policy: PermissionPolicy | None = None,
         telemetry: TelemetryCollector | None = None,
     ) -> None:
@@ -76,7 +77,7 @@ class MakmaRuntime:
                 session_id,
                 limit=self.settings.max_history_messages,
             )
-            plan = self.planner.plan(message)
+            plan = await self._plan(message)
             tool_results: list[ToolResult] = []
             if tools_enabled:
                 tool_results = await self._execute_plan(
@@ -170,6 +171,12 @@ class MakmaRuntime:
                 attributes={"provider": self.provider.name},
             )
             raise
+
+    async def _plan(self, message: str) -> list[PlanStep]:
+        planned = self.planner.plan(message)
+        if inspect.isawaitable(planned):
+            return await planned
+        return planned
 
     async def _execute_plan(
         self,
@@ -279,7 +286,7 @@ class MakmaRuntime:
                 session_id,
                 limit=self.settings.max_history_messages,
             )
-            plan = self.planner.plan(message)
+            plan = await self._plan(message)
             tool_results: list[ToolResult] = []
             if tools_enabled:
                 tool_results = await self._execute_plan(
@@ -345,9 +352,20 @@ def build_runtime(settings: Settings | None = None) -> MakmaRuntime:
     memory = SQLiteMemory(settings.database_path)
     provider = build_provider(settings)
     registry = build_default_registry(memory)
+    planner: Planner | StructuredModelPlanner
+    if settings.planner_mode == "deterministic":
+        planner = Planner()
+    else:
+        planner = StructuredModelPlanner(
+            provider=provider,
+            registry=registry,
+            fallback=Planner(),
+            prefer_deterministic=settings.planner_mode == "hybrid",
+        )
     return MakmaRuntime(
         settings=settings,
         memory=memory,
         provider=provider,
         registry=registry,
+        planner=planner,
     )
