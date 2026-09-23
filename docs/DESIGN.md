@@ -4,7 +4,7 @@ Personal AI runtime with ranked SQLite memory recall, deterministic multi-intent
 
 ## Scope
 
-The default local provider is deterministic, not an LLM. Ranked memory recall uses lexical overlap, phrase matching and recency rather than embeddings, so it must not be described as semantic memory. OpenAI-compatible and Ollama adapters stream provider chunks natively; local deterministic mode emits one completed local chunk. Protected API routes are local-first and single-owner: non-loopback clients require `MAKMA_API_TOKEN`, but sessions are still identifiers rather than per-user authorization boundaries. Client chat payloads cannot assert approvals. No high-risk tools are registered and a server-authoritative approval-challenge store is not implemented yet. Run lifecycle status and failures persist; full tool-call traces are returned with responses rather than stored as first-class rows. Runtime telemetry is bounded and process-local. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
+The default local provider is deterministic, not an LLM. Ranked memory recall uses lexical overlap, phrase matching and recency rather than embeddings, so it must not be described as semantic memory. OpenAI-compatible and Ollama adapters stream provider chunks natively; local deterministic mode emits one completed local chunk. Protected API routes are local-first and single-owner: non-loopback clients require `MAKMA_API_TOKEN`, but sessions are still identifiers rather than per-user authorization boundaries. Client chat payloads cannot assert approvals. No high-risk tools are registered by default; any tool marked approval-required is gated by a server-created, expiring, one-time challenge bound to the session, tool and canonical argument hash. Run lifecycle status and failures persist. Tool attempts also persist digest-only audit metadata (tool/step, argument/result hashes, outcome and latency) without copying raw tool payloads into the audit table. Runtime telemetry is bounded and process-local. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
 
 ## Execution model
 
@@ -22,4 +22,4 @@ Tests include synthetic regression fixtures. Package and container checks verify
 
 ## Planned evolution
 
-Semantic/vector memory; durable tool-call traces; schema-validated model planning; server-authoritative approval challenges for future higher-risk tools; multi-user identity/session ownership if needed; OpenTelemetry export; isolated workers for long-running or higher-risk tools.
+Semantic/vector memory; schema-validated model planning; multi-user identity/session ownership if needed; async database access; pooled provider clients; OpenTelemetry export; isolated workers and sandboxes for long-running or higher-risk tools.
