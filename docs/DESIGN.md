@@ -4,7 +4,7 @@ Personal AI runtime with ranked SQLite memory recall, deterministic multi-intent
 
 ## Scope
 
-The default local provider is deterministic, not an LLM. Ranked memory recall uses lexical overlap, phrase matching and recency rather than embeddings, so it must not be described as semantic memory. SSE replays a completed answer rather than streaming model tokens. Sessions are identifiers, not authentication boundaries. API-provided approvals are intended for a trusted local client, not multi-user authorization. Run history persists responses and metadata; full tool traces are returned with the response, not persisted. Runtime telemetry is bounded and process-local. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
+The default local provider is deterministic, not an LLM. Ranked memory recall uses lexical overlap, phrase matching and recency rather than embeddings, so it must not be described as semantic memory. OpenAI-compatible and Ollama adapters stream provider chunks natively; local deterministic mode emits one completed local chunk. Protected API routes are local-first and single-owner: non-loopback clients require `MAKMA_API_TOKEN`, but sessions are still identifiers rather than per-user authorization boundaries. Client chat payloads cannot assert approvals. No high-risk tools are registered and a server-authoritative approval-challenge store is not implemented yet. Run lifecycle status and failures persist; full tool-call traces are returned with responses rather than stored as first-class rows. Runtime telemetry is bounded and process-local. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
 
 ## Execution model
 
@@ -22,4 +22,4 @@ Tests include synthetic regression fixtures. Package and container checks verify
 
 ## Planned evolution
 
-Authenticated sessions; semantic/vector memory; durable tool traces; native provider streaming; schema-validated model planning; OpenTelemetry export; isolated workers for any future higher-risk tools.
+Semantic/vector memory; durable tool-call traces; schema-validated model planning; server-authoritative approval challenges for future higher-risk tools; multi-user identity/session ownership if needed; OpenTelemetry export; isolated workers for long-running or higher-risk tools.
