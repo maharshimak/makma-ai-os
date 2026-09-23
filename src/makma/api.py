@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import json
-import secrets
 from dataclasses import asdict
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -27,7 +26,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         version="1.2.0",
         description=(
             "Tool-using AI runtime with persistent memory, provider routing, "
-            "durable run records, guarded tool observations, and real provider streaming."
+            "server-side access control and audit traces."
         ),
     )
     app.state.runtime = runtime
@@ -39,30 +38,18 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         allow_headers=["Content-Type", "Authorization"],
     )
 
-    async def require_api_access(
-        request: Request,
-        authorization: str | None = Header(default=None),
-    ) -> str:
-        configured_token = runtime.settings.api_token
-        if configured_token:
-            scheme, _, supplied = (authorization or "").partition(" ")
-            if scheme.lower() != "bearer" or not supplied or not secrets.compare_digest(
-                supplied,
-                configured_token,
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Valid bearer token required.",
-                )
-            return "configured-owner"
-
-        client_host = request.client.host if request.client else ""
-        if client_host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+    async def require_auth(authorization: str | None = Header(default=None)) -> None:
+        token = runtime.settings.api_token
+        if token is None:
+            return
+        if authorization != f"Bearer {token}":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Remote access requires MAKMA_API_TOKEN.",
+                detail="Valid bearer token required.",
+                headers={"WWW-Authenticate": "Bearer"},
             )
-        return "local-owner"
+
+    protected = [Depends(require_auth)]
 
     @app.get("/health")
     async def health() -> dict[str, object]:
@@ -71,104 +58,83 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
             "version": "1.2.0",
             "provider": runtime.provider.name,
             "tools": runtime.registry.names,
-            "remote_auth_configured": bool(runtime.settings.api_token),
             "capabilities": [
                 "multi_intent_planning",
                 "ranked_memory_recall",
-                "durable_run_lifecycle",
-                "guarded_tool_observations",
-                "provider_streaming",
+                "execution_metrics",
                 "runtime_telemetry",
+                "provider_streaming",
+                "server_authorized_api",
+                "untrusted_tool_observations",
+                "durable_failed_runs",
             ],
         }
 
-    @app.get("/v1/tools")
-    async def tools(_: str = Depends(require_api_access)) -> list[dict[str, object]]:
+    @app.get("/v1/tools", dependencies=protected)
+    async def tools() -> list[dict[str, object]]:
         return runtime.registry.describe()
 
-    @app.post("/v1/chat")
-    async def chat(
-        request: ChatRequest,
-        _: str = Depends(require_api_access),
-    ) -> dict[str, object]:
+    @app.post("/v1/chat", dependencies=protected)
+    async def chat(request: ChatRequest) -> dict[str, object]:
         result = await runtime.run(
             request.message,
             request.session_id,
-            approvals=set(),
             tools_enabled=request.tools_enabled,
         )
         return result.model_dump()
 
-    @app.post("/v1/chat/stream")
-    async def stream_chat(
-        request: ChatRequest,
-        _: str = Depends(require_api_access),
-    ) -> StreamingResponse:
+    @app.post("/v1/chat/stream", dependencies=protected)
+    async def stream_chat(request: ChatRequest) -> StreamingResponse:
         async def event_stream():
-            try:
-                async for token in runtime.stream(
-                    request.message,
-                    request.session_id,
-                    approvals=set(),
-                    tools_enabled=request.tools_enabled,
-                ):
-                    payload = json.dumps({"type": "token", "token": token})
-                    yield f"data: {payload}\n\n"
-                yield 'data: {"type":"done"}\n\n'
-            except Exception:
-                payload = json.dumps(
-                    {
-                        "type": "error",
-                        "error": "stream_failed",
-                        "message": "The provider stream failed.",
-                    }
-                )
+            yield 'data: {"type":"run_started"}\n\n'
+            async for token in runtime.stream(
+                request.message,
+                request.session_id,
+                tools_enabled=request.tools_enabled,
+            ):
+                payload = json.dumps({"type": "token", "token": token})
                 yield f"data: {payload}\n\n"
+            yield 'data: {"type":"done"}\n\n'
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
-    @app.get("/v1/sessions/{session_id}/history")
+    @app.get("/v1/sessions/{session_id}/history", dependencies=protected)
     async def session_history(
         session_id: str,
         limit: int = Query(default=20, ge=1, le=200),
-        _: str = Depends(require_api_access),
     ) -> list[dict[str, str]]:
         history = await runtime.memory.load(session_id, limit=limit)
         return [message.model_dump() for message in history]
 
-    @app.get("/v1/sessions/{session_id}/runs")
+    @app.get("/v1/sessions/{session_id}/runs", dependencies=protected)
     async def run_history(
         session_id: str,
         limit: int = Query(default=20, ge=1, le=200),
-        _: str = Depends(require_api_access),
     ) -> list[dict[str, object]]:
         runs = await runtime.memory.run_history(session_id, limit=limit)
         return [record.model_dump() for record in runs]
 
-    @app.get("/v1/sessions/{session_id}/search")
+    @app.get("/v1/sessions/{session_id}/search", dependencies=protected)
     async def search_memory(
         session_id: str,
         q: str = Query(min_length=1, max_length=1000),
         limit: int = Query(default=5, ge=1, le=50),
-        _: str = Depends(require_api_access),
     ) -> list[dict[str, str]]:
         matches = await runtime.memory.search(session_id, q, limit=limit)
         return [message.model_dump() for message in matches]
 
-    @app.get("/v1/sessions/{session_id}/recall")
+    @app.get("/v1/sessions/{session_id}/recall", dependencies=protected)
     async def recall_memory(
         session_id: str,
         q: str = Query(min_length=1, max_length=1000),
         limit: int = Query(default=5, ge=1, le=50),
-        _: str = Depends(require_api_access),
     ) -> list[dict[str, object]]:
         matches = await runtime.memory.recall(session_id, q, limit=limit)
         return [match.model_dump() for match in matches]
 
-    @app.get("/v1/telemetry")
+    @app.get("/v1/telemetry", dependencies=protected)
     async def telemetry_summary(
         operation: str | None = Query(default=None, min_length=1, max_length=200),
-        _: str = Depends(require_api_access),
     ) -> dict[str, object]:
         return asdict(runtime.telemetry.summarize(operation))
 
