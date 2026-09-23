@@ -55,6 +55,9 @@ class ToolRegistry:
     def names(self) -> list[str]:
         return sorted(self._tools)
 
+    def definition(self, name: str) -> ToolDefinition | None:
+        return self._tools.get(name)
+
     def describe(self) -> list[dict[str, object]]:
         return [
             {
