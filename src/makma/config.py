@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     api_key: str | None = None
     base_url: str = "http://localhost:11434"
     database_path: str = "./data/makma.db"
+    api_token: str | None = None
     request_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
     max_history_messages: int = Field(default=20, ge=1, le=200)
     cors_origins: str = (
@@ -22,8 +23,4 @@ class Settings(BaseSettings):
 
     @property
     def allowed_cors_origins(self) -> list[str]:
-        return [
-            origin.strip()
-            for origin in self.cors_origins.split(",")
-            if origin.strip()
-        ]
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
