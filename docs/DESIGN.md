@@ -1,6 +1,6 @@
 # Design and operating boundaries
 
-Personal AI runtime with ranked SQLite memory recall, deterministic multi-intent tool planning, permission checks, bounded telemetry and local/model-server adapters.
+Personal AI runtime with ranked SQLite memory recall, deterministic plus optional schema-constrained model planning, permission checks, bounded telemetry and local/model-server adapters.
 
 ## Scope
 
@@ -8,7 +8,7 @@ The default local provider is deterministic, not an LLM. Ranked memory recall us
 
 ## Execution model
 
-The planner recognizes explicit supported intents and can emit multiple ordered tool steps before a final response step. Memory tools execute before the current user message is persisted so a recall request cannot retrieve itself. Tool, provider and full-run latency/success measurements are recorded in a bounded telemetry collector and per-run execution metrics are returned with chat responses.
+The default deterministic planner recognizes explicit supported intents and can emit multiple ordered tool steps before a final response step. Optional `hybrid` and `model` modes ask the configured provider for a JSON tool plan, then reject unknown tools, validate declared argument schemas, enforce a step cap and fall back to deterministic planning when model output is malformed or unsafe. The runtime policy and one-time approval layer remains authoritative regardless of planner mode. Memory tools execute before the current user message is persisted so a recall request cannot retrieve itself. Tool, provider and full-run latency/success measurements are recorded in a bounded telemetry collector and per-run execution metrics are returned with chat responses.
 
 ## Interfaces
 
@@ -22,4 +22,4 @@ Tests include synthetic regression fixtures. Package and container checks verify
 
 ## Planned evolution
 
-Semantic/vector memory; schema-validated model planning; multi-user identity/session ownership if needed; async database access; pooled provider clients; OpenTelemetry export; isolated workers and sandboxes for long-running or higher-risk tools.
+Semantic/vector memory; multi-user identity/session ownership if needed; async database access; pooled provider clients; OpenTelemetry export; cross-product service adapters; isolated workers and sandboxes for long-running or higher-risk tools.
