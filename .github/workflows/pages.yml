@@ -31,6 +31,7 @@ jobs:
       - name: Check shared domain contracts
         run: |
           python scripts/fetch_parity_backends.py
+          python scripts/check_backend_contracts.py
           python scripts/generate_parity.py --backend-root parity-backends --check
           npm test
           node --check demo/app.js
