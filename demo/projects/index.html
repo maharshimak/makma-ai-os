@@ -1,306 +1,427 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="theme-color" content="#090a0c" />
-        <meta
-            name="description"
-            content="Maharshi Patel AI engineering portfolio — interactive systems demos."
-        />
-        <title>MAK'MA Labs · AI Products by MAK'MA Studio</title>
-        <link rel="stylesheet" href="./assets/styles.css" />
-    </head>
-    <body>
-        <div class="shell">
-            <header class="top">
-                <a class="brand" href="../"
-                    ><span class="mark">M'</span
-                    ><span
-                        ><strong>MAK'MA LABS</strong
-                        ><small>Products by MAK'MA Studio</small></span
-                    ></a
-                >
-                <nav class="nav">
-                    <a
-                        class="btn hide-mobile"
-                        href="https://github.com/maharshimak"
-                        >GitHub</a
-                    ><a
-                        class="btn primary"
-                        href="https://maharshipatel-portfolio.vercel.app/"
-                        >Portfolio</a
-                    >
-                </nav>
-            </header>
-            <section class="hero">
-                <div>
-                    <div class="eyebrow">MAK'MA LABS · PRODUCT ECOSYSTEM</div>
-                    <h1>
-                        Useful engineering tools. Decisions you can inspect.
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#050608" />
+    <meta name="description" content="MAK'MA Labs — an interactive AI engineering ecosystem by Maharshi Patel." />
+    <title>MAK'MA Labs · AI Systems by MAK'MA Studio</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <link rel="stylesheet" href="./assets/hub.css" />
+    <script src="./assets/hub.js" defer></script>
+</head>
+<body class="hub-page">
+    <div class="hub-atmosphere" aria-hidden="true">
+        <div class="hub-orb hub-orb-a"></div>
+        <div class="hub-orb hub-orb-b"></div>
+        <div class="hub-grid-plane"></div>
+    </div>
+
+    <div class="hub-shell">
+        <header class="hub-topbar">
+            <a class="hub-brand" href="../" aria-label="Open MAK'MA AI OS">
+                <span class="hub-brand-mark">M'</span>
+                <span class="hub-brand-copy">
+                    <strong>MAK'MA LABS</strong>
+                    <small>Systems by MAK'MA Studio</small>
+                </span>
+            </a>
+
+            <nav class="hub-nav" aria-label="Primary">
+                <a href="#systems" class="hub-nav-link">Systems</a>
+                <button class="hub-command-button" type="button" data-command-open aria-haspopup="dialog">
+                    <span>Command</span><kbd>⌘ K</kbd>
+                </button>
+                <a class="hub-nav-link hide-mobile" href="https://github.com/maharshimak">GitHub ↗</a>
+                <a class="hub-primary-link" href="https://maharshipatel-portfolio.vercel.app/">Portfolio ↗</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hub-hero" aria-labelledby="hub-title">
+                <div class="hub-hero-copy">
+                    <div class="hub-status-line">
+                        <span class="hub-live-dot"></span>
+                        <span>MAK'MA LABS // SYSTEM ECOSYSTEM</span>
+                        <span class="hub-status-separator">·</span>
+                        <span>09 ACTIVE SYSTEMS</span>
+                    </div>
+
+                    <h1 id="hub-title">
+                        Build intelligence.
+                        <span>Ship systems.</span>
                     </h1>
+
+                    <p class="hub-lede">
+                        A production-minded AI engineering lab spanning agent runtimes, retrieval,
+                        knowledge systems, document intelligence, evaluation, safe data workflows,
+                        multimodal planning and MLOps.
+                    </p>
+
+                    <div class="hub-hero-actions">
+                        <a class="hub-cta hub-cta-primary" href="#systems">
+                            Explore system grid
+                            <span aria-hidden="true">↘</span>
+                        </a>
+                        <a class="hub-cta" href="../">
+                            Launch MAK'MA AI OS
+                            <span aria-hidden="true">→</span>
+                        </a>
+                    </div>
+
+                    <div class="hub-stack-line" aria-label="Engineering stack">
+                        <span>PYTHON</span>
+                        <i></i>
+                        <span>FASTAPI</span>
+                        <i></i>
+                        <span>RAG</span>
+                        <i></i>
+                        <span>AGENTS</span>
+                        <i></i>
+                        <span>EVALS</span>
+                        <i></i>
+                        <span>MLOPS</span>
+                    </div>
+                </div>
+
+                <aside class="hub-console" aria-label="MAK'MA runtime overview">
+                    <div class="hub-console-head">
+                        <span class="hub-console-title">MAKMA://LABS.RUNTIME</span>
+                        <span class="hub-console-signal"><i></i> ONLINE</span>
+                    </div>
+                    <div class="hub-console-body">
+                        <div class="hub-console-command">
+                            <span class="hub-prompt">›</span>
+                            <code>boot ecosystem --inspect --trace</code>
+                        </div>
+                        <div class="hub-console-log">
+                            <p><span class="log-ok">[ready]</span> agent.runtime <b>permissioned_tools</b></p>
+                            <p><span class="log-ok">[ready]</span> retrieval.engine <b>hybrid_rag</b></p>
+                            <p><span class="log-ok">[ready]</span> knowledge.graph <b>evidence_paths</b></p>
+                            <p><span class="log-ok">[ready]</span> evaluation.layer <b>release_gates</b></p>
+                            <p><span class="log-ok">[ready]</span> ml.control <b>drift_canary</b></p>
+                        </div>
+                        <div class="hub-console-footer">
+                            <span>STATUS</span>
+                            <strong>9 / 9 SYSTEMS INDEXED</strong>
+                            <span class="console-cursor" aria-hidden="true"></span>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+
+            <section class="hub-metrics" aria-label="MAK'MA Labs metrics">
+                <article>
+                    <span class="metric-index">01</span>
+                    <div><strong>09</strong><small>Interactive systems</small></div>
+                </article>
+                <article>
+                    <span class="metric-index">02</span>
+                    <div><strong>08</strong><small>Specialized AI labs</small></div>
+                </article>
+                <article>
+                    <span class="metric-index">03</span>
+                    <div><strong>CI</strong><small>Tests · build · deploy</small></div>
+                </article>
+                <article>
+                    <span class="metric-index">04</span>
+                    <div><strong>∞</strong><small>Inspectable decisions</small></div>
+                </article>
+            </section>
+
+            <section class="hub-index" id="systems">
+                <div class="hub-section-heading">
+                    <div>
+                        <span class="hub-kicker">SYSTEM INDEX / 2026</span>
+                        <h2>Choose a system. Inspect the logic.</h2>
+                    </div>
                     <p>
-                        MAK'MA Labs is the home of a growing family of AI
-                        systems designed and built by MAK'MA Studio — spanning
-                        agent runtimes, RAG, document intelligence, safe data
-                        agents, LLM evaluation and MLOps.
+                        Every product is designed as an interactive engineering surface rather than a static mockup:
+                        inputs change behavior, decisions expose evidence, and critical paths are covered by automated checks.
                     </p>
                 </div>
-                <div class="meta">
-                    <div class="metric">
-                        <span>Systems</span><strong>09 working tools</strong>
+
+                <div class="hub-controls">
+                    <div class="hub-filter-group" role="group" aria-label="Filter systems">
+                        <button type="button" class="hub-filter is-active" data-filter="all">All <span>09</span></button>
+                        <button type="button" class="hub-filter" data-filter="agents">Agents <span>02</span></button>
+                        <button type="button" class="hub-filter" data-filter="intelligence">Intelligence <span>02</span></button>
+                        <button type="button" class="hub-filter" data-filter="operations">Operations <span>04</span></button>
+                        <button type="button" class="hub-filter" data-filter="media">Media <span>01</span></button>
                     </div>
-                    <div class="metric">
-                        <span>Focus</span><strong>AI / ML / GenAI</strong>
-                    </div>
-                    <div class="metric">
-                        <span>Engineering</span
-                        ><strong>CI · tests · Docker</strong>
-                    </div>
-                    <div class="metric">
-                        <span>Author</span><strong>Maharshi Patel</strong>
-                    </div>
+
+                    <label class="hub-search">
+                        <span class="sr-only">Search systems</span>
+                        <span aria-hidden="true">⌕</span>
+                        <input id="hub-search-input" type="search" placeholder="Search systems / capabilities" autocomplete="off" />
+                    </label>
                 </div>
-            </section>
-            <section class="hub-group">
-                <h2>Agent Systems</h2>
-                <div class="cards">
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>MAK’MA AI OS</h3>
-                        <p>
-                            Plan multistep requests, inspect tool execution,
-                            remember facts and export a session.
-                        </p>
-                        <div class="tags">
-                            <span class="pill"
-                                >Browser tools + optional FastAPI
-                                connection</span
-                            >
+
+                <div class="hub-system-grid" id="system-grid">
+                    <article class="project-card hub-system-card hub-system-card-featured" data-category="agents" data-system-name="MAK'MA AI OS">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 01</span>
+                            <span class="hub-card-state"><i></i> FLAGSHIP</span>
                         </div>
-                        <div class="product-links">
-                            <a href="../">Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/makma-ai-os"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-symbol" aria-hidden="true">M'</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">agent.runtime / orchestration</span>
+                            <h3>MAK'MA AI OS</h3>
+                            <p>
+                                A personal agent runtime for planning multistep requests, permissioned tools,
+                                memory, execution traces and exportable sessions.
+                            </p>
+                        </div>
+                        <div class="hub-capability-row">
+                            <span>tool routing</span><span>memory</span><span>traceability</span>
+                        </div>
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="../">Launch system <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/makma-ai-os" aria-label="MAK'MA AI OS source on GitHub">Source ↗</a>
                         </div>
                     </article>
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>Agentic RAG Engine</h3>
-                        <p>
-                            Tune retrieval against your corpus and relevance
-                            judgments; compare rankings and export cited
-                            context.
-                        </p>
-                        <div class="tags">
-                            <span class="pill"
-                                >Deterministic browser retrieval</span
-                            >
+
+                    <article class="project-card hub-system-card" data-category="agents" data-system-name="Agentic RAG Engine">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 02</span>
+                            <span class="hub-card-state"><i></i> LIVE</span>
                         </div>
-                        <div class="product-links">
-                            <a href="./agentic-rag-engine/">Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/agentic-rag-engine"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-symbol" aria-hidden="true">RAG</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">retrieval.engine / grounded_generation</span>
+                            <h3>Agentic RAG Engine</h3>
+                            <p>
+                                Tune retrieval against editable corpora and relevance judgments, compare rankings,
+                                inspect metrics and export grounded context.
+                            </p>
                         </div>
-                    </article>
-                </div>
-            </section>
-            <section class="hub-group">
-                <h2>Knowledge & Intelligence</h2>
-                <div class="cards">
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>Knowledge Twin</h3>
-                        <p>
-                            Resolve entity names, inspect evidence, find
-                            directed paths and block incomplete graphs.
-                        </p>
-                        <div class="tags">
-                            <span class="pill">Browser graph analysis</span>
+                        <div class="hub-capability-row">
+                            <span>BM25</span><span>fusion</span><span>reranking</span>
                         </div>
-                        <div class="product-links">
-                            <a href="./knowledge-twin/">Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/knowledge-twin"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="./agentic-rag-engine/">Open lab <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/agentic-rag-engine">Source ↗</a>
                         </div>
                     </article>
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>Clinical Document Intelligence</h3>
-                        <p>
-                            Extract study metadata, inspect source spans and
-                            review human corrections.
-                        </p>
-                        <div class="tags">
-                            <span class="pill"
-                                >Labeled-text extraction; synthetic
-                                documents</span
-                            >
+
+                    <article class="project-card hub-system-card" data-category="intelligence" data-system-name="Knowledge Twin">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 03</span>
+                            <span class="hub-card-state"><i></i> LIVE</span>
                         </div>
-                        <div class="product-links">
-                            <a href="./clinical-document-intelligence/"
-                                >Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/clinical-document-intelligence"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-symbol" aria-hidden="true">KG</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">knowledge.graph / entity_resolution</span>
+                            <h3>Knowledge Twin</h3>
+                            <p>
+                                Resolve entity names, inspect evidence, traverse directed relationships
+                                and reject incomplete or low-quality knowledge graphs.
+                            </p>
                         </div>
-                    </article>
-                </div>
-            </section>
-            <section class="hub-group">
-                <h2>Data & LLM Operations</h2>
-                <div class="cards">
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>Secure Data Copilot</h3>
-                        <p>
-                            Explore editable business data with safe query
-                            plans, privacy findings and CSV export.
-                        </p>
-                        <div class="tags">
-                            <span class="pill"
-                                >Structured local query engine</span
-                            >
+                        <div class="hub-capability-row">
+                            <span>graph</span><span>evidence</span><span>resolution</span>
                         </div>
-                        <div class="product-links">
-                            <a href="./secure-data-copilot/">Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/secure-data-copilot"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="./knowledge-twin/">Open lab <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/knowledge-twin">Source ↗</a>
                         </div>
                     </article>
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>LLM Eval & Observability</h3>
-                        <p>
-                            Evaluate a case dataset and decide whether a
-                            candidate meets release and regression budgets.
-                        </p>
-                        <div class="tags">
-                            <span class="pill"
-                                >Offline evaluation of supplied
-                                observations</span
-                            >
+
+                    <article class="project-card hub-system-card" data-category="intelligence" data-system-name="Clinical Document Intelligence">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 04</span>
+                            <span class="hub-card-state"><i></i> LIVE</span>
                         </div>
-                        <div class="product-links">
-                            <a href="./llm-eval-observability/">Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/llm-eval-observability"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-symbol" aria-hidden="true">DOC</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">document.ai / evidence_extraction</span>
+                            <h3>Clinical Document Intelligence</h3>
+                            <p>
+                                Extract structured study metadata, inspect provenance spans,
+                                apply human corrections and enforce quality gates.
+                            </p>
                         </div>
-                    </article>
-                </div>
-            </section>
-            <section class="hub-group">
-                <h2>ML Operations</h2>
-                <div class="cards">
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>MLOps Control Plane</h3>
-                        <p>
-                            Combine model evidence, drift and canary snapshots
-                            into an explainable rollout decision.
-                        </p>
-                        <div class="tags">
-                            <span class="pill"
-                                >Policy evaluator; no infrastructure
-                                changes</span
-                            >
+                        <div class="hub-capability-row">
+                            <span>extraction</span><span>provenance</span><span>review</span>
                         </div>
-                        <div class="product-links">
-                            <a href="./mlops-control-plane/">Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/mlops-control-plane"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="./clinical-document-intelligence/">Open lab <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/clinical-document-intelligence">Source ↗</a>
                         </div>
                     </article>
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>MLOps Production Pipeline</h3>
-                        <p>
-                            Train a compact model, test held-out data and
-                            demonstrate artifact tamper rejection.
-                        </p>
-                        <div class="tags">
-                            <span class="pill"
-                                >Browser OLS and SHA-256 integrity gate</span
-                            >
+
+                    <article class="project-card hub-system-card" data-category="operations" data-system-name="Secure Data Copilot">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 05</span>
+                            <span class="hub-card-state"><i></i> LIVE</span>
                         </div>
-                        <div class="product-links">
-                            <a href="./mlops-production-pipeline/"
-                                >Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/mlops-production-pipeline"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-symbol" aria-hidden="true">SQL</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">data.agent / safe_query_planning</span>
+                            <h3>Secure Data Copilot</h3>
+                            <p>
+                                Explore editable business data with constrained query plans,
+                                privacy findings, transparent execution and CSV export.
+                            </p>
+                        </div>
+                        <div class="hub-capability-row">
+                            <span>privacy</span><span>queries</span><span>export</span>
+                        </div>
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="./secure-data-copilot/">Open lab <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/secure-data-copilot">Source ↗</a>
                         </div>
                     </article>
-                </div>
-            </section>
-            <section class="hub-group">
-                <h2>Media Intelligence</h2>
-                <div class="cards">
-                    <article class="project-card">
-                        <span class="num"
-                            >A MAK’MA Studio Product · MAK’MA Labs</span
-                        >
-                        <h3>Multimodal AI Studio</h3>
-                        <p>
-                            Plan ordered edits and estimate how output
-                            resolution and retiming affect workload before
-                            rendering.
-                        </p>
-                        <div class="tags">
-                            <span class="pill"
-                                >Media preflight; no rendering</span
-                            >
+
+                    <article class="project-card hub-system-card" data-category="operations" data-system-name="LLM Eval & Observability">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 06</span>
+                            <span class="hub-card-state"><i></i> LIVE</span>
                         </div>
-                        <div class="product-links">
-                            <a href="./multimodal-ai-studio/">Open tool →</a
-                            ><a
-                                href="https://github.com/maharshimak/multimodal-ai-studio"
-                                >Source ↗</a
-                            >
+                        <div class="hub-card-symbol" aria-hidden="true">EV</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">llm.eval / release_observability</span>
+                            <h3>LLM Eval & Observability</h3>
+                            <p>
+                                Evaluate case datasets, quantify quality and latency,
+                                compare regressions and enforce release budgets.
+                            </p>
+                        </div>
+                        <div class="hub-capability-row">
+                            <span>evals</span><span>latency</span><span>gates</span>
+                        </div>
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="./llm-eval-observability/">Open lab <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/llm-eval-observability">Source ↗</a>
+                        </div>
+                    </article>
+
+                    <article class="project-card hub-system-card" data-category="operations" data-system-name="MLOps Control Plane">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 07</span>
+                            <span class="hub-card-state"><i></i> LIVE</span>
+                        </div>
+                        <div class="hub-card-symbol" aria-hidden="true">CTL</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">ml.control / rollout_policy</span>
+                            <h3>MLOps Control Plane</h3>
+                            <p>
+                                Combine model evidence, drift and canary snapshots
+                                into an explainable promotion, hold or rollback decision.
+                            </p>
+                        </div>
+                        <div class="hub-capability-row">
+                            <span>drift</span><span>canary</span><span>policy</span>
+                        </div>
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="./mlops-control-plane/">Open lab <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/mlops-control-plane">Source ↗</a>
+                        </div>
+                    </article>
+
+                    <article class="project-card hub-system-card" data-category="operations" data-system-name="MLOps Production Pipeline">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 08</span>
+                            <span class="hub-card-state"><i></i> LIVE</span>
+                        </div>
+                        <div class="hub-card-symbol" aria-hidden="true">ML</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">ml.pipeline / artifact_integrity</span>
+                            <h3>MLOps Production Pipeline</h3>
+                            <p>
+                                Train and evaluate a compact model, inspect drift,
+                                enforce thresholds and demonstrate artifact tamper rejection.
+                            </p>
+                        </div>
+                        <div class="hub-capability-row">
+                            <span>training</span><span>PSI</span><span>SHA-256</span>
+                        </div>
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="./mlops-production-pipeline/">Open lab <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/mlops-production-pipeline">Source ↗</a>
+                        </div>
+                    </article>
+
+                    <article class="project-card hub-system-card" data-category="media" data-system-name="Multimodal AI Studio">
+                        <div class="hub-card-glow" aria-hidden="true"></div>
+                        <div class="hub-card-head">
+                            <span class="hub-system-id">SYS // 09</span>
+                            <span class="hub-card-state"><i></i> LIVE</span>
+                        </div>
+                        <div class="hub-card-symbol" aria-hidden="true">MM</div>
+                        <div class="hub-card-copy">
+                            <span class="hub-card-path">media.ai / render_preflight</span>
+                            <h3>Multimodal AI Studio</h3>
+                            <p>
+                                Plan ordered media edits, estimate workload,
+                                validate supported operations and preflight render constraints.
+                            </p>
+                        </div>
+                        <div class="hub-capability-row">
+                            <span>media</span><span>planning</span><span>preflight</span>
+                        </div>
+                        <div class="hub-card-footer">
+                            <a class="hub-launch" href="./multimodal-ai-studio/">Open lab <span>↗</span></a>
+                            <a class="hub-source" href="https://github.com/maharshimak/multimodal-ai-studio">Source ↗</a>
                         </div>
                     </article>
                 </div>
+
+                <div class="hub-empty" id="hub-empty" hidden>
+                    <span>NO_MATCH</span>
+                    <strong>No systems match this query.</strong>
+                    <button type="button" id="hub-reset">Reset filters</button>
+                </div>
             </section>
-            <footer class="footer">
-                <span
-                    >MAK'MA Labs · Products designed and built by MAK'MA
-                    Studio</span
-                ><span
-                    ><a href="https://github.com/maharshimak"
-                        >github.com/maharshimak ↗</a
-                    ></span
-                >
-            </footer>
+
+            <section class="hub-principles" aria-labelledby="principles-title">
+                <div class="hub-principles-copy">
+                    <span class="hub-kicker">ENGINEERING PRINCIPLES</span>
+                    <h2 id="principles-title">Not a gallery. An inspectable system lab.</h2>
+                </div>
+                <div class="hub-principle-grid">
+                    <article><span>01</span><h3>Input-driven</h3><p>Tools react to editable inputs instead of replaying decorative outputs.</p></article>
+                    <article><span>02</span><h3>Evidence-first</h3><p>Important decisions expose traces, metrics, provenance or policy reasons.</p></article>
+                    <article><span>03</span><h3>Failure-aware</h3><p>Invalid, unsafe or unsupported states are rejected explicitly rather than hidden.</p></article>
+                    <article><span>04</span><h3>Continuously verified</h3><p>Regression tests, builds and production browser checks protect the deployed surface.</p></article>
+                </div>
+            </section>
+        </main>
+
+        <footer class="hub-footer">
+            <div>
+                <span class="hub-footer-mark">M'</span>
+                <div><strong>MAK'MA LABS</strong><small>Designed & engineered by Maharshi Patel</small></div>
+            </div>
+            <div class="hub-footer-links">
+                <a href="https://github.com/maharshimak">GitHub ↗</a>
+                <a href="https://maharshipatel-portfolio.vercel.app/">Portfolio ↗</a>
+                <a href="#hub-title">Back to top ↑</a>
+            </div>
+        </footer>
+    </div>
+
+    <div class="hub-command-overlay" data-command-overlay hidden>
+        <div class="hub-command-palette" role="dialog" aria-modal="true" aria-labelledby="command-title">
+            <div class="hub-command-search">
+                <span aria-hidden="true">›</span>
+                <input id="command-search" type="search" placeholder="Jump to a MAK'MA system…" autocomplete="off" />
+                <kbd>ESC</kbd>
+            </div>
+            <div class="hub-command-meta">
+                <span id="command-title">SYSTEM COMMAND PALETTE</span>
+                <span>ENTER TO OPEN</span>
+            </div>
+            <div class="hub-command-results" id="command-results"></div>
         </div>
-    </body>
+    </div>
+</body>
 </html>
