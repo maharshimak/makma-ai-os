@@ -43,7 +43,8 @@ def register_http_integrations(registry: ToolRegistry, settings: Settings) -> No
                 name="rag_answer",
                 description=(
                     "Answer a question using the configured Agentic RAG Engine. "
-                    "This is retrieval/read-only and returns citations and retrieval trace metadata."
+                    "This is retrieval/read-only and returns citations plus retrieval "
+                    "trace metadata."
                 ),
                 handler=rag_answer,
                 risk_level="low",
@@ -91,7 +92,8 @@ def register_http_integrations(registry: ToolRegistry, settings: Settings) -> No
                 name="data_ask",
                 description=(
                     "Ask the configured Secure Data Copilot a read-only analytical question. "
-                    "The downstream service must enforce its SQL AST and database read-only policies."
+                    "The downstream service must enforce its SQL AST and database "
+                    "read-only policies."
                 ),
                 handler=data_ask,
                 risk_level="medium",
