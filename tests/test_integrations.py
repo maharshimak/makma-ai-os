@@ -1,7 +1,7 @@
 from makma.config import Settings
+from makma.integrations import register_http_integrations
 from makma.memory import SQLiteMemory
 from makma.tools import build_default_registry
-from makma.integrations import register_http_integrations
 
 
 def test_satellite_tools_register_only_when_configured() -> None:
