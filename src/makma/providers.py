@@ -149,8 +149,9 @@ class OpenAICompatibleProvider:
         tool_results: list[ToolResult],
     ) -> AsyncIterator[str]:
         url = self.settings.base_url.rstrip("/") + "/chat/completions"
-        async with httpx.AsyncClient(timeout=self.settings.request_timeout_seconds) as client:
-            async with client.stream(
+        async with (
+            httpx.AsyncClient(timeout=self.settings.request_timeout_seconds) as client,
+            client.stream(
                 "POST",
                 url,
                 headers=self._headers(),
@@ -160,18 +161,19 @@ class OpenAICompatibleProvider:
                     "temperature": 0.2,
                     "stream": True,
                 },
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if not line.startswith("data:"):
-                        continue
-                    raw = line[5:].strip()
-                    if not raw or raw == "[DONE]":
-                        continue
-                    payload = json.loads(raw)
-                    delta = payload.get("choices", [{}])[0].get("delta", {}).get("content")
-                    if delta:
-                        yield str(delta)
+            ) as response,
+        ):
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
+                raw = line[5:].strip()
+                if not raw or raw == "[DONE]":
+                    continue
+                payload = json.loads(raw)
+                delta = payload.get("choices", [{}])[0].get("delta", {}).get("content")
+                if delta:
+                    yield str(delta)
 
 
 class OllamaProvider:
@@ -222,8 +224,9 @@ class OllamaProvider:
         tool_results: list[ToolResult],
     ) -> AsyncIterator[str]:
         url = self.settings.base_url.rstrip("/") + "/api/chat"
-        async with httpx.AsyncClient(timeout=self.settings.request_timeout_seconds) as client:
-            async with client.stream(
+        async with (
+            httpx.AsyncClient(timeout=self.settings.request_timeout_seconds) as client,
+            client.stream(
                 "POST",
                 url,
                 json={
@@ -231,15 +234,16 @@ class OllamaProvider:
                     "messages": self._messages(messages, system_prompt, tool_results),
                     "stream": True,
                 },
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if not line.strip():
-                        continue
-                    payload = json.loads(line)
-                    content = payload.get("message", {}).get("content")
-                    if content:
-                        yield str(content)
+            ) as response,
+        ):
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                if not line.strip():
+                    continue
+                payload = json.loads(line)
+                content = payload.get("message", {}).get("content")
+                if content:
+                    yield str(content)
 
 
 def build_provider(settings: Settings) -> ModelProvider:
