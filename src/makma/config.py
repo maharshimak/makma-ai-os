@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     api_key: str | None = None
     base_url: str = "http://localhost:11434"
     database_path: str = "./data/makma.db"
+    memory_embedding_base_url: str | None = None
+    memory_embedding_model: str | None = None
+    memory_embedding_api_key: str | None = None
     api_token: str | None = None
     request_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
     max_history_messages: int = Field(default=20, ge=1, le=200)
