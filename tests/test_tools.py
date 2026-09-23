@@ -45,3 +45,29 @@ def test_tool_descriptions_expose_security_and_schema_metadata() -> None:
     assert calculator["side_effects"] is False
     assert calculator["input_schema"]["required"] == ["expression"]
     memory.close()
+
+
+@pytest.mark.asyncio
+async def test_tool_schema_rejects_extra_and_wrong_type_arguments() -> None:
+    memory = SQLiteMemory(":memory:")
+    registry = build_default_registry(memory)
+    policy = PermissionPolicy(allowed_tools=frozenset(registry.names))
+
+    extra = await registry.execute(
+        "calculator",
+        {"expression": "2 + 2", "unexpected": "x"},
+        session_id="demo",
+        policy=policy,
+    )
+    wrong_type = await registry.execute(
+        "calculator",
+        {"expression": 42},
+        session_id="demo",
+        policy=policy,
+    )
+
+    assert not extra.ok
+    assert "Unexpected tool arguments" in (extra.error or "")
+    assert not wrong_type.ok
+    assert "must be a string" in (wrong_type.error or "")
+    memory.close()
