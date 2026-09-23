@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+import secrets
 from dataclasses import asdict
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -38,15 +39,30 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         allow_headers=["Content-Type", "Authorization"],
     )
 
-    async def require_auth(authorization: str | None = Header(default=None)) -> None:
+    async def require_auth(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ) -> None:
         token = runtime.settings.api_token
-        if token is None:
+        if token is not None:
+            scheme, _, supplied = (authorization or "").partition(" ")
+            if (
+                scheme.lower() != "bearer"
+                or not supplied
+                or not secrets.compare_digest(supplied, token)
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Valid bearer token required.",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
             return
-        if authorization != f"Bearer {token}":
+
+        client_host = request.client.host if request.client else ""
+        if client_host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Valid bearer token required.",
-                headers={"WWW-Authenticate": "Bearer"},
+                detail="Remote access requires MAKMA_API_TOKEN.",
             )
 
     protected = [Depends(require_auth)]
@@ -87,14 +103,24 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     async def stream_chat(request: ChatRequest) -> StreamingResponse:
         async def event_stream():
             yield 'data: {"type":"run_started"}\n\n'
-            async for token in runtime.stream(
-                request.message,
-                request.session_id,
-                tools_enabled=request.tools_enabled,
-            ):
-                payload = json.dumps({"type": "token", "token": token})
+            try:
+                async for token in runtime.stream(
+                    request.message,
+                    request.session_id,
+                    tools_enabled=request.tools_enabled,
+                ):
+                    payload = json.dumps({"type": "token", "token": token})
+                    yield f"data: {payload}\n\n"
+                yield 'data: {"type":"done"}\n\n'
+            except Exception:
+                payload = json.dumps(
+                    {
+                        "type": "error",
+                        "error": "stream_failed",
+                        "message": "The provider stream failed.",
+                    }
+                )
                 yield f"data: {payload}\n\n"
-            yield 'data: {"type":"done"}\n\n'
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
