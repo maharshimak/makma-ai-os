@@ -17,7 +17,7 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 
 **Architecture:** `makma-ai-os/demo` is the shared web product source and Pages deployment. This repository owns its Python domain package. The central `tests/e2e` suite exercises all nine products; `tests/fixtures/python-parity.json` plus `scripts/generate_parity.py` guard shared mathematical contracts. Backend revisions used for regeneration are pinned in the central `backend-lock.json`.
 
-**Safety and limitations:** Browser storage is local and unencrypted; use synthetic data. Backend authentication and deployment hosting are outside this static Pages release. Memory deletion approval is a browser demonstration, not a server authorization mechanism. Inputs are validated, rendered user values are escaped, and deterministic results are not presented as model inference.
+**Safety and limitations:** Browser storage is local and unencrypted; use synthetic data. The FastAPI backend supports an optional single-user bearer token through `MAKMA_API_TOKEN`; leave the backend private/local if no token is configured. Client-supplied approval assertions are rejected. Memory deletion approval in the static browser demo remains a local demonstration rather than a backend authorization mechanism. Inputs are validated, rendered user values are escaped, and deterministic results are not presented as model inference.
 
 **Verification:** Run `python -m ruff check .` and `python -m pytest -q`. `tests/test_engineering_upgrade.py` protects the new rejection/correctness paths. Central web checks: `npm ci`, `npm test`, `npm run build`, `npx playwright install --with-deps chromium`, `npm run test:e2e`. CI gates publishing on browser interactions and validates all public URLs after deployment.
 
@@ -41,7 +41,7 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 - allow-list tool permission policy and approval hooks
 - plan traces, tool-result traces and per-run execution metrics
 - bounded runtime/provider/tool telemetry with latency and failure summaries
-- FastAPI chat, tools, history, search, recall, runs, telemetry, and SSE streaming endpoints
+- FastAPI chat, tools, history, search, recall, runs, telemetry, and native provider-backed SSE streaming endpoints
 - Docker support with a persistent `/app/data` volume
 - offline tests that do not require API keys or external models
 
@@ -156,11 +156,11 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 - voice and vision adapters
 - task scheduler and background workers
 - OpenTelemetry export for the existing runtime telemetry surface
-- authenticated multi-user web sessions
+- optional single-user bearer-token protection today; true multi-user identity/session ownership remains future work
 
 ## Scope and limitations
 
-The default local provider is deterministic, not an LLM. Ranked memory recall is lexical relevance scoring, not semantic/vector memory. SSE replays a completed answer rather than streaming model tokens. Sessions are identifiers, not authentication boundaries. API-provided approvals are intended for a trusted local client, not multi-user authorization. Run history persists responses and metadata; full tool traces are returned with the response, not persisted. Telemetry is bounded and in-memory. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
+The default local provider is deterministic, not an LLM. Ranked memory recall is lexical relevance scoring, not semantic/vector memory. OpenAI-compatible and Ollama providers now stream native chunks; the local deterministic provider emits one chunk. `MAKMA_API_TOKEN` provides a single-user bearer-token boundary when configured, but sessions are still identifiers rather than multi-user ownership boundaries. Client-supplied approvals are rejected by the public chat schema; a durable server-side approval workflow is still future work before adding high-risk tools. Run history persists success and failure state; full tool traces are returned with the response but are not yet persisted. Telemetry is bounded and in-memory. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
 
 ## Installation and development
 
@@ -199,7 +199,7 @@ See [.env.example](.env.example). Export variables into the process environment;
 python -m uvicorn makma.main:app --host 127.0.0.1 --port 8000
 ```
 
-Interactive endpoint schemas are at `http://127.0.0.1:8000/docs`; machine-readable schemas are at `/openapi.json`. These APIs have no built-in authentication. Use trusted local data and local access.
+Interactive endpoint schemas are at `http://127.0.0.1:8000/docs`; machine-readable schemas are at `/openapi.json`. Set `MAKMA_API_TOKEN` to require `Authorization: Bearer <token>` on runtime data/tool endpoints. If no token is configured, treat the service as trusted-local-only and do not expose it directly to the public Internet.
 
 ## Container
 
@@ -222,7 +222,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v makma-data:/app/data makma-ai-os
 
 ## Next engineering work
 
-Authenticated sessions; semantic/vector memory; durable tool traces; native provider streaming; schema-validated model planning; OpenTelemetry export; isolated workers for any future higher-risk tools. These are planned work, not current capabilities.
+Multi-user identity/session ownership; semantic/vector memory; durable tool traces; schema-validated model planning; OpenTelemetry export; server-owned approval challenges; isolated workers for any future higher-risk tools. These are planned work, not current capabilities.
 
 ## Contributing and security
 
