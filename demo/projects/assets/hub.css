@@ -1298,3 +1298,9 @@
         animation: none;
     }
 }
+
+/* Preserve semantic product grouping while the grid remains visually continuous. */
+.hub-page .hub-system-grid > .hub-group {
+    display: contents;
+    margin: 0;
+}
