@@ -2,9 +2,15 @@ import pytest
 
 from makma.config import Settings
 from makma.memory import SQLiteMemory
+from makma.models import PlanStep
 from makma.providers import LocalProvider
 from makma.runtime import MakmaRuntime
-from makma.tools import PermissionPolicy, build_default_registry
+from makma.tools import (
+    PermissionPolicy,
+    ToolDefinition,
+    ToolRegistry,
+    build_default_registry,
+)
 
 
 def make_runtime(provider=None) -> MakmaRuntime:
@@ -100,3 +106,96 @@ async def test_provider_failure_is_persisted_as_failed_run() -> None:
     assert len(runs) == 1
     assert runs[0].status == "failed"
     assert "RuntimeError" in (runs[0].error or "")
+
+
+
+class GatedPlanner:
+    def plan(self, message: str) -> list[PlanStep]:
+        del message
+        return [
+            PlanStep(
+                id="gated-step",
+                kind="tool",
+                description="Execute a gated synthetic tool.",
+                tool_name="gated",
+                arguments={"target": "synthetic-resource"},
+            ),
+            PlanStep(
+                id="respond-step",
+                kind="respond",
+                description="Respond after the gated tool attempt.",
+            ),
+        ]
+
+
+@pytest.mark.asyncio
+async def test_server_approval_is_argument_bound_and_one_time() -> None:
+    settings = Settings(database_path=":memory:", provider="local")
+    memory = SQLiteMemory(":memory:")
+    registry = ToolRegistry()
+    calls: list[str] = []
+
+    async def gated_handler(arguments, session_id):
+        calls.append(f"{session_id}:{arguments['target']}")
+        return "synthetic action completed"
+
+    registry.register(
+        ToolDefinition(
+            name="gated",
+            description="Synthetic high-risk action used only by the regression test.",
+            handler=gated_handler,
+            requires_approval=True,
+            risk_level="high",
+            side_effects=True,
+        )
+    )
+    runtime = MakmaRuntime(
+        settings=settings,
+        memory=memory,
+        provider=LocalProvider(),
+        registry=registry,
+        planner=GatedPlanner(),
+        policy=PermissionPolicy(allowed_tools=frozenset({"gated"})),
+    )
+
+    first = await runtime.run("perform gated action", "approval-session")
+    assert not first.tool_results[0].ok
+    assert "Server approval required" in (first.tool_results[0].error or "")
+    assert calls == []
+
+    challenges = await memory.list_approval_challenges("approval-session")
+    assert len(challenges) == 1
+    assert challenges[0].status == "pending"
+
+    approved = await memory.approve_challenge(challenges[0].id)
+    assert approved.status == "approved"
+
+    second = await runtime.run("perform gated action", "approval-session")
+    assert second.tool_results[0].ok
+    assert calls == ["approval-session:synthetic-resource"]
+
+    consumed = await memory.list_approval_challenges("approval-session")
+    assert consumed[0].status == "consumed"
+
+    third = await runtime.run("perform gated action", "approval-session")
+    assert not third.tool_results[0].ok
+    assert calls == ["approval-session:synthetic-resource"]
+    latest = await memory.list_approval_challenges("approval-session")
+    assert latest[0].status == "pending"
+
+
+@pytest.mark.asyncio
+async def test_tool_execution_persists_digest_only_audit_metadata() -> None:
+    runtime = make_runtime()
+    result = await runtime.run("calculate 12 * 7", "tool-audit")
+
+    records = await runtime.memory.tool_history(result.run_id)
+
+    assert len(records) == 1
+    record = records[0]
+    assert record.tool_name == "calculator"
+    assert record.plan_step_id == result.plan[0].id
+    assert record.ok is True
+    assert len(record.arguments_sha256) == 64
+    assert len(record.result_sha256) == 64
+    assert "12 * 7" not in record.arguments_sha256
