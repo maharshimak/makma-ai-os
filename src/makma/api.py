@@ -76,6 +76,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
             "tools": runtime.registry.names,
             "capabilities": [
                 "multi_intent_planning",
+                "structured_model_planning",
                 "ranked_memory_recall",
                 "execution_metrics",
                 "runtime_telemetry",
