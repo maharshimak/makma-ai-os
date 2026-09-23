@@ -26,8 +26,8 @@ class ToolDefinition:
     requires_approval: bool = False
     risk_level: RiskLevel = "low"
     side_effects: bool = False
-    input_schema: dict[str, object] = field(default_factory=dict)
-    output_schema: dict[str, object] = field(default_factory=dict)
+    input_schema: dict[str, Any] = field(default_factory=dict)
+    output_schema: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -86,6 +86,7 @@ class ToolRegistry:
                 ok=False,
                 output="",
                 error="Unknown tool.",
+                trusted=False,
                 provenance=f"tool:{name}",
             )
         try:
@@ -106,15 +107,6 @@ class ToolRegistry:
                 ok=False,
                 output="",
                 error=str(error),
-                trusted=False,
-                provenance=f"tool:{name}",
-            )
-        except Exception as error:
-            return ToolResult(
-                tool_name=name,
-                ok=False,
-                output="",
-                error=f"{type(error).__name__}: tool execution failed",
                 trusted=False,
                 provenance=f"tool:{name}",
             )
@@ -189,6 +181,8 @@ def build_default_registry(memory: SQLiteMemory) -> ToolRegistry:
             name="calculator",
             description="Safely evaluate arithmetic expressions without arbitrary code execution.",
             handler=calculator,
+            risk_level="low",
+            side_effects=False,
             input_schema={
                 "type": "object",
                 "properties": {"expression": {"type": "string", "maxLength": 200}},
@@ -203,6 +197,8 @@ def build_default_registry(memory: SQLiteMemory) -> ToolRegistry:
             name="memory_search",
             description="Recall relevance-ranked memories from the current persisted session.",
             handler=memory_search_tool(memory),
+            risk_level="low",
+            side_effects=False,
             input_schema={
                 "type": "object",
                 "properties": {"query": {"type": "string", "minLength": 1}},
