@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import sqlite3
 from pathlib import Path
 
+from makma.memory_embeddings import MemoryEmbeddingProvider, cosine_similarity
 from makma.models import ChatMessage, MemoryMatch, RunRecord
 
 _TOKEN_RE = re.compile(r"\w+", flags=re.UNICODE)
@@ -17,8 +19,13 @@ def _tokens(text: str) -> set[str]:
 class SQLiteMemory:
     """Persistent conversational memory and durable run history backed by SQLite."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(
+        self,
+        path: str,
+        embedding_provider: MemoryEmbeddingProvider | None = None,
+    ) -> None:
         self.path = path
+        self.embedding_provider = embedding_provider
         if path != ":memory:":
             Path(path).expanduser().parent.mkdir(parents=True, exist_ok=True)
         self._connection = sqlite3.connect(path, check_same_thread=False)
@@ -38,6 +45,12 @@ class SQLiteMemory:
             );
             CREATE INDEX IF NOT EXISTS idx_messages_session
                 ON messages(session_id, id);
+
+            CREATE TABLE IF NOT EXISTS message_embeddings (
+                message_id INTEGER PRIMARY KEY,
+                vector_json TEXT NOT NULL,
+                FOREIGN KEY(message_id) REFERENCES messages(id) ON DELETE CASCADE
+            );
 
             CREATE TABLE IF NOT EXISTS runs (
                 run_id TEXT PRIMARY KEY,
@@ -68,12 +81,26 @@ class SQLiteMemory:
         if column not in columns:
             self._connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
+    async def _embed_one(self, text: str) -> list[float] | None:
+        if self.embedding_provider is None:
+            return None
+        vectors = await asyncio.to_thread(self.embedding_provider.embed, [text])
+        if len(vectors) != 1 or not vectors[0]:
+            raise ValueError("Memory embedding provider returned an invalid result.")
+        return [float(value) for value in vectors[0]]
+
     async def append(self, session_id: str, role: str, content: str) -> None:
+        vector = await self._embed_one(content)
         async with self._lock:
-            self._connection.execute(
+            cursor = self._connection.execute(
                 "INSERT INTO messages(session_id, role, content) VALUES (?, ?, ?)",
                 (session_id, role, content),
             )
+            if vector is not None:
+                self._connection.execute(
+                    "INSERT INTO message_embeddings(message_id, vector_json) VALUES (?, ?)",
+                    (cursor.lastrowid, json.dumps(vector, separators=(",", ":"))),
+                )
             self._connection.commit()
 
     async def load(self, session_id: str, limit: int = 20) -> list[ChatMessage]:
@@ -101,7 +128,7 @@ class SQLiteMemory:
         *,
         candidate_limit: int = 500,
     ) -> list[MemoryMatch]:
-        """Return relevance-ranked memories while preserving strict session isolation."""
+        """Return hybrid lexical/semantic memories with strict session isolation."""
 
         normalized_query = query.strip().casefold()
         if not normalized_query:
@@ -110,13 +137,15 @@ class SQLiteMemory:
             raise ValueError("Memory recall limits must be positive.")
 
         query_tokens = _tokens(normalized_query)
+        query_vector = await self._embed_one(query)
         async with self._lock:
             rows = self._connection.execute(
                 """
-                SELECT role, content, created_at
-                FROM messages
-                WHERE session_id = ?
-                ORDER BY id DESC
+                SELECT m.role, m.content, m.created_at, e.vector_json
+                FROM messages AS m
+                LEFT JOIN message_embeddings AS e ON e.message_id = m.id
+                WHERE m.session_id = ?
+                ORDER BY m.id DESC
                 LIMIT ?
                 """,
                 (session_id, candidate_limit),
@@ -129,14 +158,24 @@ class SQLiteMemory:
             content_tokens = _tokens(normalized_content)
             overlap = query_tokens & content_tokens
             phrase_match = normalized_query in normalized_content
-            if not phrase_match and not overlap:
+
+            semantic_score = 0.0
+            if query_vector is not None and row["vector_json"]:
+                try:
+                    stored_vector = [float(value) for value in json.loads(row["vector_json"])]
+                    semantic_score = max(0.0, cosine_similarity(query_vector, stored_vector))
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    semantic_score = 0.0
+
+            if not phrase_match and not overlap and semantic_score < 0.35:
                 continue
 
             coverage = len(overlap) / max(len(query_tokens), 1)
             phrase_bonus = 1.0 if phrase_match else 0.0
             provenance_bonus = 0.25 if row["role"] == "user" else 0.0
             recency_bonus = 0.15 / (recency_rank + 1)
-            score = phrase_bonus + coverage + provenance_bonus + recency_bonus
+            semantic_bonus = 0.75 * semantic_score
+            score = phrase_bonus + coverage + provenance_bonus + recency_bonus + semantic_bonus
             ranked.append(
                 MemoryMatch(
                     role=row["role"],
