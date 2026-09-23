@@ -26,8 +26,9 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         title="Mak'ma AI OS",
         version="1.2.0",
         description=(
-            "Tool-using AI runtime with persistent memory, provider routing, "
-            "durable run records, guarded tool observations, and real provider streaming."
+            "Tool-using AI runtime with persistent memory, provider routing, durable "
+            "run/tool audit records, server approval challenges, guarded observations, "
+            "and real provider streaming."
         ),
     )
     app.state.runtime = runtime
@@ -76,6 +77,8 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
                 "multi_intent_planning",
                 "ranked_memory_recall",
                 "durable_run_lifecycle",
+                "durable_tool_audit",
+                "server_approval_challenges",
                 "guarded_tool_observations",
                 "provider_streaming",
                 "runtime_telemetry",
@@ -94,7 +97,6 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         result = await runtime.run(
             request.message,
             request.session_id,
-            approvals=set(),
             tools_enabled=request.tools_enabled,
         )
         return result.model_dump()
@@ -109,7 +111,6 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
                 async for token in runtime.stream(
                     request.message,
                     request.session_id,
-                    approvals=set(),
                     tools_enabled=request.tools_enabled,
                 ):
                     payload = json.dumps({"type": "token", "token": token})
@@ -144,6 +145,36 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     ) -> list[dict[str, object]]:
         runs = await runtime.memory.run_history(session_id, limit=limit)
         return [record.model_dump() for record in runs]
+
+    @app.get("/v1/runs/{run_id}/tool-calls")
+    async def tool_call_history(
+        run_id: str,
+        _: str = Depends(require_api_access),
+    ) -> list[dict[str, object]]:
+        records = await runtime.memory.tool_history(run_id)
+        return [record.model_dump() for record in records]
+
+    @app.get("/v1/sessions/{session_id}/approvals")
+    async def approval_history(
+        session_id: str,
+        limit: int = Query(default=20, ge=1, le=200),
+        _: str = Depends(require_api_access),
+    ) -> list[dict[str, object]]:
+        records = await runtime.memory.list_approval_challenges(session_id, limit=limit)
+        return [record.model_dump() for record in records]
+
+    @app.post("/v1/approvals/{challenge_id}/approve")
+    async def approve_tool_challenge(
+        challenge_id: str,
+        _: str = Depends(require_api_access),
+    ) -> dict[str, object]:
+        try:
+            challenge = await runtime.memory.approve_challenge(challenge_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail="approval challenge not found") from error
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return challenge.model_dump()
 
     @app.get("/v1/sessions/{session_id}/search")
     async def search_memory(
