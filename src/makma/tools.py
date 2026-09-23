@@ -4,13 +4,14 @@ import ast
 import math
 import operator
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, Literal
 
 from makma.memory import SQLiteMemory
 from makma.models import ToolResult
 
 ToolHandler = Callable[[dict[str, Any], str], Awaitable[str]]
+RiskLevel = Literal["low", "medium", "high"]
 
 
 class ToolPermissionError(PermissionError):
@@ -23,6 +24,10 @@ class ToolDefinition:
     description: str
     handler: ToolHandler
     requires_approval: bool = False
+    risk_level: RiskLevel = "low"
+    side_effects: bool = False
+    input_schema: dict[str, object] = field(default_factory=dict)
+    output_schema: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -56,6 +61,10 @@ class ToolRegistry:
                 "name": tool.name,
                 "description": tool.description,
                 "requires_approval": tool.requires_approval,
+                "risk_level": tool.risk_level,
+                "side_effects": tool.side_effects,
+                "input_schema": tool.input_schema,
+                "output_schema": tool.output_schema,
             }
             for tool in sorted(self._tools.values(), key=lambda item: item.name)
         ]
@@ -72,15 +81,43 @@ class ToolRegistry:
         approvals = approvals or set()
         tool = self._tools.get(name)
         if tool is None:
-            return ToolResult(tool_name=name, ok=False, output="", error="Unknown tool.")
+            return ToolResult(
+                tool_name=name,
+                ok=False,
+                output="",
+                error="Unknown tool.",
+                provenance=f"tool:{name}",
+            )
         try:
             policy.check(name, approvals)
             if tool.requires_approval and name not in approvals:
                 raise ToolPermissionError(f"Tool '{name}' requires explicit approval.")
             output = await tool.handler(arguments, session_id)
-            return ToolResult(tool_name=name, ok=True, output=output)
+            return ToolResult(
+                tool_name=name,
+                ok=True,
+                output=output,
+                trusted=False,
+                provenance=f"tool:{name}",
+            )
         except (ToolPermissionError, ValueError) as error:
-            return ToolResult(tool_name=name, ok=False, output="", error=str(error))
+            return ToolResult(
+                tool_name=name,
+                ok=False,
+                output="",
+                error=str(error),
+                trusted=False,
+                provenance=f"tool:{name}",
+            )
+        except Exception as error:
+            return ToolResult(
+                tool_name=name,
+                ok=False,
+                output="",
+                error=f"{type(error).__name__}: tool execution failed",
+                trusted=False,
+                provenance=f"tool:{name}",
+            )
 
 
 _BINARY_OPERATORS: dict[type[ast.operator], Callable[[float, float], float]] = {
@@ -152,6 +189,13 @@ def build_default_registry(memory: SQLiteMemory) -> ToolRegistry:
             name="calculator",
             description="Safely evaluate arithmetic expressions without arbitrary code execution.",
             handler=calculator,
+            input_schema={
+                "type": "object",
+                "properties": {"expression": {"type": "string", "maxLength": 200}},
+                "required": ["expression"],
+                "additionalProperties": False,
+            },
+            output_schema={"type": "string"},
         )
     )
     registry.register(
@@ -159,6 +203,13 @@ def build_default_registry(memory: SQLiteMemory) -> ToolRegistry:
             name="memory_search",
             description="Recall relevance-ranked memories from the current persisted session.",
             handler=memory_search_tool(memory),
+            input_schema={
+                "type": "object",
+                "properties": {"query": {"type": "string", "minLength": 1}},
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+            output_schema={"type": "string"},
         )
     )
     return registry
