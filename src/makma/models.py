@@ -65,3 +65,15 @@ class RunRecord(BaseModel):
     error: str | None = None
     created_at: str
     updated_at: str
+
+
+class ToolCallRecord(BaseModel):
+    run_id: str
+    step_id: str
+    tool_name: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    ok: bool
+    output: str
+    error: str | None = None
+    latency_ms: float = Field(ge=0)
+    created_at: str
