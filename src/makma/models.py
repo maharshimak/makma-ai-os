@@ -35,6 +35,30 @@ class ToolResult(BaseModel):
     provenance: str | None = None
 
 
+class ToolAuditRecord(BaseModel):
+    run_id: str
+    plan_step_id: str
+    tool_name: str
+    arguments_sha256: str
+    result_sha256: str
+    ok: bool
+    latency_ms: float = Field(ge=0)
+    error: str | None = None
+    created_at: str
+
+
+class ApprovalChallenge(BaseModel):
+    id: str
+    session_id: str
+    tool_name: str
+    arguments_sha256: str
+    status: Literal["pending", "approved", "consumed", "expired"]
+    created_at: str
+    expires_at: str
+    approved_at: str | None = None
+    consumed_at: str | None = None
+
+
 class ExecutionMetrics(BaseModel):
     provider_latency_ms: float = Field(ge=0)
     tool_latency_ms: float = Field(ge=0)
