@@ -311,7 +311,12 @@ class SQLiteMemory:
                     run_id,
                     step_id,
                     tool_name,
-                    json.dumps(\n                        arguments,\n                        sort_keys=True,\n                        separators=(",", ":"),\n                        ensure_ascii=False,\n                    ),
+                    json.dumps(
+                        arguments,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        ensure_ascii=False,
+                    ),
                     int(ok),
                     output,
                     error,
