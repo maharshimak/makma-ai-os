@@ -15,7 +15,7 @@ def _tokens(text: str) -> set[str]:
 
 
 class SQLiteMemory:
-    """Persistent conversational memory and run history backed by SQLite."""
+    """Persistent conversational memory and durable run history backed by SQLite."""
 
     def __init__(self, path: str) -> None:
         self.path = path
@@ -43,16 +43,30 @@ class SQLiteMemory:
                 run_id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL,
                 user_message TEXT NOT NULL,
-                response TEXT NOT NULL,
+                response TEXT NOT NULL DEFAULT '',
                 provider TEXT NOT NULL,
-                latency_ms REAL NOT NULL,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                latency_ms REAL NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'succeeded',
+                error TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
             CREATE INDEX IF NOT EXISTS idx_runs_session
                 ON runs(session_id, created_at);
             """
         )
+        self._ensure_column("runs", "status", "TEXT NOT NULL DEFAULT 'succeeded'")
+        self._ensure_column("runs", "error", "TEXT")
+        self._ensure_column("runs", "updated_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP")
         self._connection.commit()
+
+    def _ensure_column(self, table: str, column: str, definition: str) -> None:
+        columns = {
+            str(row["name"])
+            for row in self._connection.execute(f"PRAGMA table_info({table})").fetchall()
+        }
+        if column not in columns:
+            self._connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     async def append(self, session_id: str, role: str, content: str) -> None:
         async with self._lock:
@@ -74,8 +88,10 @@ class SQLiteMemory:
                 """,
                 (session_id, limit),
             ).fetchall()
-        rows = list(reversed(rows))
-        return [ChatMessage(role=row["role"], content=row["content"]) for row in rows]
+        return [
+            ChatMessage(role=row["role"], content=row["content"])
+            for row in reversed(rows)
+        ]
 
     async def recall(
         self,
@@ -121,7 +137,6 @@ class SQLiteMemory:
             provenance_bonus = 0.25 if row["role"] == "user" else 0.0
             recency_bonus = 0.15 / (recency_rank + 1)
             score = phrase_bonus + coverage + provenance_bonus + recency_bonus
-
             ranked.append(
                 MemoryMatch(
                     role=row["role"],
@@ -138,6 +153,52 @@ class SQLiteMemory:
         matches = await self.recall(session_id, query, limit=limit)
         return [ChatMessage(role=match.role, content=match.content) for match in matches]
 
+    async def start_run(
+        self,
+        *,
+        run_id: str,
+        session_id: str,
+        user_message: str,
+        provider: str,
+    ) -> None:
+        async with self._lock:
+            self._connection.execute(
+                """
+                INSERT INTO runs(
+                    run_id, session_id, user_message, response, provider,
+                    latency_ms, status, error
+                )
+                VALUES (?, ?, ?, '', ?, 0, 'running', NULL)
+                """,
+                (run_id, session_id, user_message, provider),
+            )
+            self._connection.commit()
+
+    async def finish_run(
+        self,
+        run_id: str,
+        *,
+        response: str,
+        latency_ms: float,
+        status: str,
+        error: str | None = None,
+    ) -> None:
+        if status not in {"succeeded", "failed"}:
+            raise ValueError("Run status must be succeeded or failed.")
+        async with self._lock:
+            cursor = self._connection.execute(
+                """
+                UPDATE runs
+                SET response = ?, latency_ms = ?, status = ?, error = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE run_id = ?
+                """,
+                (response, latency_ms, status, error, run_id),
+            )
+            if cursor.rowcount != 1:
+                raise KeyError(f"Unknown run: {run_id}")
+            self._connection.commit()
+
     async def record_run(
         self,
         *,
@@ -148,24 +209,29 @@ class SQLiteMemory:
         provider: str,
         latency_ms: float,
     ) -> None:
-        async with self._lock:
-            self._connection.execute(
-                """
-                INSERT INTO runs(run_id, session_id, user_message, response, provider, latency_ms)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (run_id, session_id, user_message, response, provider, latency_ms),
-            )
-            self._connection.commit()
+        """Backward-compatible helper for callers that already have a finished run."""
+        await self.start_run(
+            run_id=run_id,
+            session_id=session_id,
+            user_message=user_message,
+            provider=provider,
+        )
+        await self.finish_run(
+            run_id,
+            response=response,
+            latency_ms=latency_ms,
+            status="succeeded",
+        )
 
     async def run_history(self, session_id: str, limit: int = 20) -> list[RunRecord]:
         async with self._lock:
             rows = self._connection.execute(
                 """
-                SELECT run_id, session_id, user_message, response, provider, latency_ms, created_at
+                SELECT run_id, session_id, user_message, response, provider, latency_ms,
+                       status, error, created_at, updated_at
                 FROM runs
                 WHERE session_id = ?
-                ORDER BY created_at DESC
+                ORDER BY created_at DESC, rowid DESC
                 LIMIT ?
                 """,
                 (session_id, limit),
