@@ -4,7 +4,7 @@
   "knowledge-twin": "52b1b9e37479ae69c984be8772b42a9a5459fe1e",
   "clinical-document-intelligence": "2fbf8601ca6689e557e21ea871968e593d62e3c7",
   "secure-data-copilot": "d81945fa707dd4af92eca06984a4c562bc15aa5f",
-  "llm-eval-observability": "7accf5a2dd95ef37603aa5cccc609b156153651c",
-  "mlops-control-plane": "99a83a12dadbbbe742165d1cdd1b4338555a6b3d",
+  "llm-eval-observability": "98afabbf9a371bfab74a0b843b5f31c01e1fce19",
+  "mlops-control-plane": "914fae7507f3f5f669a0cac7f795b3e03f863ed2",
   "mlops-production-pipeline": "4630fa62ca5105a3a26360d60393587319cbcf68"
 }
