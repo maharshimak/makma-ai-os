@@ -17,11 +17,11 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 
 **Architecture:** `makma-ai-os/demo` is the shared web product source and Pages deployment. This repository owns its Python domain package. The central `tests/e2e` suite exercises all nine products; `tests/fixtures/python-parity.json` plus `scripts/generate_parity.py` guard shared mathematical contracts. Backend revisions used for regeneration are pinned in the central `backend-lock.json`.
 
-**Safety and limitations:** Browser storage is local and unencrypted; use synthetic data. Backend authentication and deployment hosting are outside this static Pages release. Memory deletion approval is a browser demonstration, not a server authorization mechanism. Inputs are validated, rendered user values are escaped, and deterministic results are not presented as model inference.
+**Safety and limitations:** Browser storage is local and unencrypted; use synthetic data. The backend is local-first: without `MAKMA_API_TOKEN`, non-loopback API access is rejected; when a token is configured, `/v1` endpoints require bearer authentication. This is a single-owner access boundary, not multi-user identity or session ownership. Memory deletion approval remains a browser demonstration; no server-side high-risk approval-challenge workflow exists yet. Inputs are validated, rendered user values are escaped, and deterministic results are not presented as model inference.
 
 **Verification:** Run `python -m ruff check .` and `python -m pytest -q`. `tests/test_engineering_upgrade.py` protects the new rejection/correctness paths. Central web checks: `npm ci`, `npm test`, `npm run build`, `npx playwright install --with-deps chromium`, `npm run test:e2e`. CI gates publishing on browser interactions and validates all public URLs after deployment.
 
-**Highest-value next work:** Authenticated sessions, durable audit storage and integration tests against a real hosted provider.
+**Highest-value next work:** Schema-validated model planning, semantic memory, durable tool-call audit records, server-authoritative approval challenges for future high-risk tools, and multi-user identity/session ownership if the runtime is ever offered as a shared service.
 
 **Provenance:** Independent MAK’MA Studio engineering implementation; examples are synthetic and no employer code or data is included. Existing MIT license applies.
 
@@ -34,14 +34,14 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
   - Ollama `/api/chat`
 - persistent SQLite conversation memory
 - relevance-ranked lexical memory recall scoped to the current session
-- persisted run/audit history with latency and provider metadata
+- durable run/audit lifecycle with running/succeeded/failed status, error capture, latency and provider metadata
 - deterministic ordered multi-intent planning for explicit tool requests
 - safe calculator tool with AST validation instead of `eval`
 - relevance-ranked persisted-memory recall tool
-- allow-list tool permission policy and approval hooks
+- typed tool metadata, allow-list permission policy and internal approval hooks; the public chat API does not accept client-forged approval fields
 - plan traces, tool-result traces and per-run execution metrics
 - bounded runtime/provider/tool telemetry with latency and failure summaries
-- FastAPI chat, tools, history, search, recall, runs, telemetry, and SSE streaming endpoints
+- FastAPI chat, tools, history, search, recall, runs, telemetry, and native provider-streaming SSE endpoints
 - Docker support with a persistent `/app/data` volume
 - offline tests that do not require API keys or external models
 
@@ -136,8 +136,7 @@ Example:
 {
   "message": "calculate 19 * 23",
   "session_id": "demo",
-  "tools_enabled": true,
-  "approvals": []
+  "tools_enabled": true
 }
 ```
 
@@ -149,7 +148,6 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 
 ## Next engineering milestones
 
-- native model streaming instead of response-token replay
 - richer LLM-generated structured planning with schema validation
 - vector/semantic long-term memory
 - browser and filesystem tools behind approval gates and sandboxes
@@ -160,7 +158,7 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 
 ## Scope and limitations
 
-The default local provider is deterministic, not an LLM. Ranked memory recall is lexical relevance scoring, not semantic/vector memory. SSE replays a completed answer rather than streaming model tokens. Sessions are identifiers, not authentication boundaries. API-provided approvals are intended for a trusted local client, not multi-user authorization. Run history persists responses and metadata; full tool traces are returned with the response, not persisted. Telemetry is bounded and in-memory. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
+The default local provider is deterministic, not an LLM. Ranked memory recall is lexical relevance scoring, not semantic/vector memory. OpenAI-compatible and Ollama adapters stream provider chunks natively; deterministic local mode emits its completed local response as one chunk. The API is single-owner/local-first: non-loopback access is rejected unless `MAKMA_API_TOKEN` is configured, and bearer authentication still does not provide multi-user session ownership. Client-supplied approval fields are rejected. No high-risk tools are registered today, and a server-authoritative approval-challenge workflow remains future work. Run lifecycle status and failures persist; full per-tool traces are still returned with responses rather than stored as first-class audit rows. Telemetry is bounded and in-memory. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
 
 ## Installation and development
 
@@ -199,7 +197,7 @@ See [.env.example](.env.example). Export variables into the process environment;
 python -m uvicorn makma.main:app --host 127.0.0.1 --port 8000
 ```
 
-Interactive endpoint schemas are at `http://127.0.0.1:8000/docs`; machine-readable schemas are at `/openapi.json`. These APIs have no built-in authentication. Use trusted local data and local access.
+Interactive endpoint schemas are at `http://127.0.0.1:8000/docs`; machine-readable schemas are at `/openapi.json`. Without `MAKMA_API_TOKEN`, protected `/v1` endpoints accept loopback clients only. Configure `MAKMA_API_TOKEN` before any intentional remote exposure and send it as `Authorization: Bearer <token>`. This is a single-owner access boundary, not multi-user authorization.
 
 ## Container
 
@@ -222,7 +220,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v makma-data:/app/data makma-ai-os
 
 ## Next engineering work
 
-Authenticated sessions; semantic/vector memory; durable tool traces; native provider streaming; schema-validated model planning; OpenTelemetry export; isolated workers for any future higher-risk tools. These are planned work, not current capabilities.
+Semantic/vector memory; durable tool-call audit records; schema-validated model planning; server-authoritative approval challenges for future higher-risk tools; multi-user identity/session ownership if needed; OpenTelemetry export; isolated workers for long-running or higher-risk tools. These are planned work, not current capabilities.
 
 ## Contributing and security
 
