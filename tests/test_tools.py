@@ -1,7 +1,7 @@
 import pytest
 
 from makma.memory import SQLiteMemory
-from makma.tools import PermissionPolicy, build_default_registry
+from makma.tools import PermissionPolicy, ToolDefinition, ToolRegistry, build_default_registry
 
 
 @pytest.mark.asyncio
@@ -71,3 +71,42 @@ async def test_tool_schema_rejects_extra_and_wrong_type_arguments() -> None:
     assert not wrong_type.ok
     assert "must be a string" in (wrong_type.error or "")
     memory.close()
+
+
+
+@pytest.mark.asyncio
+async def test_high_risk_or_side_effecting_tools_require_approval() -> None:
+    async def mutate(arguments, session_id):
+        del arguments, session_id
+        return "changed"
+
+    registry = ToolRegistry()
+    registry.register(
+        ToolDefinition(
+            name="dangerous",
+            description="Synthetic side-effecting test tool.",
+            handler=mutate,
+            risk_level="high",
+            side_effects=True,
+        )
+    )
+    policy = PermissionPolicy(allowed_tools=frozenset({"dangerous"}))
+
+    blocked = await registry.execute(
+        "dangerous",
+        {},
+        session_id="demo",
+        policy=policy,
+    )
+    approved = await registry.execute(
+        "dangerous",
+        {},
+        session_id="demo",
+        policy=policy,
+        approvals={"dangerous"},
+    )
+
+    assert not blocked.ok
+    assert "requires explicit approval" in (blocked.error or "")
+    assert approved.ok
+    assert approved.output == "changed"
