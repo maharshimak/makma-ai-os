@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from makma.config import Settings
 from makma.memory import SQLiteMemory
+from makma.memory_embeddings import OpenAICompatibleMemoryEmbeddings
 from makma.model_planner import StructuredModelPlanner, StructuredPlannerError
 from makma.models import ChatMessage, ChatResponse, ExecutionMetrics, PlanStep, ToolResult
 from makma.planner import Planner
@@ -304,7 +305,15 @@ class MakmaRuntime:
 
 def build_runtime(settings: Settings | None = None) -> MakmaRuntime:
     settings = settings or Settings()
-    memory = SQLiteMemory(settings.database_path)
+    embedding_provider = None
+    if settings.memory_embedding_base_url and settings.memory_embedding_model:
+        embedding_provider = OpenAICompatibleMemoryEmbeddings(
+            base_url=settings.memory_embedding_base_url,
+            model=settings.memory_embedding_model,
+            api_key=settings.memory_embedding_api_key or "",
+            timeout_seconds=settings.request_timeout_seconds,
+        )
+    memory = SQLiteMemory(settings.database_path, embedding_provider=embedding_provider)
     provider = build_provider(settings)
     registry = build_default_registry(memory)
     return MakmaRuntime(
