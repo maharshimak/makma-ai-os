@@ -57,6 +57,12 @@ class MakmaRuntime:
         self.policy = policy or PermissionPolicy(allowed_tools=frozenset(registry.names))
         self.telemetry = telemetry or TelemetryCollector()
 
+    async def aclose(self) -> None:
+        close_provider = getattr(self.provider, "aclose", None)
+        if close_provider is not None:
+            await close_provider()
+        self.memory.close()
+
     async def run(
         self,
         message: str,
