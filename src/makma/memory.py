@@ -3,9 +3,17 @@ from __future__ import annotations
 import asyncio
 import re
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from uuid import uuid4
 
-from makma.models import ChatMessage, MemoryMatch, RunRecord
+from makma.models import (
+    ApprovalChallenge,
+    ChatMessage,
+    MemoryMatch,
+    RunRecord,
+    ToolAuditRecord,
+)
 
 _TOKEN_RE = re.compile(r"\w+", flags=re.UNICODE)
 
@@ -14,8 +22,12 @@ def _tokens(text: str) -> set[str]:
     return {token.casefold() for token in _TOKEN_RE.findall(text) if token}
 
 
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class SQLiteMemory:
-    """Persistent conversational memory and durable run history backed by SQLite."""
+    """Persistent conversational memory, approvals and audit history backed by SQLite."""
 
     def __init__(self, path: str) -> None:
         self.path = path
@@ -53,6 +65,36 @@ class SQLiteMemory:
             );
             CREATE INDEX IF NOT EXISTS idx_runs_session
                 ON runs(session_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS tool_calls (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL,
+                plan_step_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                arguments_sha256 TEXT NOT NULL,
+                result_sha256 TEXT NOT NULL,
+                ok INTEGER NOT NULL,
+                latency_ms REAL NOT NULL,
+                error TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(run_id) REFERENCES runs(run_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_tool_calls_run
+                ON tool_calls(run_id, id);
+
+            CREATE TABLE IF NOT EXISTS approval_challenges (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                arguments_sha256 TEXT NOT NULL,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                approved_at TEXT,
+                consumed_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_approval_lookup
+                ON approval_challenges(session_id, tool_name, arguments_sha256, status);
             """
         )
         self._ensure_column("runs", "status", "TEXT NOT NULL DEFAULT 'succeeded'")
@@ -198,6 +240,251 @@ class SQLiteMemory:
             if cursor.rowcount != 1:
                 raise KeyError(f"Unknown run: {run_id}")
             self._connection.commit()
+
+    async def record_tool_call(
+        self,
+        *,
+        run_id: str,
+        plan_step_id: str,
+        tool_name: str,
+        arguments_sha256: str,
+        result_sha256: str,
+        ok: bool,
+        latency_ms: float,
+        error: str | None,
+    ) -> None:
+        created_at = _utc_now().isoformat()
+        async with self._lock:
+            self._connection.execute(
+                """
+                INSERT INTO tool_calls(
+                    run_id, plan_step_id, tool_name, arguments_sha256,
+                    result_sha256, ok, latency_ms, error, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    plan_step_id,
+                    tool_name,
+                    arguments_sha256,
+                    result_sha256,
+                    int(ok),
+                    latency_ms,
+                    error,
+                    created_at,
+                ),
+            )
+            self._connection.commit()
+
+    async def tool_history(self, run_id: str) -> list[ToolAuditRecord]:
+        async with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT run_id, plan_step_id, tool_name, arguments_sha256,
+                       result_sha256, ok, latency_ms, error, created_at
+                FROM tool_calls
+                WHERE run_id = ?
+                ORDER BY id
+                """,
+                (run_id,),
+            ).fetchall()
+        return [
+            ToolAuditRecord(
+                run_id=row["run_id"],
+                plan_step_id=row["plan_step_id"],
+                tool_name=row["tool_name"],
+                arguments_sha256=row["arguments_sha256"],
+                result_sha256=row["result_sha256"],
+                ok=bool(row["ok"]),
+                latency_ms=row["latency_ms"],
+                error=row["error"],
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
+
+    def _expire_approvals(self, now: str) -> None:
+        self._connection.execute(
+            """
+            UPDATE approval_challenges
+            SET status = 'expired'
+            WHERE status IN ('pending', 'approved') AND expires_at <= ?
+            """,
+            (now,),
+        )
+
+    @staticmethod
+    def _approval_from_row(row: sqlite3.Row) -> ApprovalChallenge:
+        return ApprovalChallenge(**dict(row))
+
+    async def create_approval_challenge(
+        self,
+        *,
+        session_id: str,
+        tool_name: str,
+        arguments_sha256: str,
+        ttl_seconds: int = 600,
+    ) -> ApprovalChallenge:
+        if not 30 <= ttl_seconds <= 3600:
+            raise ValueError("Approval TTL must be between 30 and 3600 seconds.")
+        now_dt = _utc_now()
+        now = now_dt.isoformat()
+        expires_at = (now_dt + timedelta(seconds=ttl_seconds)).isoformat()
+
+        async with self._lock:
+            self._expire_approvals(now)
+            existing = self._connection.execute(
+                """
+                SELECT id, session_id, tool_name, arguments_sha256, status,
+                       created_at, expires_at, approved_at, consumed_at
+                FROM approval_challenges
+                WHERE session_id = ? AND tool_name = ? AND arguments_sha256 = ?
+                  AND status = 'pending'
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (session_id, tool_name, arguments_sha256),
+            ).fetchone()
+            if existing is not None:
+                self._connection.commit()
+                return self._approval_from_row(existing)
+
+            challenge_id = str(uuid4())
+            self._connection.execute(
+                """
+                INSERT INTO approval_challenges(
+                    id, session_id, tool_name, arguments_sha256, status,
+                    created_at, expires_at
+                )
+                VALUES (?, ?, ?, ?, 'pending', ?, ?)
+                """,
+                (
+                    challenge_id,
+                    session_id,
+                    tool_name,
+                    arguments_sha256,
+                    now,
+                    expires_at,
+                ),
+            )
+            row = self._connection.execute(
+                """
+                SELECT id, session_id, tool_name, arguments_sha256, status,
+                       created_at, expires_at, approved_at, consumed_at
+                FROM approval_challenges
+                WHERE id = ?
+                """,
+                (challenge_id,),
+            ).fetchone()
+            self._connection.commit()
+        if row is None:
+            raise RuntimeError("Failed to create approval challenge.")
+        return self._approval_from_row(row)
+
+    async def approve_challenge(self, challenge_id: str) -> ApprovalChallenge:
+        now = _utc_now().isoformat()
+        async with self._lock:
+            self._expire_approvals(now)
+            row = self._connection.execute(
+                """
+                SELECT id, session_id, tool_name, arguments_sha256, status,
+                       created_at, expires_at, approved_at, consumed_at
+                FROM approval_challenges
+                WHERE id = ?
+                """,
+                (challenge_id,),
+            ).fetchone()
+            if row is None:
+                self._connection.commit()
+                raise KeyError(challenge_id)
+            if row["status"] == "expired":
+                self._connection.commit()
+                raise ValueError("Approval challenge has expired.")
+            if row["status"] == "consumed":
+                self._connection.commit()
+                raise ValueError("Approval challenge has already been consumed.")
+            if row["status"] == "pending":
+                self._connection.execute(
+                    """
+                    UPDATE approval_challenges
+                    SET status = 'approved', approved_at = ?
+                    WHERE id = ?
+                    """,
+                    (now, challenge_id),
+                )
+            updated = self._connection.execute(
+                """
+                SELECT id, session_id, tool_name, arguments_sha256, status,
+                       created_at, expires_at, approved_at, consumed_at
+                FROM approval_challenges
+                WHERE id = ?
+                """,
+                (challenge_id,),
+            ).fetchone()
+            self._connection.commit()
+        if updated is None:
+            raise RuntimeError("Approval challenge disappeared.")
+        return self._approval_from_row(updated)
+
+    async def consume_approval(
+        self,
+        *,
+        session_id: str,
+        tool_name: str,
+        arguments_sha256: str,
+    ) -> bool:
+        now = _utc_now().isoformat()
+        async with self._lock:
+            self._expire_approvals(now)
+            row = self._connection.execute(
+                """
+                SELECT id
+                FROM approval_challenges
+                WHERE session_id = ? AND tool_name = ? AND arguments_sha256 = ?
+                  AND status = 'approved' AND expires_at > ?
+                ORDER BY approved_at DESC
+                LIMIT 1
+                """,
+                (session_id, tool_name, arguments_sha256, now),
+            ).fetchone()
+            if row is None:
+                self._connection.commit()
+                return False
+            self._connection.execute(
+                """
+                UPDATE approval_challenges
+                SET status = 'consumed', consumed_at = ?
+                WHERE id = ?
+                """,
+                (now, row["id"]),
+            )
+            self._connection.commit()
+        return True
+
+    async def list_approval_challenges(
+        self,
+        session_id: str,
+        limit: int = 20,
+    ) -> list[ApprovalChallenge]:
+        if not 1 <= limit <= 200:
+            raise ValueError("Approval limit must be between 1 and 200.")
+        now = _utc_now().isoformat()
+        async with self._lock:
+            self._expire_approvals(now)
+            rows = self._connection.execute(
+                """
+                SELECT id, session_id, tool_name, arguments_sha256, status,
+                       created_at, expires_at, approved_at, consumed_at
+                FROM approval_challenges
+                WHERE session_id = ?
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (session_id, limit),
+            ).fetchall()
+            self._connection.commit()
+        return [self._approval_from_row(row) for row in rows]
 
     async def record_run(
         self,
