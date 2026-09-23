@@ -42,6 +42,54 @@ class PermissionPolicy:
             raise ToolPermissionError(f"Tool '{tool_name}' requires explicit approval.")
 
 
+def _validate_arguments(schema: dict[str, Any], arguments: dict[str, Any]) -> None:
+    if not schema:
+        return
+    if schema.get("type") not in (None, "object"):
+        raise ValueError("Tool input schema must describe an object.")
+
+    properties = schema.get("properties", {})
+    required = schema.get("required", [])
+    if not isinstance(properties, dict) or not isinstance(required, list):
+        raise ValueError("Invalid tool input schema.")
+
+    missing = [name for name in required if name not in arguments]
+    if missing:
+        raise ValueError("Missing required tool arguments: " + ", ".join(sorted(missing)))
+
+    if schema.get("additionalProperties") is False:
+        extras = sorted(set(arguments) - set(properties))
+        if extras:
+            raise ValueError("Unexpected tool arguments: " + ", ".join(extras))
+
+    for name, value in arguments.items():
+        rule = properties.get(name)
+        if not isinstance(rule, dict):
+            continue
+        expected = rule.get("type")
+        if expected == "string":
+            if not isinstance(value, str):
+                raise ValueError(f"Tool argument '{name}' must be a string.")
+            minimum = rule.get("minLength")
+            maximum = rule.get("maxLength")
+            if minimum is not None and len(value) < int(minimum):
+                raise ValueError(f"Tool argument '{name}' is too short.")
+            if maximum is not None and len(value) > int(maximum):
+                raise ValueError(f"Tool argument '{name}' is too long.")
+        elif expected == "integer":
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise ValueError(f"Tool argument '{name}' must be an integer.")
+        elif expected == "number":
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError(f"Tool argument '{name}' must be a number.")
+        elif expected == "boolean" and not isinstance(value, bool):
+            raise ValueError(f"Tool argument '{name}' must be a boolean.")
+        elif expected == "object" and not isinstance(value, dict):
+            raise ValueError(f"Tool argument '{name}' must be an object.")
+        elif expected == "array" and not isinstance(value, list):
+            raise ValueError(f"Tool argument '{name}' must be an array.")
+
+
 class ToolRegistry:
     def __init__(self) -> None:
         self._tools: dict[str, ToolDefinition] = {}
@@ -93,6 +141,7 @@ class ToolRegistry:
             policy.check(name, approvals)
             if tool.requires_approval and name not in approvals:
                 raise ToolPermissionError(f"Tool '{name}' requires explicit approval.")
+            _validate_arguments(tool.input_schema, arguments)
             output = await tool.handler(arguments, session_id)
             return ToolResult(
                 tool_name=name,
