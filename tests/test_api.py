@@ -8,8 +8,8 @@ from makma.runtime import MakmaRuntime
 from makma.tools import PermissionPolicy, build_default_registry
 
 
-def build_test_client() -> TestClient:
-    settings = Settings(database_path=":memory:", provider="local")
+def build_test_client(*, api_token: str | None = None) -> TestClient:
+    settings = Settings(database_path=":memory:", provider="local", api_token=api_token)
     memory = SQLiteMemory(":memory:")
     registry = build_default_registry(memory)
     runtime = MakmaRuntime(
@@ -30,6 +30,7 @@ def test_health_exposes_runtime_capabilities() -> None:
     assert payload["status"] == "ok"
     assert payload["provider"] == "local"
     assert "calculator" in payload["tools"]
+    assert "provider_streaming" in payload["capabilities"]
 
 
 def test_chat_returns_plan_trace_and_tool_results() -> None:
@@ -43,6 +44,29 @@ def test_chat_returns_plan_trace_and_tool_results() -> None:
     assert "81" in payload["response"]
     assert payload["plan"][0]["tool_name"] == "calculator"
     assert payload["tool_results"][0]["ok"] is True
+
+
+def test_chat_rejects_client_supplied_approvals() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/v1/chat",
+        json={
+            "message": "hello",
+            "session_id": "demo",
+            "approvals": ["dangerous_tool"],
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_configured_api_token_is_required() -> None:
+    client = build_test_client(api_token="top-secret")
+    assert client.get("/v1/tools").status_code == 401
+    response = client.get(
+        "/v1/tools",
+        headers={"Authorization": "Bearer top-secret"},
+    )
+    assert response.status_code == 200
 
 
 def test_history_endpoint_reads_persisted_conversation() -> None:
