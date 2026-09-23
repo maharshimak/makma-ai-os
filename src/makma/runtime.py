@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 from uuid import uuid4
 
 from makma.config import Settings
+from makma.integrations import register_http_integrations
 from makma.memory import SQLiteMemory
 from makma.memory_embeddings import OpenAICompatibleMemoryEmbeddings
 from makma.model_planner import StructuredModelPlanner, StructuredPlannerError
@@ -329,6 +330,7 @@ def build_runtime(settings: Settings | None = None) -> MakmaRuntime:
     memory = SQLiteMemory(settings.database_path, embedding_provider=embedding_provider)
     provider = build_provider(settings)
     registry = build_default_registry(memory)
+    register_http_integrations(registry, settings)
     return MakmaRuntime(
         settings=settings,
         memory=memory,
