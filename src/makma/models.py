@@ -31,6 +31,8 @@ class ToolResult(BaseModel):
     output: str
     error: str | None = None
     latency_ms: float = Field(default=0.0, ge=0)
+    trusted: bool = False
+    provenance: str | None = None
 
 
 class ExecutionMetrics(BaseModel):
@@ -59,4 +61,7 @@ class RunRecord(BaseModel):
     response: str
     provider: str
     latency_ms: float
+    status: Literal["running", "succeeded", "failed"] = "succeeded"
+    error: str | None = None
     created_at: str
+    updated_at: str
