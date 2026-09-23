@@ -11,6 +11,7 @@
     <script src="./assets/hub.js" defer></script>
 </head>
 <body class="hub-page">
+    <div class="hub-scroll-progress" aria-hidden="true"><i></i></div>
     <div class="hub-atmosphere" aria-hidden="true">
         <div class="hub-orb hub-orb-a"></div>
         <div class="hub-orb hub-orb-b"></div>
@@ -29,6 +30,7 @@
 
             <nav class="hub-nav" aria-label="Primary">
                 <a href="#systems" class="hub-nav-link">Systems</a>
+                <a href="#about-maharshi" class="hub-nav-link">About</a>
                 <button class="hub-command-button" type="button" data-command-open aria-haspopup="dialog">
                     <span>Command</span><kbd>⌘ K</kbd>
                 </button>
@@ -408,17 +410,77 @@
                     <article><span>04</span><h3>Continuously verified</h3><p>Regression tests, builds and production browser checks protect the deployed surface.</p></article>
                 </div>
             </section>
+
+            <section class="hub-profile" id="about-maharshi" aria-labelledby="profile-title">
+                <div class="hub-profile-grid">
+                    <div class="hub-profile-main">
+                        <span class="hub-kicker">BUILDER / PROFILE</span>
+                        <p class="hub-profile-overline">AI ENGINEERING · AGENTIC SYSTEMS · APPLIED ML</p>
+                        <h2 id="profile-title">Maharshi Patel</h2>
+                        <p class="hub-profile-role">
+                            AI Engineer building production-minded systems across agents, RAG,
+                            document intelligence, evaluation, data workflows and MLOps.
+                        </p>
+                        <p class="hub-profile-bio">
+                            I study Artificial Intelligence &amp; Data Science for Business at aivancity in Paris
+                            and build systems that connect models with retrieval, memory, tools, APIs,
+                            evaluation and deployment infrastructure.
+                        </p>
+
+                        <div class="hub-profile-badges" aria-label="Professional highlights">
+                            <span>Aivancity · Paris</span>
+                            <span>AWS Certified ML Engineer — Associate</span>
+                            <span>Python · FastAPI · RAG · Agents · MLOps</span>
+                        </div>
+
+                        <div class="hub-profile-actions">
+                            <a class="hub-profile-primary" href="https://maharshipatel-portfolio.vercel.app/">
+                                View full portfolio <span>↗</span>
+                            </a>
+                            <a href="https://www.linkedin.com/in/maharshi-patel-6bb638298/">LinkedIn ↗</a>
+                            <a href="https://github.com/maharshimak">GitHub ↗</a>
+                        </div>
+                    </div>
+
+                    <aside class="hub-profile-terminal" aria-label="Maharshi Patel professional profile">
+                        <div class="hub-profile-terminal-head">
+                            <span>profile.json</span>
+                            <span class="hub-profile-terminal-state"><i></i> AVAILABLE</span>
+                        </div>
+                        <dl>
+                            <div><dt>name</dt><dd>"Maharshi Patel"</dd></div>
+                            <div><dt>role</dt><dd>"AI / ML Engineer"</dd></div>
+                            <div><dt>base</dt><dd>"Paris, France"</dd></div>
+                            <div><dt>study</dt><dd>"AI &amp; Data Science for Business"</dd></div>
+                            <div><dt>cert</dt><dd>"AWS ML Engineer — Associate"</dd></div>
+                            <div><dt>focus</dt><dd>["agents", "RAG", "evals", "MLOps"]</dd></div>
+                        </dl>
+                        <div class="hub-profile-terminal-foot">
+                            <span>BUILDING</span>
+                            <strong>MAK'MA LABS / MAK'MA AI OS</strong>
+                        </div>
+                    </aside>
+                </div>
+            </section>
         </main>
 
-        <footer class="hub-footer">
-            <div>
+        <footer class="hub-footer hub-footer-pro">
+            <div class="hub-footer-identity">
                 <span class="hub-footer-mark">M'</span>
-                <div><strong>MAK'MA LABS</strong><small>Designed & engineered by Maharshi Patel</small></div>
+                <div>
+                    <strong>MAK'MA LABS</strong>
+                    <small>AI systems designed &amp; engineered by Maharshi Patel</small>
+                </div>
+            </div>
+            <div class="hub-footer-meta">
+                <span>Paris, France</span>
+                <span>© 2026 Maharshi Patel</span>
             </div>
             <div class="hub-footer-links">
-                <a href="https://github.com/maharshimak">GitHub ↗</a>
                 <a href="https://maharshipatel-portfolio.vercel.app/">Portfolio ↗</a>
-                <a href="#hub-title">Back to top ↑</a>
+                <a href="https://www.linkedin.com/in/maharshi-patel-6bb638298/">LinkedIn ↗</a>
+                <a href="https://github.com/maharshimak">GitHub ↗</a>
+                <a href="#hub-title">Top ↑</a>
             </div>
         </footer>
     </div>

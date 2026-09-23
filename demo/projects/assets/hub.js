@@ -169,4 +169,63 @@
 
     filters.forEach((item) => item.setAttribute("aria-pressed", String(item.classList.contains("is-active"))));
     applyFilters();
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const topbar = document.querySelector(".hub-topbar");
+    const progress = document.querySelector(".hub-scroll-progress i");
+    let scrollFrame = 0;
+
+    function updateScrollUI() {
+        scrollFrame = 0;
+        const y = window.scrollY || document.documentElement.scrollTop;
+        if (topbar) topbar.classList.toggle("is-scrolled", y > 16);
+        if (progress) {
+            const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+            progress.style.transform = "scaleX(" + Math.min(1, Math.max(0, y / max)) + ")";
+        }
+    }
+
+    window.addEventListener("scroll", () => {
+        if (scrollFrame) return;
+        scrollFrame = requestAnimationFrame(updateScrollUI);
+    }, { passive: true });
+    window.addEventListener("resize", updateScrollUI, { passive: true });
+    updateScrollUI();
+
+    if (!reducedMotion && "IntersectionObserver" in window) {
+        const staggered = [
+            ...document.querySelectorAll(".hub-metrics article"),
+            ...document.querySelectorAll(".hub-system-card"),
+            ...document.querySelectorAll(".hub-principle-grid article"),
+            ...document.querySelectorAll(".hub-profile-badges span")
+        ];
+
+        staggered.forEach((node, index) => {
+            node.classList.add("hub-reveal");
+            node.style.setProperty("--reveal-delay", ((index % 4) * 55) + "ms");
+        });
+
+        [
+            document.querySelector(".hub-section-heading"),
+            document.querySelector(".hub-controls"),
+            document.querySelector(".hub-principles-copy"),
+            document.querySelector(".hub-profile-main"),
+            document.querySelector(".hub-profile-terminal")
+        ].filter(Boolean).forEach((node) => node.classList.add("hub-reveal-soft"));
+
+        document.body.classList.add("hub-motion-ready");
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+            });
+        }, {
+            rootMargin: "0px 0px -8% 0px",
+            threshold: 0.08
+        });
+
+        document.querySelectorAll(".hub-reveal,.hub-reveal-soft").forEach((node) => observer.observe(node));
+    }
 })();
