@@ -7,7 +7,7 @@ import sqlite3
 from pathlib import Path
 
 from makma.memory_embeddings import MemoryEmbeddingProvider, cosine_similarity
-from makma.models import ChatMessage, MemoryMatch, RunRecord
+from makma.models import ChatMessage, MemoryMatch, RunRecord, ToolCallRecord
 
 _TOKEN_RE = re.compile(r"\w+", flags=re.UNICODE)
 
@@ -66,6 +66,22 @@ class SQLiteMemory:
             );
             CREATE INDEX IF NOT EXISTS idx_runs_session
                 ON runs(session_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS tool_calls (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL,
+                step_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                arguments_json TEXT NOT NULL,
+                ok INTEGER NOT NULL,
+                output TEXT NOT NULL DEFAULT '',
+                error TEXT,
+                latency_ms REAL NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(run_id) REFERENCES runs(run_id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_tool_calls_run
+                ON tool_calls(run_id, id);
             """
         )
         self._ensure_column("runs", "status", "TEXT NOT NULL DEFAULT 'succeeded'")
@@ -261,6 +277,75 @@ class SQLiteMemory:
             latency_ms=latency_ms,
             status="succeeded",
         )
+
+    async def record_tool_call(
+        self,
+        *,
+        run_id: str,
+        step_id: str,
+        tool_name: str,
+        arguments: dict[str, object],
+        ok: bool,
+        output: str,
+        error: str | None,
+        latency_ms: float,
+    ) -> None:
+        if latency_ms < 0:
+            raise ValueError("Tool latency must be non-negative.")
+        async with self._lock:
+            exists = self._connection.execute(
+                "SELECT 1 FROM runs WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+            if exists is None:
+                raise KeyError(f"Unknown run: {run_id}")
+            self._connection.execute(
+                """
+                INSERT INTO tool_calls(
+                    run_id, step_id, tool_name, arguments_json,
+                    ok, output, error, latency_ms
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    step_id,
+                    tool_name,
+                    json.dumps(arguments, sort_keys=True, separators=(",", ":"), ensure_ascii=False),
+                    int(ok),
+                    output,
+                    error,
+                    latency_ms,
+                ),
+            )
+            self._connection.commit()
+
+    async def tool_history(self, run_id: str) -> list[ToolCallRecord]:
+        async with self._lock:
+            rows = self._connection.execute(
+                """
+                SELECT run_id, step_id, tool_name, arguments_json, ok,
+                       output, error, latency_ms, created_at
+                FROM tool_calls
+                WHERE run_id = ?
+                ORDER BY id ASC
+                """,
+                (run_id,),
+            ).fetchall()
+        return [
+            ToolCallRecord(
+                run_id=row["run_id"],
+                step_id=row["step_id"],
+                tool_name=row["tool_name"],
+                arguments=json.loads(row["arguments_json"]),
+                ok=bool(row["ok"]),
+                output=row["output"],
+                error=row["error"],
+                latency_ms=row["latency_ms"],
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
 
     async def run_history(self, session_id: str, limit: int = 20) -> list[RunRecord]:
         async with self._lock:
