@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     memory_embedding_base_url: str | None = None
     memory_embedding_model: str | None = None
     memory_embedding_api_key: str | None = None
+    rag_base_url: str | None = None
+    rag_api_token: str | None = None
+    data_copilot_base_url: str | None = None
+    data_copilot_api_token: str | None = None
     api_token: str | None = None
     request_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
     max_history_messages: int = Field(default=20, ge=1, le=200)
