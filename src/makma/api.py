@@ -71,6 +71,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
             "status": "ok",
             "version": "1.2.0",
             "provider": runtime.provider.name,
+            "planner_mode": runtime.settings.planner_mode,
             "tools": runtime.registry.names,
             "remote_auth_configured": bool(runtime.settings.api_token),
             "capabilities": [
