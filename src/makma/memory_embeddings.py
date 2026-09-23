@@ -40,7 +40,11 @@ class OpenAICompatibleMemoryEmbeddings:
         vectors = [[float(value) for value in item["embedding"]] for item in ordered]
         if len(vectors) != len(texts):
             raise ValueError("Embedding provider returned the wrong number of vectors.")
-        invalid_vector = any(\n            not vector or not all(math.isfinite(value) for value in vector)\n            for vector in vectors\n        )\n        if invalid_vector:
+        invalid_vector = any(
+            not vector or not all(math.isfinite(value) for value in vector)
+            for vector in vectors
+        )
+        if invalid_vector:
             raise ValueError("Embedding vectors must be non-empty and finite.")
         return vectors
 
