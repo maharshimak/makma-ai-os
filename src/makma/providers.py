@@ -35,6 +35,8 @@ class ModelProvider(Protocol):
         tool_results: list[ToolResult],
     ) -> AsyncIterator[str]: ...
 
+    async def aclose(self) -> None: ...
+
 
 def _provider_messages(
     messages: list[ChatMessage],
@@ -108,12 +110,34 @@ class LocalProvider:
             tool_results=tool_results,
         )
 
+    async def aclose(self) -> None:
+        return None
 
-class OpenAICompatibleProvider:
-    name = "openai"
 
+class _HTTPProviderBase:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        self._client: httpx.AsyncClient | None = None
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(
+                timeout=self.settings.request_timeout_seconds,
+                limits=httpx.Limits(
+                    max_connections=20,
+                    max_keepalive_connections=10,
+                    keepalive_expiry=30.0,
+                ),
+            )
+        return self._client
+
+    async def aclose(self) -> None:
+        if self._client is not None and not self._client.is_closed:
+            await self._client.aclose()
+
+
+class OpenAICompatibleProvider(_HTTPProviderBase):
+    name = "openai"
 
     def _headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
@@ -129,22 +153,21 @@ class OpenAICompatibleProvider:
         tool_results: list[ToolResult],
     ) -> str:
         url = self.settings.base_url.rstrip("/") + "/chat/completions"
-        async with httpx.AsyncClient(timeout=self.settings.request_timeout_seconds) as client:
-            response = await client.post(
-                url,
-                headers=self._headers(),
-                json={
-                    "model": self.settings.model,
-                    "messages": _provider_messages(
-                        messages,
-                        system_prompt=system_prompt,
-                        tool_results=tool_results,
-                    ),
-                    "temperature": 0.2,
-                },
-            )
-            response.raise_for_status()
-            data = response.json()
+        response = await self._get_client().post(
+            url,
+            headers=self._headers(),
+            json={
+                "model": self.settings.model,
+                "messages": _provider_messages(
+                    messages,
+                    system_prompt=system_prompt,
+                    tool_results=tool_results,
+                ),
+                "temperature": 0.2,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
         return str(data["choices"][0]["message"]["content"]).strip()
 
     async def stream_generate(
@@ -155,24 +178,21 @@ class OpenAICompatibleProvider:
         tool_results: list[ToolResult],
     ) -> AsyncIterator[str]:
         url = self.settings.base_url.rstrip("/") + "/chat/completions"
-        async with (
-            httpx.AsyncClient(timeout=self.settings.request_timeout_seconds) as client,
-            client.stream(
-                "POST",
-                url,
-                headers=self._headers(),
-                json={
-                    "model": self.settings.model,
-                    "messages": _provider_messages(
-                        messages,
-                        system_prompt=system_prompt,
-                        tool_results=tool_results,
-                    ),
-                    "temperature": 0.2,
-                    "stream": True,
-                },
-            ) as response,
-        ):
+        async with self._get_client().stream(
+            "POST",
+            url,
+            headers=self._headers(),
+            json={
+                "model": self.settings.model,
+                "messages": _provider_messages(
+                    messages,
+                    system_prompt=system_prompt,
+                    tool_results=tool_results,
+                ),
+                "temperature": 0.2,
+                "stream": True,
+            },
+        ) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line.startswith("data:"):
@@ -186,11 +206,8 @@ class OpenAICompatibleProvider:
                     yield str(content)
 
 
-class OllamaProvider:
+class OllamaProvider(_HTTPProviderBase):
     name = "ollama"
-
-    def __init__(self, settings: Settings) -> None:
-        self.settings = settings
 
     async def generate(
         self,
@@ -200,21 +217,20 @@ class OllamaProvider:
         tool_results: list[ToolResult],
     ) -> str:
         url = self.settings.base_url.rstrip("/") + "/api/chat"
-        async with httpx.AsyncClient(timeout=self.settings.request_timeout_seconds) as client:
-            response = await client.post(
-                url,
-                json={
-                    "model": self.settings.model,
-                    "messages": _provider_messages(
-                        messages,
-                        system_prompt=system_prompt,
-                        tool_results=tool_results,
-                    ),
-                    "stream": False,
-                },
-            )
-            response.raise_for_status()
-            data = response.json()
+        response = await self._get_client().post(
+            url,
+            json={
+                "model": self.settings.model,
+                "messages": _provider_messages(
+                    messages,
+                    system_prompt=system_prompt,
+                    tool_results=tool_results,
+                ),
+                "stream": False,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
         return str(data["message"]["content"]).strip()
 
     async def stream_generate(
@@ -225,22 +241,19 @@ class OllamaProvider:
         tool_results: list[ToolResult],
     ) -> AsyncIterator[str]:
         url = self.settings.base_url.rstrip("/") + "/api/chat"
-        async with (
-            httpx.AsyncClient(timeout=self.settings.request_timeout_seconds) as client,
-            client.stream(
-                "POST",
-                url,
-                json={
-                    "model": self.settings.model,
-                    "messages": _provider_messages(
-                        messages,
-                        system_prompt=system_prompt,
-                        tool_results=tool_results,
-                    ),
-                    "stream": True,
-                },
-            ) as response,
-        ):
+        async with self._get_client().stream(
+            "POST",
+            url,
+            json={
+                "model": self.settings.model,
+                "messages": _provider_messages(
+                    messages,
+                    system_prompt=system_prompt,
+                    tool_results=tool_results,
+                ),
+                "stream": True,
+            },
+        ) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line:
