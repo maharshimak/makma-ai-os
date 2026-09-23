@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 import json
+import secrets
 from dataclasses import asdict
 
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from makma.runtime import MakmaRuntime, build_runtime
 
 
 class ChatRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     message: str = Field(min_length=1, max_length=20_000)
     session_id: str = Field(default="default", min_length=1, max_length=200)
-    approvals: list[str] = Field(default_factory=list)
     tools_enabled: bool = True
 
 
@@ -22,9 +24,10 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     runtime = runtime or build_runtime()
     app = FastAPI(
         title="Mak'ma AI OS",
-        version="1.1.0",
+        version="1.2.0",
         description=(
-            "Tool-using AI runtime with persistent memory, provider routing, and audit traces."
+            "Tool-using AI runtime with persistent memory, provider routing, "
+            "durable run records, guarded tool observations, and real provider streaming."
         ),
     )
     app.state.runtime = runtime
@@ -33,50 +36,94 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         allow_origins=runtime.settings.allowed_cors_origins,
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "Authorization"],
     )
+
+    async def require_api_access(
+        request: Request,
+        authorization: str | None = Header(default=None),
+    ) -> str:
+        configured_token = runtime.settings.api_token
+        if configured_token:
+            scheme, _, supplied = (authorization or "").partition(" ")
+            if scheme.lower() != "bearer" or not supplied or not secrets.compare_digest(
+                supplied,
+                configured_token,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Valid bearer token required.",
+                )
+            return "configured-owner"
+
+        client_host = request.client.host if request.client else ""
+        if client_host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Remote access requires MAKMA_API_TOKEN.",
+            )
+        return "local-owner"
 
     @app.get("/health")
     async def health() -> dict[str, object]:
         return {
             "status": "ok",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "provider": runtime.provider.name,
             "tools": runtime.registry.names,
+            "remote_auth_configured": bool(runtime.settings.api_token),
             "capabilities": [
                 "multi_intent_planning",
                 "ranked_memory_recall",
-                "execution_metrics",
+                "durable_run_lifecycle",
+                "guarded_tool_observations",
+                "provider_streaming",
                 "runtime_telemetry",
             ],
         }
 
     @app.get("/v1/tools")
-    async def tools() -> list[dict[str, object]]:
+    async def tools(_: str = Depends(require_api_access)) -> list[dict[str, object]]:
         return runtime.registry.describe()
 
     @app.post("/v1/chat")
-    async def chat(request: ChatRequest) -> dict[str, object]:
+    async def chat(
+        request: ChatRequest,
+        _: str = Depends(require_api_access),
+    ) -> dict[str, object]:
         result = await runtime.run(
             request.message,
             request.session_id,
-            approvals=set(request.approvals),
+            approvals=set(),
             tools_enabled=request.tools_enabled,
         )
         return result.model_dump()
 
     @app.post("/v1/chat/stream")
-    async def stream_chat(request: ChatRequest) -> StreamingResponse:
+    async def stream_chat(
+        request: ChatRequest,
+        _: str = Depends(require_api_access),
+    ) -> StreamingResponse:
         async def event_stream():
-            async for token in runtime.stream(
-                request.message,
-                request.session_id,
-                approvals=set(request.approvals),
-                tools_enabled=request.tools_enabled,
-            ):
-                payload = json.dumps({"type": "token", "token": token})
+            try:
+                async for token in runtime.stream(
+                    request.message,
+                    request.session_id,
+                    approvals=set(),
+                    tools_enabled=request.tools_enabled,
+                ):
+                    payload = json.dumps({"type": "token", "token": token})
+                    yield f"data: {payload}\n\n"
+                yield 'data: {"type":"done"}\n\n'
+            except Exception:
+                payload = json.dumps(
+                    {
+                        "type": "error",
+                        "error": "stream_failed",
+                        "message": "The provider stream failed.",
+                    }
+                )
                 yield f"data: {payload}\n\n"
-            yield 'data: {"type":"done"}\n\n'
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -84,6 +131,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     async def session_history(
         session_id: str,
         limit: int = Query(default=20, ge=1, le=200),
+        _: str = Depends(require_api_access),
     ) -> list[dict[str, str]]:
         history = await runtime.memory.load(session_id, limit=limit)
         return [message.model_dump() for message in history]
@@ -92,6 +140,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     async def run_history(
         session_id: str,
         limit: int = Query(default=20, ge=1, le=200),
+        _: str = Depends(require_api_access),
     ) -> list[dict[str, object]]:
         runs = await runtime.memory.run_history(session_id, limit=limit)
         return [record.model_dump() for record in runs]
@@ -101,6 +150,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         session_id: str,
         q: str = Query(min_length=1, max_length=1000),
         limit: int = Query(default=5, ge=1, le=50),
+        _: str = Depends(require_api_access),
     ) -> list[dict[str, str]]:
         matches = await runtime.memory.search(session_id, q, limit=limit)
         return [message.model_dump() for message in matches]
@@ -110,6 +160,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         session_id: str,
         q: str = Query(min_length=1, max_length=1000),
         limit: int = Query(default=5, ge=1, le=50),
+        _: str = Depends(require_api_access),
     ) -> list[dict[str, object]]:
         matches = await runtime.memory.recall(session_id, q, limit=limit)
         return [match.model_dump() for match in matches]
@@ -117,6 +168,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     @app.get("/v1/telemetry")
     async def telemetry_summary(
         operation: str | None = Query(default=None, min_length=1, max_length=200),
+        _: str = Depends(require_api_access),
     ) -> dict[str, object]:
         return asdict(runtime.telemetry.summarize(operation))
 

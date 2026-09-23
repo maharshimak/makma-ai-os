@@ -70,3 +70,20 @@ jobs:
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
       - name: Verify deployed release and all public URLs
         run: python scripts/verify_live.py
+  live-e2e:
+    if: github.event_name != 'pull_request'
+    needs: deploy
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install locked browser dependencies
+        run: npm ci --ignore-scripts
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser suite against production
+        env:
+          LIVE_BASE_URL: https://maharshimak.github.io/makma-ai-os/
+        run: npm run test:e2e

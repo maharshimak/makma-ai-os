@@ -1,5 +1,10 @@
 {
   "agentic-rag-engine": "6d275fc05514c3d008f7ac1ae07d352d7e078abc",
-  "mlops-production-pipeline": "8c13763f6d1e6ccc72907a406ecca4422364bf7b",
-  "mlops-control-plane": "f7a4e8c8b52ab46aafcb9b2abcde9a188d29b2d7"
+  "multimodal-ai-studio": "94a8fc8e7e6da0ad0a3c842434e9e45392a49596",
+  "knowledge-twin": "343ab4abb355deea88f2e0845b79e8c75e050126",
+  "clinical-document-intelligence": "121f7ffb1533d1e3fb3a01e1d6a532a6a195d91d",
+  "secure-data-copilot": "be4c1854f629fbc05cca82a0f957a26852fdffb1",
+  "llm-eval-observability": "d1db940a6fbd950d63ef26053a1213a3d9a2625a",
+  "mlops-control-plane": "f7a4e8c8b52ab46aafcb9b2abcde9a188d29b2d7",
+  "mlops-production-pipeline": "8c13763f6d1e6ccc72907a406ecca4422364bf7b"
 }
