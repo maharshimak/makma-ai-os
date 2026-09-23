@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from makma.config import Settings
 from makma.memory import SQLiteMemory
+from makma.model_planner import StructuredModelPlanner, StructuredPlannerError
 from makma.models import ChatMessage, ChatResponse, ExecutionMetrics, PlanStep, ToolResult
 from makma.planner import Planner
 from makma.providers import ModelProvider, build_provider
@@ -31,6 +32,7 @@ class MakmaRuntime:
         planner: Planner | None = None,
         policy: PermissionPolicy | None = None,
         telemetry: TelemetryCollector | None = None,
+        model_planner: StructuredModelPlanner | None = None,
     ) -> None:
         self.settings = settings
         self.memory = memory
@@ -39,6 +41,34 @@ class MakmaRuntime:
         self.planner = planner or Planner()
         self.policy = policy or PermissionPolicy(allowed_tools=frozenset(registry.names))
         self.telemetry = telemetry or TelemetryCollector()
+        self.model_planner = model_planner
+        if self.model_planner is None and settings.planner_mode != "deterministic":
+            self.model_planner = StructuredModelPlanner(settings)
+
+    async def _build_plan(self, message: str) -> list[PlanStep]:
+        deterministic = self.planner.plan(message)
+        if self.settings.planner_mode == "deterministic":
+            return deterministic
+
+        has_deterministic_tool = any(step.kind == "tool" for step in deterministic)
+        if self.settings.planner_mode == "hybrid" and has_deterministic_tool:
+            return deterministic
+
+        if self.model_planner is None:
+            if self.settings.planner_mode == "hybrid":
+                return deterministic
+            raise StructuredPlannerError("Model planner is not configured.")
+
+        try:
+            return await self.model_planner.plan(
+                message,
+                tools=self.registry.describe(),
+                max_steps=4,
+            )
+        except Exception:
+            if self.settings.planner_mode == "hybrid":
+                return deterministic
+            raise
 
     async def run(
         self,
@@ -61,7 +91,7 @@ class MakmaRuntime:
                 session_id,
                 limit=self.settings.max_history_messages,
             )
-            plan = self.planner.plan(message)
+            plan = await self._build_plan(message)
 
             tool_results: list[ToolResult] = []
             if tools_enabled:
@@ -206,7 +236,7 @@ class MakmaRuntime:
             session_id,
             limit=self.settings.max_history_messages,
         )
-        plan = self.planner.plan(message)
+        plan = await self._build_plan(message)
         tool_results: list[ToolResult] = []
         try:
             if tools_enabled:
