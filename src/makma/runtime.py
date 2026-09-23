@@ -98,6 +98,7 @@ class MakmaRuntime:
             if tools_enabled:
                 tool_results = await self._execute_plan(
                     plan,
+                    run_id=run_id,
                     session_id=session_id,
                     approvals=approvals or set(),
                 )
@@ -190,6 +191,7 @@ class MakmaRuntime:
         self,
         plan: list[PlanStep],
         *,
+        run_id: str,
         session_id: str,
         approvals: set[str],
     ) -> list[ToolResult]:
@@ -213,6 +215,16 @@ class MakmaRuntime:
                 latency_ms=latency_ms,
                 success=result.ok,
                 attributes={"plan_step_id": step.id},
+            )
+            await self.memory.record_tool_call(
+                run_id=run_id,
+                step_id=step.id,
+                tool_name=step.tool_name,
+                arguments=step.arguments,
+                ok=result.ok,
+                output=result.output,
+                error=result.error,
+                latency_ms=latency_ms,
             )
             results.append(result)
         return results
@@ -243,6 +255,7 @@ class MakmaRuntime:
             if tools_enabled:
                 tool_results = await self._execute_plan(
                     plan,
+                    run_id=run_id,
                     session_id=session_id,
                     approvals=approvals or set(),
                 )
