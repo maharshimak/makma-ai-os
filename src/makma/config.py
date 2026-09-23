@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="MAKMA_", env_file=None, extra="ignore")
 
     provider: Literal["local", "openai", "ollama"] = "local"
+    planner_mode: Literal["deterministic", "hybrid", "model"] = "deterministic"
     model: str = "qwen2.5:7b"
     api_key: str | None = None
     base_url: str = "http://localhost:11434"
