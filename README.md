@@ -13,15 +13,15 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 
 **Implemented browser workflow:** Browser: ordered remember/recall/calculator actions, measured tool latency, local approval for memory deletion, persistent conversations and run history, complete session JSON export. Connected mode retains FastAPI health verification and request timeouts.
 
-**Backend and parity contract:** Python: SQLite session memory, tool registry and permission policy, deterministic/provider routing, API and telemetry. Browser memory ranking and planning are separate offline implementations; no LLM is called in browser mode. The calculator follows Python arithmetic precedence and rejects unsupported syntax.
+**Backend and parity contract:** Python: SQLite session memory, typed tool registry and permission policy, deterministic/hybrid/model planning modes, provider routing, API and telemetry. Browser memory ranking and planning are separate offline implementations; no LLM is called in browser mode. The calculator follows Python arithmetic precedence and rejects unsupported syntax.
 
-**Architecture:** `makma-ai-os/demo` is the shared web product source and Pages deployment. This repository owns its Python domain package. The central `tests/e2e` suite exercises all nine products; `tests/fixtures/python-parity.json` plus `scripts/generate_parity.py` guard shared mathematical contracts. Backend revisions used for regeneration are pinned in the central `backend-lock.json`.
+**Architecture:** `makma-ai-os/demo` is the shared web product source and Pages deployment. This repository owns its Python domain package. The central `tests/e2e` suite exercises all nine products. All eight satellite backend revisions are pinned in `backend-lock.json`; CI fetches every pinned backend, verifies the expected capability module and parses its Python source. Exact generated browser/Python mathematical parity fixtures currently cover the shared RAG, MLOps Control Plane and MLOps Production Pipeline contracts; the remaining satellites are lock/contract checked and exercised through their own CI plus the central browser E2E suite.
 
 **Safety and limitations:** Browser storage is local and unencrypted; use synthetic data. The backend is local-first: without `MAKMA_API_TOKEN`, non-loopback API access is rejected; when a token is configured, `/v1` endpoints require bearer authentication. This is a single-owner access boundary, not multi-user identity or session ownership. Browser memory-deletion approval remains a separate static-demo interaction. The backend now creates server-authoritative, expiring, one-time approval challenges for any registered tool that requires approval; each challenge is bound to the session, tool name and canonical argument hash. Inputs are validated, rendered user values are escaped, and deterministic results are not presented as model inference.
 
 **Verification:** Run `python -m ruff check .` and `python -m pytest -q`. `tests/test_engineering_upgrade.py` protects the new rejection/correctness paths. Central web checks: `npm ci`, `npm test`, `npm run build`, `npx playwright install --with-deps chromium`, `npm run test:e2e`. CI gates publishing on browser interactions and validates all public URLs after deployment.
 
-**Highest-value next work:** Schema-validated model planning, semantic memory, async persistence/provider connection reuse, richer sandboxed tool adapters, and multi-user identity/session ownership if the runtime is ever offered as a shared service.
+**Highest-value next work:** Semantic/vector memory, async persistence/provider connection reuse, richer sandboxed tool and cross-product service adapters, and multi-user identity/session ownership if the runtime is ever offered as a shared service.
 
 **Provenance:** Independent MAK’MA Studio engineering implementation; examples are synthetic and no employer code or data is included. Existing MIT license applies.
 
@@ -36,6 +36,7 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 - relevance-ranked lexical memory recall scoped to the current session
 - durable run/audit lifecycle with running/succeeded/failed status, error capture, latency and provider metadata
 - deterministic ordered multi-intent planning for explicit tool requests
+- optional `hybrid` and `model` planner modes that request a JSON tool plan from the configured provider, reject unknown tools/extra arguments against registered schemas, cap tool steps, and fall back to the deterministic planner on invalid model output
 - safe calculator tool with AST validation instead of `eval`
 - relevance-ranked persisted-memory recall tool
 - typed tool metadata, allow-list permission policy, and expiring one-time server approval challenges bound to session/tool/argument hashes; the public chat API does not accept client-forged approval fields
@@ -152,7 +153,6 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 
 ## Next engineering milestones
 
-- richer LLM-generated structured planning with schema validation
 - vector/semantic long-term memory
 - browser and filesystem tools behind approval gates and sandboxes
 - voice and vision adapters
@@ -162,7 +162,7 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 
 ## Scope and limitations
 
-The default local provider is deterministic, not an LLM. Ranked memory recall is lexical relevance scoring, not semantic/vector memory. OpenAI-compatible and Ollama adapters stream provider chunks natively; deterministic local mode emits its completed local response as one chunk. The API is single-owner/local-first: non-loopback access is rejected unless `MAKMA_API_TOKEN` is configured, and bearer authentication still does not provide multi-user session ownership. Client-supplied approval fields are rejected. No high-risk tools are registered by default, but tools marked as approval-required use server-created, expiring, one-time challenges bound to the exact session/tool/argument hash; approval is consumed on execution. Run lifecycle status and failures persist. Digest-only tool audit rows persist tool/step identity, argument/result hashes, outcome and latency; raw tool arguments/results remain in the immediate response path rather than being copied into the audit table. Telemetry is bounded and in-memory. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
+The default local provider is deterministic, not an LLM. Planner mode defaults to `deterministic`; `hybrid` preserves deterministic handling for recognized explicit intents and otherwise requests a schema-constrained plan from the configured provider, while `model` requests that plan first. Model plans cannot invent unregistered tools or undeclared arguments and invalid planning output falls back safely. Ranked memory recall is lexical relevance scoring, not semantic/vector memory. OpenAI-compatible and Ollama adapters stream provider chunks natively; deterministic local mode emits its completed local response as one chunk. The API is single-owner/local-first: non-loopback access is rejected unless `MAKMA_API_TOKEN` is configured, and bearer authentication still does not provide multi-user session ownership. Client-supplied approval fields are rejected. No high-risk tools are registered by default, but tools marked as approval-required use server-created, expiring, one-time challenges bound to the exact session/tool/argument hash; approval is consumed on execution. Run lifecycle status and failures persist. Digest-only tool audit rows persist tool/step identity, argument/result hashes, outcome and latency; raw tool arguments/results remain in the immediate response path rather than being copied into the audit table. Telemetry is bounded and in-memory. SQLite operations are synchronous. No shell, filesystem, browser or autonomous background execution is implemented.
 
 ## Installation and development
 
@@ -224,7 +224,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v makma-data:/app/data makma-ai-os
 
 ## Next engineering work
 
-Semantic/vector memory; schema-validated model planning; multi-user identity/session ownership if needed; async database access; pooled provider clients; OpenTelemetry export; isolated workers and sandboxed adapters for long-running or higher-risk tools. These are planned work, not current capabilities.
+Semantic/vector memory; multi-user identity/session ownership if needed; async database access; pooled provider clients; OpenTelemetry export; cross-product service tools; isolated workers and sandboxed adapters for long-running or higher-risk tools. These are planned work, not current capabilities.
 
 ## Contributing and security
 
