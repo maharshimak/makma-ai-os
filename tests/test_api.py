@@ -31,6 +31,8 @@ def test_health_exposes_runtime_capabilities() -> None:
     assert payload["provider"] == "local"
     assert "calculator" in payload["tools"]
     assert "provider_streaming" in payload["capabilities"]
+    assert "durable_tool_audit" in payload["capabilities"]
+    assert "server_approval_challenges" in payload["capabilities"]
 
 
 def test_chat_returns_plan_trace_and_tool_results() -> None:
@@ -44,6 +46,13 @@ def test_chat_returns_plan_trace_and_tool_results() -> None:
     assert "81" in payload["response"]
     assert payload["plan"][0]["tool_name"] == "calculator"
     assert payload["tool_results"][0]["ok"] is True
+
+    audit_response = client.get(f"/v1/runs/{payload['run_id']}/tool-calls")
+    assert audit_response.status_code == 200
+    audit = audit_response.json()
+    assert len(audit) == 1
+    assert audit[0]["tool_name"] == "calculator"
+    assert len(audit[0]["arguments_sha256"]) == 64
 
 
 def test_chat_rejects_client_supplied_approvals() -> None:
