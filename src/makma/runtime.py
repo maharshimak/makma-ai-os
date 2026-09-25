@@ -331,9 +331,23 @@ def build_runtime(settings: Settings | None = None) -> MakmaRuntime:
     provider = build_provider(settings)
     registry = build_default_registry(memory)
     register_http_integrations(registry, settings)
+    telemetry = None
+    if settings.otel_metrics_endpoint:
+        from makma.telemetry_otel import OpenTelemetryMetricSink
+
+        telemetry = TelemetryCollector(
+            sinks=(
+                OpenTelemetryMetricSink(
+                    settings.otel_metrics_endpoint,
+                    service_name=settings.otel_service_name,
+                    export_interval_millis=settings.otel_export_interval_ms,
+                ),
+            )
+        )
     return MakmaRuntime(
         settings=settings,
         memory=memory,
         provider=provider,
         registry=registry,
+        telemetry=telemetry,
     )
