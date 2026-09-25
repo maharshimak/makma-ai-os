@@ -49,3 +49,25 @@ def test_telemetry_rejects_invalid_measurements(
 
     with pytest.raises(error):
         telemetry.record("model", **kwargs)
+
+
+def test_telemetry_sinks_receive_events_and_fail_open() -> None:
+    class RecordingSink:
+        def __init__(self):
+            self.events = []
+
+        def emit(self, event):
+            self.events.append(event)
+
+    class BrokenSink:
+        def emit(self, event):
+            del event
+            raise RuntimeError("collector unavailable")
+
+    recording = RecordingSink()
+    telemetry = TelemetryCollector(sinks=(recording, BrokenSink()))
+    event = telemetry.record("tool.search", latency_ms=12, success=True)
+
+    assert recording.events == [event]
+    assert telemetry.sink_failures == 1
+    assert telemetry.summarize("tool.search").count == 1
