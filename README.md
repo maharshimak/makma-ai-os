@@ -1,8 +1,8 @@
 # Mak'ma AI OS
 
-[Live Runtime Console](https://maharshimak.github.io/makma-ai-os/) · [MAK'MA Labs](https://maharshimak.github.io/makma-ai-os/projects/) · [Architecture](docs/DESIGN.md) · [API Reference](#api)
+[Live Runtime Console](https://maharshimak.github.io/makma-ai-os/) · [MAK'MA Labs](https://maharshimak.github.io/makma-ai-os/projects/) · [Architecture](docs/DESIGN.md) · [Open-source benchmark](docs/OPEN_SOURCE_BENCHMARK.md) · [API Reference](#api)
 
-Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **tool-using personal AI runtime** built as an engineering portfolio project. The runtime supports deterministic, hybrid or schema-constrained model planning; local/OpenAI-compatible/Ollama providers; native provider streaming; durable run and tool-call audit history; optional hybrid semantic memory; permissioned typed tools; and optional read-only integration with MAK'MA RAG and Data Copilot services.
+Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **tool-using personal AI runtime** built as an engineering portfolio project. The runtime supports deterministic, hybrid or schema-constrained model planning; local/OpenAI-compatible/Ollama providers; native provider streaming; durable run and tool-call audit history; optional hybrid semantic memory; permissioned typed tools; durable dependency-aware workflows with pause/resume approval checkpoints; and optional integration with MAK'MA RAG, Data Copilot, LLM Eval and MLOps Control Plane services.
 
 
 ## Product contract — engineering upgrade
@@ -41,8 +41,11 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 - relevance-ranked persisted-memory recall tool
 - allow-list tool permission policy, enforced tool input schemas, risk metadata and approval hooks
 - plan traces, persisted tool-result traces and per-run execution metrics
-- optional read-only `rag_answer` and `data_ask` satellite-service tools when configured
+- optional `rag_answer`, `data_ask`, `eval_judge` and `mlops_models` read-only satellite tools when configured
+- approval-gated `mlops_promote_candidate` and `mlops_promote_production` lifecycle mutation tools
+- durable DAG workflows with SQLite checkpoints, dependency validation, pause/resume and explicit approval gates
 - bounded runtime/provider/tool telemetry with latency and failure summaries
+- optional fail-open OpenTelemetry OTLP metrics export via the `observability` extra
 - FastAPI chat, tools, history, search, recall, runs, telemetry, and native provider-backed SSE streaming endpoints
 - Docker support with a persistent `/app/data` volume
 - offline tests that do not require API keys or external models
@@ -59,6 +62,9 @@ flowchart LR
     T --> S[Memory Search]
     T --> RG[Optional RAG Service]
     T --> DC[Optional Data Copilot]
+    T --> EV[Optional Eval Service]
+    T --> CP[Optional MLOps Control Plane]
+    O --> WF[(Durable Workflow Checkpoints)]
     O --> R[Provider Router]
     R --> L[Local Provider]
     R --> V[vLLM / OpenAI-compatible]
@@ -134,6 +140,9 @@ export MAKMA_API_KEY=optional-if-your-server-requires-it
 - `GET /v1/sessions/{session_id}/recall?q=...`
 - `GET /v1/runs/{run_id}/tools`
 - `GET /v1/telemetry?operation=runtime.run`
+- `POST /v1/workflows/run`
+- `GET /v1/workflows/{run_id}`
+- `POST /v1/workflows/{run_id}/resume`
 
 Example:
 
@@ -156,12 +165,12 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 - browser and filesystem tools behind approval gates and sandboxes
 - voice and vision adapters
 - task scheduler and background workers
-- OpenTelemetry export for the existing runtime telemetry surface
+- trace/span correlation on top of the implemented OpenTelemetry metrics export
 - optional single-user bearer-token protection today; true multi-user identity/session ownership remains future work
 
 ## Scope and limitations
 
-The default local provider is deterministic, not an LLM. Memory remains lexical by default; semantic recall activates only when a compatible embedding endpoint/model is configured. OpenAI-compatible and Ollama providers stream native chunks; the local deterministic provider emits one chunk. Remote access is blocked unless `MAKMA_API_TOKEN` is configured, but the token represents a single owner rather than full multi-user identity/session ownership. Client-supplied approvals are rejected by the public chat schema; a durable server-owned approval challenge workflow is still future work before any high-risk tools are added. Run history and individual tool traces persist in SQLite. Telemetry is bounded and in-memory. Core SQLite operations remain synchronous under an asyncio lock. No shell, filesystem, browser or autonomous background execution is registered.
+The default local provider is deterministic, not an LLM. Memory remains lexical by default; semantic recall activates only when a compatible embedding endpoint/model is configured. OpenAI-compatible and Ollama providers stream native chunks; the local deterministic provider emits one chunk. Remote access is blocked unless `MAKMA_API_TOKEN` is configured, but the token represents a single owner rather than full multi-user identity/session ownership. Client-supplied approvals are rejected by the public chat schema. High-risk lifecycle operations are instead exposed through the durable workflow API, where a run can pause at an approval checkpoint and resume explicitly with the approved tool name. Run history and individual tool traces persist in SQLite. Telemetry is bounded and in-memory. Core SQLite operations remain synchronous under an asyncio lock. No shell, filesystem, browser or autonomous background execution is registered.
 
 ## Installation and development
 
@@ -223,7 +232,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v makma-data:/app/data makma-ai-os
 
 ## Next engineering work
 
-Multi-user identity/session ownership; OpenTelemetry export; server-owned approval challenges; isolated workers for future higher-risk tools; provider connection pooling/retry policy; and richer hosted integration testing. These are planned work, not current capabilities.
+Multi-user identity/session ownership; OpenTelemetry export; multi-user approval identity and signed approval challenges; isolated workers for future higher-risk tools; provider connection pooling/retry policy; and richer hosted integration testing. These are planned work, not current capabilities.
 
 ## Contributing and security
 
