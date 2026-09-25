@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -175,8 +176,8 @@ def register_http_integrations(registry: ToolRegistry, settings: Settings) -> No
 
         async def promote_candidate(arguments: dict[str, Any], session_id: str) -> str:
             del session_id
-            name = str(arguments["name"]).strip()
-            version = str(arguments["version"]).strip()
+            name = quote(str(arguments["name"]).strip(), safe="")
+            version = quote(str(arguments["version"]).strip(), safe="")
             async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
                 response = await client.post(
                     settings.control_plane_base_url.rstrip("/")
@@ -189,8 +190,8 @@ def register_http_integrations(registry: ToolRegistry, settings: Settings) -> No
 
         async def promote_production(arguments: dict[str, Any], session_id: str) -> str:
             del session_id
-            name = str(arguments["name"]).strip()
-            version = str(arguments["version"]).strip()
+            name = quote(str(arguments["name"]).strip(), safe="")
+            version = quote(str(arguments["version"]).strip(), safe="")
             async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
                 response = await client.post(
                     settings.control_plane_base_url.rstrip("/")
