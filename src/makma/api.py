@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from makma.runtime import MakmaRuntime, build_runtime
+from makma.workflows import SQLiteWorkflowStore, WorkflowEngine, WorkflowSpec, WorkflowStep
 
 
 class ChatRequest(BaseModel):
@@ -18,6 +19,30 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=20_000)
     session_id: str = Field(default="default", min_length=1, max_length=200)
     tools_enabled: bool = True
+
+
+class WorkflowStepRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1, max_length=100)
+    tool_name: str = Field(min_length=1, max_length=200)
+    arguments: dict[str, object] = Field(default_factory=dict)
+    depends_on: list[str] = Field(default_factory=list, max_length=100)
+
+
+class WorkflowRunRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    session_id: str = Field(default="default", min_length=1, max_length=200)
+    steps: list[WorkflowStepRequest] = Field(min_length=1, max_length=100)
+    approvals: list[str] = Field(default_factory=list, max_length=100)
+
+
+class WorkflowResumeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    approvals: list[str] = Field(default_factory=list, max_length=100)
 
 
 def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
@@ -31,6 +56,14 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         ),
     )
     app.state.runtime = runtime
+    workflow_store = SQLiteWorkflowStore(runtime.settings.database_path)
+    workflow_engine = WorkflowEngine(
+        runtime.registry,
+        policy=runtime.policy,
+        store=workflow_store,
+    )
+    app.state.workflow_engine = workflow_engine
+    app.state.workflow_store = workflow_store
     app.add_middleware(
         CORSMiddleware,
         allow_origins=runtime.settings.allowed_cors_origins,
@@ -169,6 +202,49 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         operation: str | None = Query(default=None, min_length=1, max_length=200),
     ) -> dict[str, object]:
         return asdict(runtime.telemetry.summarize(operation))
+
+    @app.post("/v1/workflows/run", dependencies=protected)
+    async def run_workflow(request: WorkflowRunRequest) -> dict[str, object]:
+        spec = WorkflowSpec(
+            name=request.name,
+            steps=tuple(
+                WorkflowStep(
+                    id=step.id,
+                    tool_name=step.tool_name,
+                    arguments=step.arguments,
+                    depends_on=tuple(step.depends_on),
+                )
+                for step in request.steps
+            ),
+        )
+        checkpoint = await workflow_engine.start(
+            spec,
+            session_id=request.session_id,
+            approvals=set(request.approvals),
+        )
+        return asdict(checkpoint)
+
+    @app.post("/v1/workflows/{run_id}/resume", dependencies=protected)
+    async def resume_workflow(
+        run_id: str,
+        request: WorkflowResumeRequest,
+    ) -> dict[str, object]:
+        try:
+            checkpoint = await workflow_engine.resume(
+                run_id,
+                approvals=set(request.approvals),
+            )
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return asdict(checkpoint)
+
+    @app.get("/v1/workflows/{run_id}", dependencies=protected)
+    async def workflow_status(run_id: str) -> dict[str, object]:
+        try:
+            _, checkpoint = workflow_store.load(run_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        return asdict(checkpoint)
 
     return app
 
