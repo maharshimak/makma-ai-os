@@ -1,5 +1,6 @@
 from collections import deque
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from typing import Protocol
 from dataclasses import dataclass
 from math import ceil, isfinite
 
@@ -11,6 +12,10 @@ class TelemetryEvent:
     success: bool
     cost_usd: float = 0.0
     attributes: tuple[tuple[str, str], ...] = ()
+
+
+class TelemetrySink(Protocol):
+    def emit(self, event: "TelemetryEvent") -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,10 +41,17 @@ def _percentile(values: list[float], percentile: float) -> float:
 class TelemetryCollector:
     """Bounded in-memory telemetry for local agent and tool execution."""
 
-    def __init__(self, *, max_events: int = 1_000) -> None:
+    def __init__(
+        self,
+        *,
+        max_events: int = 1_000,
+        sinks: Sequence[TelemetrySink] = (),
+    ) -> None:
         if isinstance(max_events, bool) or not isinstance(max_events, int) or max_events <= 0:
             raise ValueError("max_events must be a positive integer")
         self._events: deque[TelemetryEvent] = deque(maxlen=max_events)
+        self._sinks = tuple(sinks)
+        self._sink_failures = 0
 
     def record(
         self,
@@ -74,10 +86,20 @@ class TelemetryCollector:
             attributes=normalized_attributes,
         )
         self._events.append(event)
+        for sink in self._sinks:
+            try:
+                sink.emit(event)
+            except Exception:
+                # Instrumentation must never make the agent runtime unavailable.
+                self._sink_failures += 1
         return event
 
     def events(self) -> tuple[TelemetryEvent, ...]:
         return tuple(self._events)
+
+    @property
+    def sink_failures(self) -> int:
+        return self._sink_failures
 
     def summarize(self, operation: str | None = None) -> OperationSummary:
         selected = [
