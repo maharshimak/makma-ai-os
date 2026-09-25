@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     rag_api_token: str | None = None
     data_copilot_base_url: str | None = None
     data_copilot_api_token: str | None = None
+    eval_base_url: str | None = None
+    eval_api_token: str | None = None
+    control_plane_base_url: str | None = None
+    control_plane_api_token: str | None = None
     api_token: str | None = None
     request_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
     max_history_messages: int = Field(default=20, ge=1, le=200)
