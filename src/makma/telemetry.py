@@ -1,8 +1,8 @@
 from collections import deque
 from collections.abc import Mapping, Sequence
-from typing import Protocol
 from dataclasses import dataclass
 from math import ceil, isfinite
+from typing import Protocol
 
 
 @dataclass(frozen=True, slots=True)
