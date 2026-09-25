@@ -1,6 +1,6 @@
 # Mak'ma AI OS
 
-[Live Runtime Console](https://maharshimak.github.io/makma-ai-os/) · [MAK'MA Labs](https://maharshimak.github.io/makma-ai-os/projects/) · [Architecture](docs/DESIGN.md) · [API Reference](#api)
+[Live Runtime Console](https://maharshimak.github.io/makma-ai-os/) · [MAK'MA Labs](https://maharshimak.github.io/makma-ai-os/projects/) · [Architecture](docs/DESIGN.md) · [Open-source benchmark](docs/OPEN_SOURCE_BENCHMARK.md) · [API Reference](#api)
 
 Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **tool-using personal AI runtime** built as an engineering portfolio project. The runtime supports deterministic, hybrid or schema-constrained model planning; local/OpenAI-compatible/Ollama providers; native provider streaming; durable run and tool-call audit history; optional hybrid semantic memory; permissioned typed tools; durable dependency-aware workflows with pause/resume approval checkpoints; and optional integration with MAK'MA RAG, Data Copilot, LLM Eval and MLOps Control Plane services.
 
@@ -45,6 +45,7 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 - approval-gated `mlops_promote_candidate` and `mlops_promote_production` lifecycle mutation tools
 - durable DAG workflows with SQLite checkpoints, dependency validation, pause/resume and explicit approval gates
 - bounded runtime/provider/tool telemetry with latency and failure summaries
+- optional fail-open OpenTelemetry OTLP metrics export via the `observability` extra
 - FastAPI chat, tools, history, search, recall, runs, telemetry, and native provider-backed SSE streaming endpoints
 - Docker support with a persistent `/app/data` volume
 - offline tests that do not require API keys or external models
@@ -164,7 +165,7 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 - browser and filesystem tools behind approval gates and sandboxes
 - voice and vision adapters
 - task scheduler and background workers
-- OpenTelemetry export for the existing runtime telemetry surface
+- trace/span correlation on top of the implemented OpenTelemetry metrics export
 - optional single-user bearer-token protection today; true multi-user identity/session ownership remains future work
 
 ## Scope and limitations
