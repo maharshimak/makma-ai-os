@@ -25,6 +25,10 @@ dev = [
   "pytest-cov>=7.1.0,<8",
   "ruff>=0.16.7,<1",
 ]
+observability = [
+  "opentelemetry-exporter-otlp-proto-http>=1.44.0,<2",
+  "opentelemetry-sdk>=1.44.0,<2",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
