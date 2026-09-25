@@ -11,6 +11,8 @@ def test_satellite_tools_register_only_when_configured() -> None:
         database_path=":memory:",
         rag_base_url="http://rag.local",
         data_copilot_base_url="http://data.local",
+        eval_base_url="http://eval.local",
+        control_plane_base_url="http://control.local",
     )
 
     register_http_integrations(registry, settings)
@@ -20,4 +22,10 @@ def test_satellite_tools_register_only_when_configured() -> None:
     assert described["rag_answer"]["side_effects"] is False
     assert "data_ask" in described
     assert described["data_ask"]["risk_level"] == "medium"
+    assert described["eval_judge"]["side_effects"] is False
+    assert described["mlops_models"]["side_effects"] is False
+    assert described["mlops_promote_candidate"]["requires_approval"] is True
+    assert described["mlops_promote_candidate"]["risk_level"] == "high"
+    assert described["mlops_promote_candidate"]["side_effects"] is True
+    assert described["mlops_promote_production"]["requires_approval"] is True
     memory.close()
