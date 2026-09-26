@@ -987,7 +987,7 @@ $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
   target.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block:'start' });
 }));
 
-const magneticUI=$('.nav a,.wordmark,.source-link,.links a,.dialog-links a,.dialog-close');
+const magneticUI=$$('.nav a,.wordmark,.source-link,.links a,.dialog-links a,.dialog-close');
 magneticUI.forEach((el)=>{
   el.addEventListener('pointermove',(event)=>{
     const rect=el.getBoundingClientRect();
