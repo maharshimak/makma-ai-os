@@ -927,7 +927,7 @@ function animateScene(t) {
     const scale = 1 + hover*.045;
     screen.scale.x = lerp(screen.scale.x,scale,.1);
     screen.scale.y = lerp(screen.scale.y,scale,.1);
-    if (!reducedMotion && frameCount % 4 === 0) drawProjectArt(screen,i,t);
+    if (!reducedMotion && scrollProgress > .56 && scrollProgress < .9 && frameCount % 24 === 0) drawProjectArt(screen,i,t);
   });
 
   dust.forEach((o,i)=>{
