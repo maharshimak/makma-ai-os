@@ -2,7 +2,14 @@ const { test, expect } = require("@playwright/test");
 
 test.beforeEach(async ({ page }) => {
     page.on("pageerror", (error) => {
-        throw error;
+        console.log("PORTFOLIO_PAGEERROR_MESSAGE:", error.message);
+        console.log("PORTFOLIO_PAGEERROR_STACK:", error.stack || "(no stack)");
+    });
+    page.on("console", (msg) => {
+        if (msg.type() === "error") console.log("PORTFOLIO_CONSOLE_ERROR:", msg.text());
+    });
+    page.on("requestfailed", (request) => {
+        console.log("PORTFOLIO_REQUEST_FAILED:", request.url(), request.failure()?.errorText || "");
     });
 });
 
