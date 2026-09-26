@@ -5,10 +5,7 @@ import random
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from enum import Enum
-from typing import TypeVar
-
-T = TypeVar("T")
+from enum import StrEnum
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,7 +40,7 @@ class RetryPolicy:
         return max(0.0, delay + random.uniform(-jitter, jitter))
 
 
-class CircuitState(str, Enum):
+class CircuitState(StrEnum):
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"
@@ -76,9 +73,12 @@ class CircuitBreaker:
 
     @property
     def state(self) -> CircuitState:
-        if self._state is CircuitState.OPEN and self._opened_at is not None:
-            if self._clock() - self._opened_at >= self.recovery_timeout_seconds:
-                self._state = CircuitState.HALF_OPEN
+        if (
+            self._state is CircuitState.OPEN
+            and self._opened_at is not None
+            and self._clock() - self._opened_at >= self.recovery_timeout_seconds
+        ):
+            self._state = CircuitState.HALF_OPEN
         return self._state
 
     def before_call(self) -> None:
@@ -100,7 +100,7 @@ class CircuitBreaker:
             self._opened_at = self._clock()
 
 
-async def resilient_call(
+async def resilient_call[T](
     operation: Callable[[], Awaitable[T]],
     *,
     retry: RetryPolicy | None = None,
