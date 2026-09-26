@@ -154,6 +154,14 @@
     <span>Public-domain artworks via Wikimedia Commons</span>
   </footer>
 
+  <script>
+    window.addEventListener('error', function (event) {
+      console.error('PORTFOLIO_BOOT_ERROR|' + event.message + '|' + (event.filename || '') + '|' + event.lineno + ':' + event.colno);
+    });
+    window.addEventListener('unhandledrejection', function (event) {
+      console.error('PORTFOLIO_PROMISE_ERROR|' + String(event.reason && (event.reason.stack || event.reason.message) || event.reason));
+    });
+  </script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
