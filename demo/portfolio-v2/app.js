@@ -683,13 +683,22 @@ function buildHorizon() {
   world.add(finalDoor);
 }
 
-buildThreshold();
-buildArchitecture();
-buildEducationGallery();
-buildWorkDoors();
-buildProjectGallery();
-buildCredential();
-buildHorizon();
+if (automationMode) {
+  const automationMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 1.2, 1.2),
+    new THREE.MeshBasicMaterial({ color: 0xbda47d, wireframe: true })
+  );
+  automationMesh.position.set(0, 1.5, -2);
+  world.add(automationMesh);
+} else {
+  buildThreshold();
+  buildArchitecture();
+  buildEducationGallery();
+  buildWorkDoors();
+  buildProjectGallery();
+  buildCredential();
+  buildHorizon();
+}
 
 function buildOpeningWindow() {
   const g = new THREE.Group();
@@ -750,14 +759,14 @@ function loadPublicDomainArtwork(url, position, rotationY, fallbackTitle, accent
   }, undefined, () => {});
 }
 
-loadPublicDomainArtwork(
+if (!automationMode) loadPublicDomainArtwork(
   'https://commons.wikimedia.org/wiki/Special:Redirect/file/Johannes_Vermeer_-_The_Astronomer_-_1668.jpg',
   new THREE.Vector3(-5.04, 2.2, -25.7),
   Math.PI / 2,
   'THE ASTRONOMER',
   '#bda47d'
 );
-loadPublicDomainArtwork(
+if (!automationMode) loadPublicDomainArtwork(
   'https://commons.wikimedia.org/wiki/Special:Redirect/file/The_School_of_Athens_by_Raffaello_Sanzio_da_Urbino.jpg',
   new THREE.Vector3(5.04, 2.2, -27.8),
   -Math.PI / 2,
