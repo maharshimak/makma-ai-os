@@ -893,7 +893,7 @@ function animateScene(t) {
 
   if (windowPanel) {
     const phase = smoothstep(.16,.27,scrollProgress);
-    windowPanel.rotation.z = phase * Math.PI * .44;
+    windowPanel.rotation.y = phase * Math.PI * .44;
   }
 
   const sculpture = world.children.find(o => o.userData && o.userData.sculpture)?.userData.sculpture;
