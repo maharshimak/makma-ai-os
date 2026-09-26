@@ -2,6 +2,11 @@ import * as THREE from './vendor/three.module.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = window.matchMedia('(pointer:fine)').matches;
+const bootElement = document.getElementById('preloader');
+const bootFailSafe = window.setTimeout(
+  () => bootElement?.classList.add('is-off'),
+  reducedMotion ? 180 : 2600
+);
 const automatedBrowser = navigator.webdriver === true;
 const $ = (q, root = document) => root.querySelector(q);
 const $$ = (q, root = document) => [...root.querySelectorAll(q)];
@@ -945,15 +950,19 @@ let loadProgress = 0;
 const loadCopy = ['Constructing the first room','Hanging the archive','Opening the corridor','Lighting the project gallery','Ready'];
 const preloader = $('#preloader');
 const loadingStart = performance.now();
-function updateLoader() {
-  const elapsed = performance.now() - loadingStart;
-  const externalReady = elapsed > (reducedMotion ? 250 : 1400);
-  loadProgress = Math.min(100, loadProgress + (externalReady ? 4.2 : 2.1));
+const loadingDuration = reducedMotion ? 120 : 1750;
+function updateLoader(now = performance.now()) {
+  const elapsed = now - loadingStart;
+  loadProgress = Math.min(100, (elapsed / loadingDuration) * 100);
   $('#loadNumber').textContent = String(Math.floor(loadProgress)).padStart(2,'0');
   $('#loadRail').style.width = `${loadProgress}%`;
   $('#loadCopy').textContent = loadCopy[Math.min(loadCopy.length-1, Math.floor(loadProgress/24))];
-  if (loadProgress < 100) requestAnimationFrame(updateLoader);
-  else setTimeout(()=>preloader.classList.add('is-off'), reducedMotion ? 20 : 280);
+  if (loadProgress < 100) {
+    requestAnimationFrame(updateLoader);
+  } else {
+    window.clearTimeout(bootFailSafe);
+    preloader.classList.add('is-off');
+  }
 }
 requestAnimationFrame(updateLoader);
 
