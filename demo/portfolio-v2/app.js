@@ -86,7 +86,8 @@ const renderer = new THREE.WebGLRenderer({
   alpha: false,
   powerPreference: 'high-performance'
 });
-const maxDpr = innerWidth < 800 ? 1.15 : 1.6;\nrenderer.setPixelRatio(Math.min(devicePixelRatio, maxDpr));
+const maxDpr = innerWidth < 800 ? 1.15 : 1.6;
+renderer.setPixelRatio(Math.min(devicePixelRatio, maxDpr));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = !reducedMotion;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -134,7 +135,16 @@ let scrollProgress = 0;
 let currentChapter = null;
 let hoveredObject = null;
 let targetLookX = 0;
-let targetLookY = 1.55;\nlet frameCount = 0;\nconst atmosphere = {\n  threshold: new THREE.Color(0x0d0e0d),\n  education: new THREE.Color(0x17140f),\n  work: new THREE.Color(0x111514),\n  systems: new THREE.Color(0x080d10),\n  credential: new THREE.Color(0x18130d),\n  horizon: new THREE.Color(0x242522)\n};
+let targetLookY = 1.55;
+let frameCount = 0;
+const atmosphere = {
+  threshold: new THREE.Color(0x0d0e0d),
+  education: new THREE.Color(0x17140f),
+  work: new THREE.Color(0x111514),
+  systems: new THREE.Color(0x080d10),
+  credential: new THREE.Color(0x18130d),
+  horizon: new THREE.Color(0x242522)
+};
 
 const MAT = {
   darkMetal: new THREE.MeshStandardMaterial({ color: 0x171816, roughness: .54, metalness: .65 }),
