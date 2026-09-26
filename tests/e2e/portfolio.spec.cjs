@@ -1,5 +1,7 @@
 const { test, expect } = require("@playwright/test");
 
+test.describe.configure({ mode: "serial" });
+
 test.beforeEach(async ({ page }) => {
     page.on("pageerror", (error) => {
         throw error;
@@ -7,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("portfolio v2 boots into immersive museum journey", async ({ page }) => {
-    await page.goto("portfolio-v2/");
+    await page.goto("portfolio-v2/?automation=1");
     await expect(page).toHaveTitle(/Maharshi Patel/);
     await expect(page.locator("#experience")).toBeVisible();
     await expect(page.locator("#preloader")).toHaveClass(/is-off/, { timeout: 12000 });
@@ -19,7 +21,7 @@ test("portfolio v2 boots into immersive museum journey", async ({ page }) => {
 });
 
 test("portfolio v2 navigation follows chapters", async ({ page }) => {
-    await page.goto("portfolio-v2/");
+    await page.goto("portfolio-v2/?automation=1");
     await expect(page.locator("#preloader")).toHaveClass(/is-off/, { timeout: 12000 });
     await page.locator("#education").scrollIntoViewIfNeeded();
     await expect(page.locator("#education")).toHaveClass(/is-active/, { timeout: 7000 });
@@ -27,7 +29,7 @@ test("portfolio v2 navigation follows chapters", async ({ page }) => {
 });
 
 test("portfolio v2 exposes project gallery and dialog", async ({ page }) => {
-    await page.goto("portfolio-v2/");
+    await page.goto("portfolio-v2/?automation=1");
     await expect(page.locator("#preloader")).toHaveClass(/is-off/, { timeout: 12000 });
     await page.locator("#systems").scrollIntoViewIfNeeded();
     await expect(page.locator("#systems")).toContainText("PROJECT GALLERY");
