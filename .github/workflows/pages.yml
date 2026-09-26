@@ -34,7 +34,7 @@ jobs:
           python scripts/check_backend_contracts.py
           python scripts/generate_parity.py --backend-root parity-backends --check
           npm test
-          node --check demo/app.js
+          node --check demo/app.js\n          node --check demo/portfolio-v2/app.js
           for file in demo/projects/assets/*.js demo/projects/assets/tools/*.js; do node --check "$file"; done
       - name: Build versioned static site
         run: npm run build
