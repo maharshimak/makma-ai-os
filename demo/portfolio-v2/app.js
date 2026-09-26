@@ -92,7 +92,7 @@ const renderer = new THREE.WebGLRenderer({
   alpha: false,
   powerPreference: 'high-performance'
 });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
+const maxDpr = innerWidth < 800 ? 1.15 : 1.6;\nrenderer.setPixelRatio(Math.min(devicePixelRatio, maxDpr));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = !reducedMotion;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -148,7 +148,7 @@ let scrollProgress = 0;
 let currentChapter = null;
 let hoveredObject = null;
 let targetLookX = 0;
-let targetLookY = 1.55;
+let targetLookY = 1.55;\nlet frameCount = 0;\nconst atmosphere = {\n  threshold: new THREE.Color(0x0d0e0d),\n  education: new THREE.Color(0x17140f),\n  work: new THREE.Color(0x111514),\n  systems: new THREE.Color(0x080d10),\n  credential: new THREE.Color(0x18130d),\n  horizon: new THREE.Color(0x242522)\n};
 
 const MAT = {
   darkMetal: new THREE.MeshStandardMaterial({ color: 0x171816, roughness: .54, metalness: .65 }),
@@ -856,6 +856,25 @@ function animateDoors() {
   });
 }
 
+function updateAtmosphere() {
+  let a = atmosphere.threshold, b = atmosphere.education, mix = 0;
+  if (scrollProgress < .18) {
+    a = atmosphere.threshold; b = atmosphere.education; mix = smoothstep(.04,.18,scrollProgress);
+  } else if (scrollProgress < .62) {
+    a = atmosphere.education; b = atmosphere.work; mix = smoothstep(.18,.62,scrollProgress);
+  } else if (scrollProgress < .82) {
+    a = atmosphere.work; b = atmosphere.systems; mix = smoothstep(.62,.82,scrollProgress);
+  } else if (scrollProgress < .93) {
+    a = atmosphere.systems; b = atmosphere.credential; mix = smoothstep(.82,.93,scrollProgress);
+  } else {
+    a = atmosphere.credential; b = atmosphere.horizon; mix = smoothstep(.93,1,scrollProgress);
+  }
+  scene.background.copy(a).lerp(b, mix);
+  scene.fog.color.copy(scene.background);
+  scene.fog.density = lerp(.027, .013, smoothstep(.9,1,scrollProgress));
+  bloom.strength = lerp(innerWidth < 800 ? .10 : .2, innerWidth < 800 ? .16 : .34, smoothstep(.78,1,scrollProgress));
+}
+
 function animateScene(t) {
   const p = path.getPointAt(scrollProgress);
   const ahead = path.getPointAt(Math.min(scrollProgress + .012, 1));
@@ -897,7 +916,7 @@ function animateScene(t) {
     const scale = 1 + hover*.045;
     screen.scale.x = lerp(screen.scale.x,scale,.1);
     screen.scale.y = lerp(screen.scale.y,scale,.1);
-    if (!reducedMotion && Math.floor(t*12)%3===0) drawProjectArt(screen,i,t);
+    if (!reducedMotion && frameCount % 4 === 0) drawProjectArt(screen,i,t);
   });
 
   dust.forEach((o,i)=>{
@@ -931,7 +950,7 @@ function resize() {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 800 ? 1.15 : 1.6));
 }
 addEventListener('resize',resize);
 
