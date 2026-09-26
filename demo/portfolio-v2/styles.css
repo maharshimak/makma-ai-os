@@ -134,3 +134,4 @@ h2{font-size:clamp(3.2rem,7.5vw,8.5rem);line-height:.88;letter-spacing:-.07em;fo
   .grain{animation:none}
   .hero-meta i::after{animation:none}
 }
+\n@media(pointer:fine){body,a,button{cursor:none}}\n
