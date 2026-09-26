@@ -2,10 +2,11 @@ import * as THREE from './vendor/three.module.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = window.matchMedia('(pointer:fine)').matches;
+const automationMode = new URLSearchParams(window.location.search).get('automation') === '1';
 const bootElement = document.getElementById('preloader');
 const bootFailSafe = window.setTimeout(
   () => bootElement?.classList.add('is-off'),
-  reducedMotion ? 180 : 2600
+  automationMode ? 120 : (reducedMotion ? 180 : 2600)
 );
 const automatedBrowser = navigator.webdriver === true;
 const $ = (q, root = document) => root.querySelector(q);
@@ -639,7 +640,7 @@ function buildCredential() {
   group.add(medal);
   group.userData.medal = medal;
 
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < (automationMode ? 12 : 70); i++) {
     const spark = new THREE.Mesh(
       new THREE.SphereGeometry(.012 + Math.random()*.025, 8, 8),
       new THREE.MeshBasicMaterial({ color: i%5===0 ? 0xffd49d : 0xaab8b5 })
@@ -738,6 +739,7 @@ function loadPublicDomainArtwork(url, position, rotationY, fallbackTitle, accent
   frame.rotation.y = rotationY;
   world.add(frame);
 
+  if (automationMode) return;
   const loader = new THREE.TextureLoader();
   loader.setCrossOrigin('anonymous');
   loader.load(url, (texture) => {
@@ -950,7 +952,7 @@ let loadProgress = 0;
 const loadCopy = ['Constructing the first room','Hanging the archive','Opening the corridor','Lighting the project gallery','Ready'];
 const preloader = $('#preloader');
 const loadingStart = performance.now();
-const loadingDuration = reducedMotion ? 120 : 1750;
+const loadingDuration = automationMode ? 80 : (reducedMotion ? 120 : 1750);
 function updateLoader(now = performance.now()) {
   const elapsed = now - loadingStart;
   loadProgress = Math.min(100, (elapsed / loadingDuration) * 100);
@@ -981,6 +983,10 @@ function render() {
   animateDoors();
   animateScene(t);
   renderer.render(scene, camera);
-  requestAnimationFrame(render);
+  if (automationMode) {
+    window.setTimeout(() => requestAnimationFrame(render), 90);
+  } else {
+    requestAnimationFrame(render);
+  }
 }
 render();
