@@ -1,6 +1,8 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;\nconst gsap = window.gsap;\nconst ScrollTrigger = window.ScrollTrigger;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const gsap = window.gsap;
+const ScrollTrigger = window.ScrollTrigger;
 const $ = (q, root = document) => root.querySelector(q);
 const $$ = (q, root = document) => [...root.querySelectorAll(q)];
 
