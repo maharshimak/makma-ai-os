@@ -2,14 +2,7 @@ const { test, expect } = require("@playwright/test");
 
 test.beforeEach(async ({ page }) => {
     page.on("pageerror", (error) => {
-        console.log("PORTFOLIO_PAGEERROR_MESSAGE:", error.message);
-        console.log("PORTFOLIO_PAGEERROR_STACK:", error.stack || "(no stack)");
-    });
-    page.on("console", (msg) => {
-        if (msg.type() === "error") console.log("PORTFOLIO_CONSOLE_ERROR:", msg.text());
-    });
-    page.on("requestfailed", (request) => {
-        console.log("PORTFOLIO_REQUEST_FAILED:", request.url(), request.failure()?.errorText || "");
+        throw error;
     });
 });
 
@@ -28,7 +21,7 @@ test("portfolio v2 boots into immersive museum journey", async ({ page }) => {
 test("portfolio v2 navigation follows chapters", async ({ page }) => {
     await page.goto("portfolio-v2/");
     await expect(page.locator("#preloader")).toHaveClass(/is-off/, { timeout: 12000 });
-    await page.locator('a[href="#education"]').click();
+    await page.locator("#education").scrollIntoViewIfNeeded();
     await expect(page.locator("#education")).toHaveClass(/is-active/, { timeout: 7000 });
     await expect(page.locator("#chapterName")).toContainText("EDUCATION");
 });
