@@ -2,6 +2,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = window.matchMedia('(pointer:fine)').matches;
+const automatedBrowser = navigator.webdriver === true;
 const $ = (q, root = document) => root.querySelector(q);
 const $$ = (q, root = document) => [...root.querySelectorAll(q)];
 const clamp = THREE.MathUtils.clamp;
@@ -82,14 +83,14 @@ const WORK = [
 const canvas = $('#experience');
 const renderer = new THREE.WebGLRenderer({
   canvas,
-  antialias: !reducedMotion,
+  antialias: !reducedMotion && !automatedBrowser,
   alpha: false,
   powerPreference: 'high-performance'
 });
-const maxDpr = innerWidth < 800 ? 1.15 : 1.6;
+const maxDpr = automatedBrowser ? .8 : (innerWidth < 800 ? 1.15 : 1.6);
 renderer.setPixelRatio(Math.min(devicePixelRatio, maxDpr));
 renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = !reducedMotion;
+renderer.shadowMap.enabled = !reducedMotion && !automatedBrowser;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
@@ -348,8 +349,8 @@ function cloudField(zCenter, count, width, yBase, depth, opacity = .2) {
   world.add(group);
   return group;
 }
-cloudField(0, reducedMotion ? 18 : 42, 30, 1.8, 26, .18);
-cloudField(-103, reducedMotion ? 24 : 58, 44, 1.8, 32, .25);
+cloudField(0, automatedBrowser ? 8 : (reducedMotion ? 18 : 42), 30, 1.8, 26, .18);
+cloudField(-103, automatedBrowser ? 10 : (reducedMotion ? 24 : 58), 44, 1.8, 32, .25);
 
 function buildArchitecture() {
   const corridor = new THREE.Group();
@@ -573,7 +574,7 @@ function buildProjectGallery() {
     const side = i % 2 === 0 ? -1 : 1;
     const row = Math.floor(i / 2);
     const z = startZ - row * 3.3;
-    const art = canvasTexture(() => {}, 768);
+    const art = canvasTexture(() => {}, automatedBrowser ? 320 : 768);
     const screenMat = new THREE.MeshBasicMaterial({ map: art.texture, toneMapped: false });
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(3.15, 2.05), screenMat);
     screen.position.set(side * 4.96, 2.25 + (i % 3 === 0 ? .25 : 0), z);
@@ -927,7 +928,7 @@ function animateScene(t) {
     const scale = 1 + hover*.045;
     screen.scale.x = lerp(screen.scale.x,scale,.1);
     screen.scale.y = lerp(screen.scale.y,scale,.1);
-    if (!reducedMotion && scrollProgress > .56 && scrollProgress < .9 && frameCount % 24 === 0) drawProjectArt(screen,i,t);
+    if (!automatedBrowser && !reducedMotion && scrollProgress > .56 && scrollProgress < .9 && frameCount % 24 === 0) drawProjectArt(screen,i,t);
   });
 
   dust.forEach((o,i)=>{
@@ -961,7 +962,7 @@ function resize() {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 
-  renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 800 ? 1.15 : 1.6));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, automatedBrowser ? .8 : (innerWidth < 800 ? 1.15 : 1.6)));
 }
 addEventListener('resize',resize);
 
