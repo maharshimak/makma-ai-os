@@ -1,10 +1,4 @@
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = window.matchMedia('(pointer:fine)').matches;
@@ -107,15 +101,7 @@ scene.fog = new THREE.FogExp2(0x151713, 0.024);
 const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.08, 180);
 camera.position.set(0, 1.65, 9);
 
-const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-pmrem.dispose();
-
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), reducedMotion ? 0.06 : 0.26, 0.58, 0.89);
-composer.addPass(bloom);
-composer.addPass(new OutputPass());
+scene.environmentIntensity = 0.5;
 
 const hemi = new THREE.HemisphereLight(0xc9d7dc, 0x4b3a2f, 0.68);
 scene.add(hemi);
@@ -688,29 +674,44 @@ buildProjectGallery();
 buildCredential();
 buildHorizon();
 
-function loadActualWindow() {
-  const loader = new GLTFLoader();
-  const url = 'https://cdn.jsdelivr.net/gh/mohitvirli/mohitvirli.github.io@edc716e10c120f5e19aa8358be433222a83d453e/public/models/window.glb';
-  loader.load(url, (gltf) => {
-    const object = gltf.scene;
-    object.scale.setScalar(2.1);
-    object.position.set(4.82, 1.7, -23.8);
-    object.rotation.set(0, -Math.PI / 2, 0);
-    object.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = !reducedMotion;
-        child.receiveShadow = true;
-        if (child.material) {
-          child.material.envMapIntensity = .65;
-          child.material.roughness = Math.max(.35, child.material.roughness ?? .6);
-        }
-        if ((child.name || '').toLowerCase().includes('window')) windowPanel = child;
-      }
-    });
-    world.add(object);
-  }, undefined, () => {});
+function buildOpeningWindow() {
+  const g = new THREE.Group();
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x3a3329, roughness: .52, metalness: .24 });
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0xb5d0d1, transparent: true, opacity: .24, roughness: .08, metalness: .04,
+    transmission: .25, side: THREE.DoubleSide
+  });
+  const outer = new THREE.Group();
+  const v = new THREE.BoxGeometry(.18, 4.2, .18);
+  const h = new THREE.BoxGeometry(.18, .18, 3.05);
+  const a = new THREE.Mesh(v, frameMat); a.position.z = -1.45;
+  const b = a.clone(); b.position.z = 1.45;
+  const t = new THREE.Mesh(h, frameMat); t.position.y = 2.0;
+  const bot = t.clone(); bot.position.y = -2.0;
+  outer.add(a,b,t,bot);
+  g.add(outer);
+
+  const pivot = new THREE.Group();
+  pivot.position.z = -1.28;
+  const sashFrame = new THREE.Mesh(new THREE.BoxGeometry(.15, 3.72, 2.52), frameMat);
+  sashFrame.position.z = 1.26;
+  pivot.add(sashFrame);
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(2.18,3.35),glassMat);
+  glass.rotation.y = Math.PI/2;
+  glass.position.set(-.085,0,1.26);
+  pivot.add(glass);
+  const crossA = new THREE.Mesh(new THREE.BoxGeometry(.18,.07,2.25),MAT.brass);
+  crossA.position.set(-.09,0,1.26);
+  pivot.add(crossA);
+  const crossB = new THREE.Mesh(new THREE.BoxGeometry(.18,3.35,.07),MAT.brass);
+  crossB.position.set(-.09,0,1.26);
+  pivot.add(crossB);
+  g.add(pivot);
+  g.position.set(4.92,1.7,-23.8);
+  world.add(g);
+  windowPanel = pivot;
 }
-loadActualWindow();
+buildOpeningWindow();
 
 function loadPublicDomainArtwork(url, position, rotationY, fallbackTitle, accent) {
   const fallback = textTexture(fallbackTitle, 'PUBLIC DOMAIN STUDY / ARCHIVE', {
@@ -872,7 +873,7 @@ function updateAtmosphere() {
   scene.background.copy(a).lerp(b, mix);
   scene.fog.color.copy(scene.background);
   scene.fog.density = lerp(.027, .013, smoothstep(.9,1,scrollProgress));
-  bloom.strength = lerp(innerWidth < 800 ? .10 : .2, innerWidth < 800 ? .16 : .34, smoothstep(.78,1,scrollProgress));
+  renderer.toneMappingExposure = lerp(1.0, 1.18, smoothstep(.88,1,scrollProgress));
 }
 
 function animateScene(t) {
@@ -949,7 +950,7 @@ function resize() {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
-  composer.setSize(innerWidth, innerHeight);
+
   renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 800 ? 1.15 : 1.6));
 }
 addEventListener('resize',resize);
@@ -959,7 +960,7 @@ function render() {
   updateRaycaster();
   animateDoors();
   animateScene(t);
-  composer.render();
+  renderer.render(scene, camera);
   requestAnimationFrame(render);
 }
 render();
