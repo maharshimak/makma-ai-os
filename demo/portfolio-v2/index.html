@@ -3,488 +3,165 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#05080d" />
-  <meta name="description" content="Maharshi Patel — AI Engineer and AI & Data Science student. Explore professional experience, education, certifications, and the MAK'MA Labs ecosystem." />
-  <title>Maharshi Patel — AI Engineer · Portfolio</title>
+  <meta name="theme-color" content="#11110f" />
+  <meta name="description" content="Maharshi Patel — AI engineer. An interactive journey through education, professional work, experiments and MAK'MA Labs." />
+  <title>Maharshi Patel — Journey in AI</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles.css" />
-  <script type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"Person",
-    "name":"Maharshi Patel",
-    "url":"https://maharshimak.github.io/",
-    "jobTitle":"AI Engineer",
-    "alumniOf":[
-      {"@type":"CollegeOrUniversity","name":"Ganpat University"},
-      {"@type":"CollegeOrUniversity","name":"aivancity School for Technology, Business & Society Paris-Cachan"}
-    ],
-    "sameAs":[
-      "https://github.com/maharshimak",
-      "https://www.linkedin.com/in/maharshi-patel-6bb638298/"
-    ],
-    "knowsAbout":["Artificial Intelligence","Machine Learning","LLMs","RAG","AI Agents","MLOps","Data Science","Responsible AI"]
-  }
-  </script>
 </head>
 <body>
-  <div class="boot" id="boot" aria-hidden="true">
-    <div class="boot__panel">
-      <div class="boot__mark">M//P</div>
-      <div class="boot__line"><span>INITIALIZING</span><i></i></div>
-      <p id="bootText">Loading intelligence layer…</p>
-    </div>
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__number" id="loadNumber">00</div>
+    <div class="preloader__word">MAHARSHI / ARCHIVE</div>
+    <div class="preloader__rail"><i id="loadRail"></i></div>
+    <p id="loadCopy">Constructing the first room</p>
   </div>
 
-  <canvas id="world" aria-hidden="true"></canvas>
-  <div class="noise" aria-hidden="true"></div>
-  <div class="aurora" aria-hidden="true"></div>
-  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
-  <div class="progress" id="progress" aria-hidden="true"></div>
+  <canvas id="experience" aria-label="Interactive 3D portfolio"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="cursor" id="cursor" aria-hidden="true"><i></i><span>EXPLORE</span></div>
 
-  <header class="topbar">
-    <a class="brand" href="#home" aria-label="Home">
-      <span class="brand__sigil">M</span>
-      <span>MAHARSHI<span class="muted">.AI</span></span>
-    </a>
-    <nav class="topnav" aria-label="Primary navigation">
-      <a href="#identity">Identity</a>
+  <header class="nav">
+    <a class="wordmark" href="#home"><b>MP</b><span>MAHARSHI PATEL</span></a>
+    <div class="nav__center"><span id="chapterIndex">01</span><i></i><span id="chapterName">THRESHOLD</span></div>
+    <nav>
       <a href="#education">Education</a>
       <a href="#journey">Journey</a>
       <a href="#systems">Systems</a>
-      <a href="#lab">Lab</a>
+      <a href="#contact">Contact</a>
     </nav>
-    <a class="topbar__cta magnetic" href="#contact">Connect <span>↗</span></a>
   </header>
 
-  <aside class="rail" aria-label="Section progress">
-    <span class="rail__line"></span>
-    <a href="#home" class="rail__dot is-active" data-section="home"><b>01</b><span>Home</span></a>
-    <a href="#identity" class="rail__dot" data-section="identity"><b>02</b><span>Identity</span></a>
-    <a href="#education" class="rail__dot" data-section="education"><b>03</b><span>Education</span></a>
-    <a href="#journey" class="rail__dot" data-section="journey"><b>04</b><span>Journey</span></a>
-    <a href="#systems" class="rail__dot" data-section="systems"><b>05</b><span>Systems</span></a>
-    <a href="#lab" class="rail__dot" data-section="lab"><b>06</b><span>Lab</span></a>
-    <a href="#contact" class="rail__dot" data-section="contact"><b>07</b><span>Contact</span></a>
-  </aside>
+  <div class="side-progress" aria-hidden="true"><i id="sideProgress"></i></div>
 
   <main>
-    <section class="hero section" id="home" data-scene="core">
-      <div class="hero__grid">
-        <div class="hero__copy reveal">
-          <div class="eyebrow"><i></i> AI ENGINEER · PARIS, FRANCE</div>
-          <p class="system-line">01 // BOOT SEQUENCE <span>SYS.ONLINE</span></p>
-          <h1>
-            <span class="thin">I build</span>
-            <span class="hero__accent scramble" data-text="INTELLIGENT SYSTEMS">INTELLIGENT SYSTEMS</span>
-            <span class="thin">that move ideas into reality.</span>
-          </h1>
-          <p class="lede">
-            I’m <strong>Maharshi Patel</strong> — an AI engineer and AI & Data Science student working across
-            LLMs, agentic systems, RAG, machine learning, data products and production MLOps.
-          </p>
-          <div class="hero__actions">
-            <a class="btn btn--primary magnetic" href="#systems"><span>Explore my systems</span><b>→</b></a>
-            <a class="btn magnetic" href="#journey"><span>Trace my journey</span><b>↓</b></a>
-          </div>
-          <div class="availability">
-            <i></i>
-            <span>Open to AI / ML / Data opportunities &amp; alternance across France</span>
-          </div>
-        </div>
-
-        <div class="hero__telemetry reveal">
-          <div class="hud hud--status">
-            <span>LIVE PROFILE</span>
-            <strong>BUILD / LEARN / SHIP</strong>
-            <small>Signal stable · portfolio v2</small>
-          </div>
-          <div class="hero__stats">
-            <div><strong data-counter="9">0</strong><span>MAK’MA systems</span></div>
-            <div><strong data-counter="7">0</strong><span>AI / data roles</span></div>
-            <div><strong data-counter="4">0</strong><span>Languages</span></div>
-            <div><strong>∞</strong><span>Curiosity</span></div>
-          </div>
-        </div>
+    <section class="chapter chapter--hero" id="home" data-name="THRESHOLD" data-index="01">
+      <div class="copy copy--hero">
+        <p class="overline">AI ENGINEER · PARIS</p>
+        <h1>MAHARSHI<br><em>PATEL</em></h1>
+        <p class="hero-note">I build systems that retrieve, reason, act and learn.</p>
       </div>
-      <div class="scroll-cue"><span>SCROLL TO ENTER</span><i></i></div>
-    </section>
-
-    <section class="section identity" id="identity" data-scene="identity">
-      <div class="section-heading reveal">
-        <p class="kicker">02 // IDENTITY</p>
-        <h2>Engineer the system.<br><em>Understand the business.</em></h2>
-        <p>I work where technical depth, product thinking and responsible AI meet.</p>
-      </div>
-
-      <div class="identity-grid">
-        <article class="glass-card story-card reveal spotlight-card">
-          <span class="card-index">PROFILE // 001</span>
-          <h3>From software foundations to intelligent systems.</h3>
-          <p>
-            My path started with IT and software engineering, then moved deeper into machine learning,
-            NLP, data analytics, generative AI and agentic architectures. I like turning research ideas
-            into usable systems with clear interfaces, measurable behavior and production constraints.
-          </p>
-          <div class="pill-row">
-            <span>AI Engineering</span><span>Data Science</span><span>Product</span><span>Responsible AI</span>
-          </div>
-        </article>
-
-        <div class="principles">
-          <article class="mini-card reveal spotlight-card">
-            <span>01</span><h3>Systems over demos</h3>
-            <p>Build inputs, validation, evaluation, observability and deployment — not just screenshots.</p>
-          </article>
-          <article class="mini-card reveal spotlight-card">
-            <span>02</span><h3>AI with evidence</h3>
-            <p>Use retrieval, metrics, experiments and traceability to make model behavior understandable.</p>
-          </article>
-          <article class="mini-card reveal spotlight-card">
-            <span>03</span><h3>Business-aware engineering</h3>
-            <p>Connect technical decisions to users, operations, cost, risk and measurable value.</p>
-          </article>
-        </div>
-      </div>
-
-      <div class="signal-strip reveal" aria-label="Areas of expertise">
-        <span>LLMs</span><i></i><span>Agents</span><i></i><span>RAG</span><i></i><span>ML</span><i></i>
-        <span>Data</span><i></i><span>MLOps</span><i></i><span>AWS</span><i></i><span>Responsible AI</span>
+      <div class="hero-meta">
+        <span>SCROLL TO OPEN</span>
+        <i></i>
       </div>
     </section>
 
-    <section class="section education" id="education" data-scene="network">
-      <div class="section-heading reveal">
-        <p class="kicker">03 // EDUCATION</p>
-        <h2>Learning across <em>AI, business &amp; society.</em></h2>
-        <p>My academic track is intentionally hybrid: mathematics and engineering, business context, and AI responsibility.</p>
+    <section class="chapter chapter--portal" id="portal" data-name="PASSAGE" data-index="02">
+      <div class="copy copy--right">
+        <p class="overline">THE JOURNEY</p>
+        <h2>Every chapter<br>opens another <em>door.</em></h2>
+        <p>Software foundations in India. AI, data and business in France. Then a sequence of real systems, teams and experiments.</p>
       </div>
+    </section>
 
-      <div class="education-layout">
-        <article class="edu-feature glass-card reveal spotlight-card">
-          <div class="edu-feature__top">
-            <div>
-              <span class="badge">CURRENT</span>
-              <h3>aivancity</h3>
-              <p class="edu-degree">Programme Grande École — Artificial Intelligence &amp; Data Science for Business</p>
-            </div>
-            <span class="edu-orbit" aria-hidden="true"><i></i><b></b></span>
-          </div>
-          <p>
-            Grade de Master track in Paris, combining technical AI/data expertise with business management,
-            ethics and societal impact. The official programme emphasizes the “IAgénieur®” profile:
-            professionals able to connect science, technology, business and responsible innovation.
-          </p>
-          <div class="edu-meta">
-            <span>Paris · Villejuif</span>
-            <span>French + English</span>
-            <span>AI Clinic / real projects</span>
-            <span>Work-study pathway</span>
-          </div>
-          <a class="text-link" href="https://aivancity.ai/en/program/programme-grande-ecole/home" target="_blank" rel="noreferrer">Official programme ↗</a>
-        </article>
-
-        <article class="edu-foundation glass-card reveal spotlight-card">
-          <span class="badge badge--ghost">FOUNDATION</span>
-          <h3>Ganpat University</h3>
-          <p class="edu-degree">Diploma in Information Technology · 2020—2023</p>
-          <p>Built my foundation in programming, software development, algorithms, databases and computer systems before specializing in AI.</p>
-        </article>
-      </div>
-
-      <div class="curriculum reveal">
-        <div class="curriculum__copy">
-          <span class="card-index">LEARNING GRAPH</span>
-          <h3>Core academic domains</h3>
-          <p>Hover a node to wake its related cluster.</p>
+    <section class="chapter chapter--education" id="education" data-name="EDUCATION" data-index="03">
+      <div class="copy copy--left copy--wide">
+        <p class="overline">ACADEMIC ROOM / 2020 → NOW</p>
+        <h2>From IT foundations<br>to the <em>IAgénieur®</em> path.</h2>
+        <div class="facts">
+          <p><b>Ganpat University</b><span>Diploma · Information Technology · 2020—2023</span></p>
+          <p><b>aivancity</b><span>Programme Grande École · AI & Data Science · Paris</span></p>
         </div>
-        <div class="skill-orbit" id="skillOrbit">
-          <button data-cluster="math">Math for AI</button>
-          <button data-cluster="ml">Machine Learning</button>
-          <button data-cluster="dl">Deep Learning</button>
-          <button data-cluster="data">Time Series</button>
-          <button data-cluster="code">Coding for AI</button>
-          <button data-cluster="ethics">Responsible AI</button>
-          <button data-cluster="robotics">Robotics</button>
-          <button data-cluster="optim">Optimization</button>
-          <button data-cluster="cloud">Cloud &amp; PySpark</button>
-          <div class="orbit-core"><span>AI</span><small>×</small><span>BUSINESS</span></div>
-        </div>
+        <p class="quiet">Math for AI · Deep Learning · Coding · Time Series · Robotics · Optimization · Responsible AI · Cloud / PySpark</p>
+      </div>
+      <a class="source-link" href="https://aivancity.ai/en/program/programme-grande-ecole/home" target="_blank" rel="noreferrer">AIVANCITY PROGRAM ↗</a>
+    </section>
+
+    <section class="chapter chapter--work-intro" id="journey" data-name="PROFESSIONAL JOURNEY" data-index="04">
+      <div class="copy copy--center">
+        <p class="overline">SEVEN ROOMS / ONE DIRECTION</p>
+        <h2>Work that moved me<br>closer to <em>AI engineering.</em></h2>
+        <p class="quiet">Each door ahead is a real chapter. Move through them.</p>
       </div>
     </section>
 
-    <section class="section journey" id="journey" data-scene="path">
-      <div class="section-heading reveal">
-        <p class="kicker">04 // PROFESSIONAL JOURNEY</p>
-        <h2>Experience built <em>mission by mission.</em></h2>
-        <p>From analytics and NLP to production-minded RAG, AI agents and clinical document intelligence.</p>
+    <section class="chapter work-memory" data-company="Substrate AI" data-role="Data Analytics Intern" data-time="OCT 2023 — JAN 2024" data-name="SUBSTRATE AI" data-index="04.1">
+      <div class="memory-copy"><span>01 / ORIGIN</span><h3>Substrate AI</h3><p>Data Analytics Intern</p></div>
+    </section>
+
+    <section class="chapter work-memory" data-company="X & Y Corp" data-role="NLP & Algorithm Developer" data-time="JAN — MAR 2024" data-name="X & Y CORP" data-index="04.2">
+      <div class="memory-copy"><span>02 / LANGUAGE</span><h3>X &amp; Y Corp</h3><p>NLP &amp; Algorithm Developer</p></div>
+    </section>
+
+    <section class="chapter work-memory" data-company="Algo Ético" data-role="Project Manager & Data Analyst" data-time="JUL — SEP 2024" data-name="ALGO ÉTICO" data-index="04.3">
+      <div class="memory-copy"><span>03 / RESPONSIBILITY</span><h3>Algo Ético</h3><p>Project Manager &amp; Data Analyst</p></div>
+    </section>
+
+    <section class="chapter work-memory" data-company="CMI Strategies" data-role="Data Analyst" data-time="SEP — DEC 2024" data-name="CMI STRATEGIES" data-index="04.4">
+      <div class="memory-copy"><span>04 / DECISIONS</span><h3>CMI Strategies</h3><p>Data Analyst</p></div>
+    </section>
+
+    <section class="chapter work-memory" data-company="Pangea Summit" data-role="Machine Learning Engineer" data-time="JAN — AUG 2025" data-name="PANGEA SUMMIT" data-index="04.5">
+      <div class="memory-copy"><span>05 / KNOWLEDGE</span><h3>Pangea Summit</h3><p>RAG · Knowledge Twin · Compliance · Prompt Evaluation</p></div>
+    </section>
+
+    <section class="chapter work-memory" data-company="FPT Software" data-role="AI Developer" data-time="OCT 2025 — JAN 2026" data-name="FPT SOFTWARE" data-index="04.6">
+      <div class="memory-copy"><span>06 / ENGINEERING</span><h3>FPT Software</h3><p>AI Developer</p></div>
+    </section>
+
+    <section class="chapter work-memory" data-company="CERC" data-role="AI Engineer" data-time="JAN — APR 2026" data-name="CERC" data-index="04.7">
+      <div class="memory-copy"><span>07 / INTELLIGENCE</span><h3>CERC</h3><p>Clinical document mapping · extraction · knowledge workflows</p></div>
+    </section>
+
+    <section class="chapter chapter--systems" id="systems" data-name="MAK'MA LABS" data-index="05">
+      <div class="copy copy--left">
+        <p class="overline">THE PROJECT GALLERY</p>
+        <h2>Nine systems.<br><em>No static thumbnails.</em></h2>
+        <p>Move your pointer across the installation. Click a screen to inspect the system behind it.</p>
       </div>
-
-      <div class="timeline">
-        <div class="timeline__beam" aria-hidden="true"></div>
-
-        <article class="timeline-item reveal" data-year="2026">
-          <div class="timeline-node"></div>
-          <div class="timeline-date">JAN — APR 2026</div>
-          <div class="timeline-card spotlight-card">
-            <span>CERC · Greater Paris · Hybrid</span>
-            <h3>AI Engineer</h3>
-            <p>Worked on clinical-trial document intelligence: mapping complex documents, structured extraction and knowledge-base workflows for high-information research material.</p>
-            <div class="pill-row"><span>Document AI</span><span>Knowledge Base</span><span>Extraction</span><span>LLMs</span></div>
-          </div>
-        </article>
-
-        <article class="timeline-item reveal" data-year="2025">
-          <div class="timeline-node"></div>
-          <div class="timeline-date">OCT 2025 — JAN 2026</div>
-          <div class="timeline-card spotlight-card">
-            <span>FPT Software · Remote</span>
-            <h3>AI Developer</h3>
-            <p>Contributed to AI application development with an emphasis on practical integration, intelligent workflows and software-engineering discipline.</p>
-            <div class="pill-row"><span>AI Development</span><span>Python</span><span>Integration</span></div>
-          </div>
-        </article>
-
-        <article class="timeline-item reveal" data-year="2025">
-          <div class="timeline-node"></div>
-          <div class="timeline-date">JAN — AUG 2025</div>
-          <div class="timeline-card spotlight-card">
-            <span>Pangea Summit</span>
-            <h3>Machine Learning Engineer</h3>
-            <p>Built RAG and “Digital Knowledge” systems, knowledge-twin concepts, compliance workflows, knowledge graphs, prompt evaluation and analytics dashboards.</p>
-            <div class="pill-row"><span>RAG</span><span>Knowledge Graph</span><span>Prompt Eval</span><span>Agents</span></div>
-          </div>
-        </article>
-
-        <article class="timeline-item reveal" data-year="2024">
-          <div class="timeline-node"></div>
-          <div class="timeline-date">SEP — DEC 2024</div>
-          <div class="timeline-card spotlight-card">
-            <span>CMI Strategies</span>
-            <h3>Data Analyst</h3>
-            <p>Translated data into decision-ready analysis, dashboards and structured insights for business use cases.</p>
-            <div class="pill-row"><span>Analytics</span><span>Power BI</span><span>SQL</span><span>Data Storytelling</span></div>
-          </div>
-        </article>
-
-        <article class="timeline-item reveal" data-year="2024">
-          <div class="timeline-node"></div>
-          <div class="timeline-date">JUL — SEP 2024</div>
-          <div class="timeline-card spotlight-card">
-            <span>Algo Ético</span>
-            <h3>Project Manager &amp; Data Analyst</h3>
-            <p>Worked at the intersection of responsible technology, project delivery and analytical decision support.</p>
-            <div class="pill-row"><span>Responsible AI</span><span>Project Delivery</span><span>Data</span></div>
-          </div>
-        </article>
-
-        <article class="timeline-item reveal" data-year="2024">
-          <div class="timeline-node"></div>
-          <div class="timeline-date">JAN — MAR 2024</div>
-          <div class="timeline-card spotlight-card">
-            <span>X &amp; Y Corp</span>
-            <h3>NLP &amp; Algorithm Developer</h3>
-            <p>Developed NLP and algorithmic components, strengthening my transition from general software work into applied machine intelligence.</p>
-            <div class="pill-row"><span>NLP</span><span>Algorithms</span><span>Python</span></div>
-          </div>
-        </article>
-
-        <article class="timeline-item reveal" data-year="2023">
-          <div class="timeline-node"></div>
-          <div class="timeline-date">OCT 2023 — JAN 2024</div>
-          <div class="timeline-card spotlight-card">
-            <span>Substrate AI</span>
-            <h3>Data Analytics Intern</h3>
-            <p>Early professional exposure to data-driven products and analytics — the starting point for my AI engineering trajectory.</p>
-            <div class="pill-row"><span>Data Analytics</span><span>Python</span><span>Insights</span></div>
-          </div>
-        </article>
+      <div class="project-index">
+        <span>AI OS</span><span>AGENTIC RAG</span><span>MULTIMODAL</span><span>KNOWLEDGE TWIN</span><span>CLINICAL AI</span><span>SECURE COPILOT</span><span>LLM EVAL</span><span>MLOPS CONTROL</span><span>ML PIPELINE</span>
       </div>
     </section>
 
-    <section class="section systems" id="systems" data-scene="systems">
-      <div class="section-heading reveal">
-        <p class="kicker">05 // BUILT SYSTEMS</p>
-        <h2>MAK’MA Labs — <em>nine systems, one direction.</em></h2>
-        <p>An evolving open-source ecosystem exploring agent runtimes, retrieval, multimodal AI, knowledge systems, evaluation and production ML.</p>
-      </div>
-
-      <div class="filterbar reveal" role="group" aria-label="Project filters">
-        <button class="is-active" data-filter="all">All</button>
-        <button data-filter="agents">Agents</button>
-        <button data-filter="rag">RAG</button>
-        <button data-filter="mlops">MLOps</button>
-        <button data-filter="data">Data / Knowledge</button>
-      </div>
-
-      <div class="project-grid">
-        <article class="project project--hero reveal spotlight-card" data-category="agents rag">
-          <div class="project__visual agent-visual" aria-hidden="true">
-            <span class="agent a1">PLAN</span><span class="agent a2">RETRIEVE</span><span class="agent a3">ACT</span>
-            <i class="wire w1"></i><i class="wire w2"></i><i class="wire w3"></i>
-            <b class="project-core">M</b>
-          </div>
-          <div class="project__content">
-            <span class="project__tag">FLAGSHIP · AGENT RUNTIME</span>
-            <h3>Mak’ma AI OS</h3>
-            <p>A permissioned agent runtime and control surface for memory, tools, telemetry and multi-step intelligent workflows.</p>
-            <div class="project__links">
-              <a href="https://maharshimak.github.io/makma-ai-os/" target="_blank" rel="noreferrer">Live console ↗</a>
-              <a href="https://github.com/maharshimak/makma-ai-os" target="_blank" rel="noreferrer">GitHub ↗</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="project reveal spotlight-card" data-category="rag agents">
-          <span class="project__tag">RAG · EVALUATION</span>
-          <h3>Agentic RAG Engine</h3>
-          <p>Hybrid retrieval, BM25 controls, fusion, reranking and retrieval metrics such as Recall, Precision, MRR and Hit Rate.</p>
-          <a href="https://github.com/maharshimak/agentic-rag-engine" target="_blank" rel="noreferrer">Inspect repository ↗</a>
-        </article>
-
-        <article class="project reveal spotlight-card" data-category="agents">
-          <span class="project__tag">MULTIMODAL</span>
-          <h3>Multimodal AI Studio</h3>
-          <p>Structured media planning, inspection and bounded execution for image/video-oriented AI workflows.</p>
-          <a href="https://github.com/maharshimak/multimodal-ai-studio" target="_blank" rel="noreferrer">Inspect repository ↗</a>
-        </article>
-
-        <article class="project reveal spotlight-card" data-category="data rag">
-          <span class="project__tag">KNOWLEDGE</span>
-          <h3>Knowledge Twin</h3>
-          <p>A knowledge-centric system exploring structured memory, entity relationships and queryable representations.</p>
-          <a href="https://github.com/maharshimak/knowledge-twin" target="_blank" rel="noreferrer">Inspect repository ↗</a>
-        </article>
-
-        <article class="project reveal spotlight-card" data-category="data agents">
-          <span class="project__tag">SECURE DATA</span>
-          <h3>Secure Data Copilot</h3>
-          <p>Assistant patterns for working with structured data while keeping permissions, validation and safe execution visible.</p>
-          <a href="https://github.com/maharshimak/secure-data-copilot" target="_blank" rel="noreferrer">Inspect repository ↗</a>
-        </article>
-
-        <article class="project reveal spotlight-card" data-category="data rag">
-          <span class="project__tag">DOCUMENT AI</span>
-          <h3>Clinical Document Intelligence</h3>
-          <p>Clinical-document extraction and intelligence patterns inspired by real-world mapping and knowledge workflows.</p>
-          <a href="https://github.com/maharshimak/clinical-document-intelligence" target="_blank" rel="noreferrer">Inspect repository ↗</a>
-        </article>
-
-        <article class="project reveal spotlight-card" data-category="agents rag">
-          <span class="project__tag">OBSERVABILITY</span>
-          <h3>LLM Eval &amp; Observability</h3>
-          <p>Evaluation and monitoring concepts for model quality, prompts, traces and system behavior.</p>
-          <a href="https://github.com/maharshimak/llm-eval-observability" target="_blank" rel="noreferrer">Inspect repository ↗</a>
-        </article>
-
-        <article class="project reveal spotlight-card" data-category="mlops">
-          <span class="project__tag">MLOPS · CONTROL</span>
-          <h3>MLOps Control Plane</h3>
-          <p>A control-plane concept for governing and observing ML lifecycle operations.</p>
-          <a href="https://github.com/maharshimak/mlops-control-plane" target="_blank" rel="noreferrer">Inspect repository ↗</a>
-        </article>
-
-        <article class="project reveal spotlight-card" data-category="mlops">
-          <span class="project__tag">PRODUCTION ML</span>
-          <h3>MLOps Production Pipeline</h3>
-          <p>Production-oriented ML pipeline patterns covering repeatability, validation and operational delivery.</p>
-          <a href="https://github.com/maharshimak/mlops-production-pipeline" target="_blank" rel="noreferrer">Inspect repository ↗</a>
-        </article>
+    <section class="chapter chapter--credential" id="credential" data-name="CREDENTIAL" data-index="06">
+      <div class="copy copy--right">
+        <p class="overline">AWS / 2026—2029</p>
+        <h2>Machine Learning<br>Engineer — <em>Associate.</em></h2>
+        <p>Production ML, data preparation, model development, deployment, orchestration, monitoring and security.</p>
       </div>
     </section>
 
-    <section class="section achievements" id="achievements" data-scene="signal">
-      <div class="section-heading reveal">
-        <p class="kicker">06 // SIGNALS</p>
-        <h2>Credentials, tools &amp; <em>proof of motion.</em></h2>
-      </div>
-      <div class="achievement-grid">
-        <article class="cert-card glass-card reveal spotlight-card">
-          <div class="cert-mark">AWS</div>
-          <div>
-            <span class="badge">CERTIFIED · 2026—2029</span>
-            <h3>AWS Certified Machine Learning Engineer — Associate</h3>
-            <p>Validated knowledge across building, operationalizing, deploying and maintaining machine-learning solutions on AWS.</p>
-          </div>
-        </article>
-        <article class="stack-card glass-card reveal spotlight-card">
-          <span class="card-index">TOOLCHAIN</span>
-          <h3>Technical stack</h3>
-          <div class="stack-cloud">
-            <span>Python</span><span>PyTorch</span><span>TensorFlow</span><span>scikit-learn</span><span>Transformers</span>
-            <span>SQL</span><span>Power BI</span><span>Next.js</span><span>TypeScript</span><span>FastAPI</span>
-            <span>AWS</span><span>Pinecone</span><span>Streamlit</span><span>GitHub Actions</span><span>MLOps</span>
-          </div>
-        </article>
-        <article class="language-card glass-card reveal spotlight-card">
-          <span class="card-index">LANGUAGES</span>
-          <h3>Working across cultures</h3>
-          <div class="language-bars">
-            <p><span>English</span><i style="--level:100%"></i><b>Fluent</b></p>
-            <p><span>Hindi</span><i style="--level:100%"></i><b>C2</b></p>
-            <p><span>Gujarati</span><i style="--level:100%"></i><b>C2</b></p>
-            <p><span>French</span><i style="--level:35%"></i><b>A2</b></p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section lab" id="lab" data-scene="lab">
-      <div class="section-heading reveal">
-        <p class="kicker">07 // INTERACTIVE LAB</p>
-        <h2>How I think about an <em>agentic system.</em></h2>
-        <p>Move across the nodes. The graph wakes up around the component you inspect.</p>
-      </div>
-
-      <div class="system-map reveal" id="systemMap">
-        <svg viewBox="0 0 1000 520" aria-hidden="true">
-          <path class="flow" d="M110 260 C210 260, 220 130, 340 130 S470 260, 500 260" />
-          <path class="flow" d="M110 260 C210 260, 220 390, 340 390 S470 260, 500 260" />
-          <path class="flow" d="M500 260 C610 260, 610 130, 740 130 S850 260, 900 260" />
-          <path class="flow" d="M500 260 C610 260, 610 390, 740 390 S850 260, 900 260" />
-        </svg>
-        <button class="map-node n-user" data-copy="Intent enters the system as a structured request."><b>01</b><span>User / Intent</span></button>
-        <button class="map-node n-router" data-copy="A router decides which retrieval, model or tool path should run."><b>02</b><span>Router</span></button>
-        <button class="map-node n-memory" data-copy="Memory carries durable context while respecting relevance and permissions."><b>03</b><span>Memory</span></button>
-        <button class="map-node n-core" data-copy="The orchestration core plans steps, coordinates tools and records traces."><b>04</b><span>Agent Core</span></button>
-        <button class="map-node n-retrieve" data-copy="Hybrid retrieval searches evidence, fuses candidates and reranks context."><b>05</b><span>RAG</span></button>
-        <button class="map-node n-tools" data-copy="Permissioned tools turn reasoning into controlled external actions."><b>06</b><span>Tools / APIs</span></button>
-        <button class="map-node n-output" data-copy="The final layer returns an answer, artifact or action with telemetry attached."><b>07</b><span>Response</span></button>
-        <div class="map-readout">
-          <span>SYSTEM EXPLAINER</span>
-          <p id="mapCopy">Hover a component to inspect the architecture.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section contact" id="contact" data-scene="contact">
-      <div class="contact-panel reveal">
-        <p class="kicker">08 // CONTACT</p>
-        <h2>Let’s build something <em>useful, ambitious and real.</em></h2>
-        <p>
-          I’m interested in AI engineering, ML, data science, generative AI and agentic systems —
-          especially work where prototypes need to become reliable products.
-        </p>
-        <div class="contact-actions">
-          <a class="btn btn--primary magnetic" href="https://www.linkedin.com/in/maharshi-patel-6bb638298/" target="_blank" rel="noreferrer">LinkedIn ↗</a>
-          <a class="btn magnetic" href="https://github.com/maharshimak" target="_blank" rel="noreferrer">GitHub ↗</a>
-          <a class="btn magnetic" href="https://maharshipatel-portfolio.vercel.app/" target="_blank" rel="noreferrer">Current portfolio ↗</a>
-        </div>
-        <div class="terminal">
-          <span>maharshi@portfolio:~$</span>
-          <b id="terminalText">system ready for collaboration_</b>
+    <section class="chapter chapter--contact" id="contact" data-name="OPEN HORIZON" data-index="07">
+      <div class="copy copy--center contact-copy">
+        <p class="overline">THE LAST DOOR IS OPEN</p>
+        <h2>Build the next<br><em>chapter with me.</em></h2>
+        <div class="links">
+          <a href="https://github.com/maharshimak" target="_blank" rel="noreferrer">GitHub ↗</a>
+          <a href="https://www.linkedin.com/in/maharshi-patel-6bb638298/" target="_blank" rel="noreferrer">LinkedIn ↗</a>
+          <a href="https://maharshipatel-portfolio.vercel.app/" target="_blank" rel="noreferrer">Portfolio I ↗</a>
         </div>
       </div>
     </section>
   </main>
 
-  <footer>
-    <span>MAHARSHI PATEL · AI ENGINEER</span>
-    <span>Designed as a living AI interface · 2026</span>
+  <dialog class="project-dialog" id="projectDialog">
+    <button class="dialog-close" id="dialogClose" aria-label="Close project">×</button>
+    <span id="dialogIndex">01 / 09</span>
+    <h2 id="dialogTitle">Mak’ma AI OS</h2>
+    <p id="dialogDescription"></p>
+    <div class="dialog-tech" id="dialogTech"></div>
+    <div class="dialog-links">
+      <a id="dialogGithub" target="_blank" rel="noreferrer">GitHub ↗</a>
+      <a id="dialogLive" target="_blank" rel="noreferrer">Live ↗</a>
+    </div>
+  </dialog>
+
+  <footer class="credits">
+    <span>© 2026 MAHARSHI PATEL</span>
+    <span>3D portal asset: Residential Window by AleixoAlonso · CC BY 4.0</span>
+    <span>Public-domain artworks via Wikimedia Commons</span>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
