@@ -1,0 +1,495 @@
+/* V5 art-direction refinement layer.
+   Keep realism in sourced imagery / 3D assets; use CSS for framing, hierarchy and restraint. */
+
+.screen-patina{opacity:.09}
+.nebula{filter:saturate(.88) contrast(1.14) brightness(.47)}
+.galaxy-canvas{opacity:.96;filter:saturate(1.03) contrast(1.02)}
+
+.journey-progress{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-1px;
+  height:1px;
+  transform-origin:0 50%;
+  background:linear-gradient(90deg,#ff8d49 0%,#ffd19e 45%,#7fdcff 100%);
+  box-shadow:0 0 14px rgba(255,139,72,.22);
+  opacity:.82;
+}
+
+.scene-load-status{
+  position:fixed;
+  z-index:49;
+  right:22px;
+  bottom:18px;
+  display:grid;
+  grid-template-columns:auto 74px auto;
+  align-items:center;
+  gap:9px;
+  padding:8px 10px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(4,5,8,.68);
+  backdrop-filter:blur(10px);
+  color:#777c86;
+  font:500 7px/1 DM Mono,monospace;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  opacity:0;
+  transform:translateY(8px);
+  transition:opacity .24s ease,transform .24s ease;
+  pointer-events:none;
+}
+.scene-load-status.is-visible{opacity:1;transform:translateY(0)}
+.scene-load-status>i{display:block;width:74px;height:1px;background:rgba(255,255,255,.12);overflow:hidden}
+.scene-load-status>i b{display:block;width:100%;height:1px;transform-origin:0 50%;background:linear-gradient(90deg,#ff8d49,#7fdcff)}
+.scene-load-status em{font-style:normal;color:#b2b6bf}
+
+.mission-card{
+  clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%);
+  border-left:0;
+  background:
+    linear-gradient(115deg,rgba(12,13,18,.82),rgba(7,8,12,.35)),
+    radial-gradient(circle at 82% 18%,rgba(255,129,65,.08),transparent 38%);
+  box-shadow:0 24px 80px rgba(0,0,0,.22);
+}
+
+.primary-cta,
+.mission-node{
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);
+}
+
+.mission-node{
+  border-left:0;
+  min-height:228px;
+  box-shadow:0 22px 55px rgba(0,0,0,.11);
+}
+
+.mission-node:before{
+  width:2px;
+  height:52%;
+  box-shadow:0 0 28px color-mix(in srgb,var(--accent) 24%,transparent);
+}
+
+.mission-node-head{gap:12px}
+.live-pulse{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-left:auto;
+  color:#84dfad;
+  font:500 7px/1 DM Mono,monospace;
+  letter-spacing:.12em;
+}
+.live-pulse i{
+  width:4px;
+  height:4px;
+  border:0;
+  border-radius:50%;
+  transform:none;
+  background:#80e1aa;
+  box-shadow:0 0 11px rgba(128,225,170,.7);
+  animation:livePulse 1.7s ease-in-out infinite alternate;
+}
+@keyframes livePulse{to{opacity:.32;box-shadow:0 0 4px rgba(128,225,170,.3)}}
+
+.mission-node .mission-summary{
+  margin:0 0 14px;
+  max-width:94%;
+  color:#9397a0;
+  font-size:11px;
+  line-height:1.58;
+}
+.mission-proof{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:10px;
+  align-items:start;
+  margin:0 0 13px;
+  padding-top:11px;
+  border-top:1px solid rgba(255,255,255,.075);
+}
+.mission-proof>span{
+  color:var(--accent);
+  font:500 7px/1.35 DM Mono,monospace;
+  letter-spacing:.13em;
+}
+.mission-proof strong{
+  color:#878b95;
+  font:400 8px/1.45 DM Mono,monospace;
+  letter-spacing:.025em;
+}
+.mission-stack{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-bottom:34px;
+}
+.mission-stack span{
+  padding:5px 7px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.025);
+  color:#6f747e;
+  font:500 7px/1 DM Mono,monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.mission-node-actions{
+  position:absolute;
+  left:20px;
+  right:18px;
+  bottom:15px;
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+.mission-node-actions a,
+.mission-node-actions button{
+  appearance:none;
+  border:0;
+  padding:0;
+  background:none;
+  color:#858a94;
+  font:500 7px/1 DM Mono,monospace;
+  letter-spacing:.12em;
+  cursor:pointer;
+  transition:color .18s ease,transform .18s ease;
+}
+.mission-node-actions button{color:color-mix(in srgb,var(--accent) 82%,#fff)}
+.mission-node-actions a:hover,
+.mission-node-actions button:hover{color:#fff;transform:translateX(2px)}
+.mission-node-actions a:last-child{margin-left:auto}
+.mission-node-actions span{color:var(--accent)}
+
+.mission-facts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px 18px;
+  margin-top:24px;
+  color:#747982;
+  font:500 8px/1.25 DM Mono,monospace;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.mission-facts span{display:flex;align-items:center;gap:8px}
+.mission-facts span:before{content:"";width:4px;height:4px;border:1px solid rgba(255,153,91,.72);transform:rotate(45deg)}
+
+.observation{
+  position:relative;
+  padding-top:10px;
+  padding-bottom:172px;
+}
+.observation-frame{
+  position:relative;
+  min-height:620px;
+  height:min(70vw,780px);
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.16);
+  background:#08090d;
+  clip-path:polygon(0 0,calc(100% - 34px) 0,100% 34px,100% 100%,0 100%);
+  box-shadow:0 50px 130px rgba(0,0,0,.38);
+}
+.observation-image{
+  position:absolute;
+  inset:-5%;
+  background-image:url('https://assets.science.nasa.gov/dynamicimage/assets/science/missions/webb/science/2022/07/STScI-01G8GYD8B1H306SSPR4MY6NGN0.png?crop=faces%2Cfocalpoint&fit=clip&h=1200&w=3200');
+  background-size:cover;
+  background-position:center 57%;
+  filter:saturate(.82) contrast(1.1) brightness(.67);
+  transform:scale(1.055);
+}
+.observation-frame:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background:
+    linear-gradient(180deg,rgba(2,3,7,.18),rgba(2,3,7,.06) 40%,rgba(2,3,7,.82) 100%),
+    linear-gradient(90deg,rgba(2,3,7,.66),transparent 54%,rgba(2,3,7,.18));
+  pointer-events:none;
+}
+.observation-frame:after{
+  content:"";
+  position:absolute;
+  inset:18px;
+  z-index:1;
+  border:1px solid rgba(255,255,255,.08);
+  pointer-events:none;
+}
+.observation-index{
+  position:absolute;
+  z-index:2;
+  top:30px;
+  left:32px;
+  display:flex;
+  gap:16px;
+  align-items:center;
+  color:rgba(232,234,239,.76);
+  font:500 8px/1 DM Mono,monospace;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.observation-index i{width:54px;height:1px;background:linear-gradient(90deg,rgba(255,159,94,.85),transparent)}
+.observation-copy{
+  position:absolute;
+  z-index:2;
+  left:clamp(30px,5vw,72px);
+  bottom:clamp(42px,6vw,78px);
+  width:min(760px,72%);
+}
+.observation-copy p{
+  margin:0 0 18px;
+  color:#e59a66;
+  font:500 9px/1.2 DM Mono,monospace;
+  letter-spacing:.17em;
+  text-transform:uppercase;
+}
+.observation-copy h2{
+  margin:0;
+  max-width:760px;
+  font-size:clamp(2.9rem,6.2vw,6.9rem);
+  line-height:.91;
+  letter-spacing:-.065em;
+  font-weight:400;
+  text-wrap:balance;
+}
+.observation-copy h2 em{font-style:normal;color:rgba(241,237,229,.58)}
+.observation-meta{
+  position:absolute;
+  z-index:2;
+  right:32px;
+  bottom:31px;
+  display:grid;
+  gap:7px;
+  justify-items:end;
+  color:rgba(216,219,226,.58);
+  font:400 7px/1.2 DM Mono,monospace;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+.observation-meta b{color:rgba(255,255,255,.82);font-weight:500}
+
+@media (max-width:900px){
+  .observation{padding-bottom:120px}
+  .observation-frame{min-height:560px;height:74vw}
+  .observation-copy{width:82%}
+  .mission-node{min-height:240px}
+}
+
+@media (max-width:720px){
+  .scene-load-status{right:10px;bottom:10px;grid-template-columns:auto 52px auto;padding:7px 8px}
+  .scene-load-status>i{width:52px}
+  .mission-facts{margin-top:20px;gap:8px 13px;font-size:7px}
+  .mission-node{min-height:250px}
+  .mission-proof{grid-template-columns:1fr;gap:5px}
+  .mission-stack{gap:4px;margin-bottom:36px}
+  .mission-node-actions{left:17px;right:16px}
+  .observation{width:100%;padding-left:16px;padding-right:16px;padding-bottom:105px}
+  .observation-frame{height:620px;min-height:0;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,0 100%)}
+  .observation-image{inset:-2%;background-position:58% center;filter:saturate(.78) contrast(1.09) brightness(.57)}
+  .observation-frame:after{inset:10px}
+  .observation-index{top:22px;left:20px;font-size:7px;gap:11px}
+  .observation-index i{width:32px}
+  .observation-copy{left:22px;bottom:62px;width:calc(100% - 44px)}
+  .observation-copy p{font-size:7px;margin-bottom:13px}
+  .observation-copy h2{font-size:clamp(2.7rem,14vw,4.15rem);line-height:.9}
+  .observation-meta{left:22px;right:auto;bottom:22px;justify-items:start;font-size:6px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .observation-image{transform:none}
+  .journey-progress{display:none}
+  .live-pulse i{animation:none}
+}
+
+
+/* Project dossier: the mission-map cards stay scannable while a recruiter can
+   inspect engineering depth without abandoning the portfolio. */
+.dossier-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:90;
+  display:flex;
+  justify-content:flex-end;
+  background:rgba(1,2,5,.72);
+  backdrop-filter:blur(7px) saturate(.82);
+}
+.dossier-panel{
+  position:relative;
+  width:min(680px,92vw);
+  height:100%;
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:30px clamp(24px,4vw,52px) 38px;
+  border-left:1px solid rgba(255,153,84,.36);
+  background:
+    radial-gradient(circle at 88% 10%,rgba(115,151,255,.10),transparent 24%),
+    radial-gradient(circle at 16% 72%,rgba(255,119,49,.08),transparent 31%),
+    linear-gradient(180deg,rgba(8,9,14,.985),rgba(3,4,8,.99));
+  box-shadow:-50px 0 120px rgba(0,0,0,.52);
+}
+.dossier-panel:after{
+  content:"";
+  position:absolute;
+  inset:12px;
+  pointer-events:none;
+  border:1px solid rgba(255,255,255,.055);
+}
+.dossier-topline{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  margin-bottom:76px;
+  color:#6f747f;
+  font:500 7px/1.2 DM Mono,monospace;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.dossier-topline button{
+  appearance:none;
+  border:0;
+  background:none;
+  color:#b4b8c1;
+  font:500 7px/1 DM Mono,monospace;
+  letter-spacing:.13em;
+  cursor:pointer;
+}
+.dossier-topline button:hover{color:#fff}
+.dossier-orbit{
+  position:absolute;
+  z-index:0;
+  right:clamp(32px,8vw,92px);
+  top:82px;
+  width:142px;
+  height:142px;
+  opacity:.78;
+}
+.dossier-orbit i{
+  position:absolute;
+  inset:50%;
+  border:1px solid rgba(127,216,255,.22);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+}
+.dossier-orbit i:nth-child(1){width:126px;height:48px;transform:translate(-50%,-50%) rotate(-20deg)}
+.dossier-orbit i:nth-child(2){width:50px;height:132px;transform:translate(-50%,-50%) rotate(28deg)}
+.dossier-orbit i:nth-child(3){width:10px;height:10px;background:#ff9b54;border:0;box-shadow:0 0 25px rgba(255,155,84,.72)}
+.dossier-panel>.eyebrow{position:relative;z-index:2}
+.dossier-panel>h2{
+  position:relative;
+  z-index:2;
+  max-width:540px;
+  margin:0;
+  font-size:clamp(3rem,6vw,6rem);
+  line-height:.92;
+  letter-spacing:-.065em;
+  font-weight:400;
+}
+.dossier-summary{
+  position:relative;
+  z-index:2;
+  max-width:560px;
+  margin:25px 0 44px;
+  color:#aeb1ba;
+  font-size:14px;
+  line-height:1.72;
+}
+.dossier-grid{
+  position:relative;
+  z-index:2;
+  display:grid;
+  gap:0;
+  border-top:1px solid rgba(255,255,255,.10);
+}
+.dossier-grid section{
+  padding:23px 0 25px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+.dossier-label{
+  display:block;
+  margin-bottom:12px;
+  color:#dd9867;
+  font:500 7px/1 DM Mono,monospace;
+  letter-spacing:.15em;
+}
+.dossier-grid p{
+  margin:0;
+  max-width:570px;
+  color:#989ca6;
+  font-size:12px;
+  line-height:1.72;
+}
+.dossier-grid ul{
+  display:grid;
+  gap:10px;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.dossier-grid li{
+  position:relative;
+  padding-left:17px;
+  color:#a8abb4;
+  font-size:12px;
+  line-height:1.55;
+}
+.dossier-grid li:before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:.62em;
+  width:5px;
+  height:5px;
+  border:1px solid #78d8ff;
+  transform:rotate(45deg);
+}
+.dossier-stack{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:26px 0 34px;
+}
+.dossier-stack span{
+  padding:7px 9px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.025);
+  color:#777c86;
+  font:500 7px/1 DM Mono,monospace;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+}
+.dossier-actions{
+  position:relative;
+  z-index:2;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.dossier-actions a{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:48px;
+  padding:0 14px;
+  border:1px solid rgba(255,255,255,.12);
+  color:#c5c8cf;
+  font:500 8px/1 DM Mono,monospace;
+  letter-spacing:.10em;
+  transition:background .18s ease,border-color .18s ease;
+}
+.dossier-actions a:first-child{border-color:rgba(255,144,75,.44);background:rgba(255,126,51,.055)}
+.dossier-actions a:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.25)}
+.dossier-actions span{color:#ff9b54}
+
+@media(max-width:620px){
+  .dossier-panel{width:100%;padding:22px 20px 28px}
+  .dossier-topline{margin-bottom:62px}
+  .dossier-orbit{right:22px;top:72px;width:110px;height:110px}
+  .dossier-panel>h2{font-size:clamp(3rem,15vw,4.8rem)}
+  .dossier-summary{font-size:13px;margin-bottom:32px}
+  .dossier-actions{grid-template-columns:1fr}
+}
