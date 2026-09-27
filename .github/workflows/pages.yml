@@ -39,6 +39,17 @@ jobs:
           for file in demo/projects/assets/*.js demo/projects/assets/tools/*.js; do node --check "$file"; done
       - name: Build versioned static site
         run: npm run build
+      - name: Materialize Portfolio V3 source
+        run: python scripts/materialize_portfolio_v3.py
+      - name: Build Portfolio V3
+        run: |
+          cd portfolio-v3
+          node scripts/fetch-polyhaven.mjs
+          npm install --no-audit --no-fund
+          npm run typecheck
+          NEXT_PUBLIC_BASE_PATH=/makma-ai-os/portfolio-v3 npm run build
+          mkdir -p ../dist-site/portfolio-v3
+          cp -R out/. ../dist-site/portfolio-v3/
       - name: Install test browser
         run: npx playwright install --with-deps chromium
       - name: Product interaction and rejection tests
