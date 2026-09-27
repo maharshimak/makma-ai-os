@@ -12,6 +12,7 @@ commit = os.environ.get("GITHUB_SHA")
 paths = [
     "",
     "projects/",
+    "portfolio-v3/",
     *[
         "projects/" + slug + "/"
         for slug in (
@@ -37,9 +38,13 @@ for attempt in range(12):
         for path in paths:
             with urllib.request.urlopen(base + path, timeout=20) as response:
                 html = response.read().decode()
-            if (
-                "<title>" not in html
-                or "MAK" not in html
+            if "<title>" not in html:
+                raise ValueError("Missing title: " + path)
+            if path == "portfolio-v3/":
+                if "Maharshi Patel" not in html:
+                    raise ValueError("Missing Portfolio V3 marker: " + path)
+            elif (
+                "MAK" not in html
                 or (path not in ("", "projects/") and "tool-root" not in html)
             ):
                 raise ValueError("Missing application marker: " + path)
