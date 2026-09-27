@@ -44,8 +44,9 @@ jobs:
       - name: Build Portfolio V3
         run: |
           cd portfolio-v3
-          node scripts/fetch-polyhaven.mjs
           npm install --no-audit --no-fund
+          node scripts/fetch-polyhaven.mjs
+          npm run assets:optimize
           npm run typecheck
           NEXT_PUBLIC_BASE_PATH=/makma-ai-os/portfolio-v3 npm run build
           mkdir -p ../dist-site/portfolio-v3
