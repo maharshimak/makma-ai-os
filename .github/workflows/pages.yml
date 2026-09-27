@@ -50,6 +50,8 @@ jobs:
           NEXT_PUBLIC_BASE_PATH=/makma-ai-os/portfolio-v3 npm run build
           mkdir -p ../dist-site/portfolio-v3
           cp -R out/. ../dist-site/portfolio-v3/
+          mkdir -p ../dist-site/makma-ai-os/portfolio-v3
+          cp -R out/. ../dist-site/makma-ai-os/portfolio-v3/
       - name: Install test browser
         run: npx playwright install --with-deps chromium
       - name: Product interaction and rejection tests
