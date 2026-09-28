@@ -1,7 +1,14 @@
 import type {Metadata, Viewport} from "next";
+import {DM_Mono, Manrope} from "next/font/google";
+import {SmoothScroll} from "@/components/SmoothScroll";
 import "./globals.css";
 import "./cinematic.css";
 import "./polish.css";
+import "./story.css";
+import "lenis/dist/lenis.css";
+
+const manrope=Manrope({subsets:["latin"],variable:"--font-manrope",display:"swap"});
+const dmMono=DM_Mono({subsets:["latin"],weight:["300","400","500"],variable:"--font-dm-mono",display:"swap"});
 
 export const metadata:Metadata={
   title:"Maharshi Patel — Galactic Systems",
@@ -30,9 +37,7 @@ export default function RootLayout({children}:{children:React.ReactNode}){
   return <html lang="en">
     <head>
       <link rel="preconnect" href="https://assets.science.nasa.gov" crossOrigin="anonymous"/>
-      <link rel="preconnect" href="https://fonts.googleapis.com"/>
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
     </head>
-    <body>{children}</body>
+    <body className={`${manrope.variable} ${dmMono.variable}`}><SmoothScroll>{children}</SmoothScroll></body>
   </html>;
 }

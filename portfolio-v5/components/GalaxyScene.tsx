@@ -1,13 +1,16 @@
 "use client";
 
 import {Canvas, useFrame, useThree} from "@react-three/fiber";
-import {Preload, useGLTF, useProgress, useTexture} from "@react-three/drei";
+import {AdaptiveDpr, Environment, Lightformer, Preload, useGLTF, useProgress, useTexture} from "@react-three/drei";
+import {Bloom, EffectComposer, Noise, Vignette} from "@react-three/postprocessing";
 import {Component, Suspense, useMemo, useRef} from "react";
 import type {ReactNode} from "react";
 import {
   ACESFilmicToneMapping,
   AdditiveBlending,
   BackSide,
+  Box3,
+  CatmullRomCurve3,
   Group,
   MathUtils,
   Mesh,
@@ -19,8 +22,27 @@ import type {MotionValue} from "motion/react";
 
 const JUPITER = "https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter/preview.webp?w=2048";
 const MARS = "https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/mars/preview.webp?w=2048";
-const DEEP_SPACE_1 = "https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/model/deep-space-1/Deep%20Space%201.glb";
+const SPACECRAFT = "https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/model/cassini-assembly/Cassini%20Assembly.glb";
 const lookTarget = new Vector3();
+const craftPoint = new Vector3();
+
+const craftPathDesktop = new CatmullRomCurve3([
+  new Vector3(4.5,-1.45,.72),
+  new Vector3(3.15,-.88,1.18),
+  new Vector3(1.2,.34,1.42),
+  new Vector3(-.35,.72,1.18),
+  new Vector3(-2.05,.12,.62),
+  new Vector3(-4.25,-1.35,-.08),
+],false,"catmullrom",.42);
+
+const craftPathMobile = new CatmullRomCurve3([
+  new Vector3(1.72,-1.58,-.12),
+  new Vector3(1.28,-1.14,.12),
+  new Vector3(.58,-.68,.42),
+  new Vector3(-.12,-.58,.34),
+  new Vector3(-.88,-.86,.08),
+  new Vector3(-1.65,-1.34,-.18),
+],false,"catmullrom",.38);
 
 class SceneErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>{
   state={failed:false};
@@ -28,10 +50,23 @@ class SceneErrorBoundary extends Component<{children:ReactNode},{failed:boolean}
   render(){ return this.state.failed ? null : this.props.children; }
 }
 
-function Scene({progress,reduceMotion}:{progress:MotionValue<number>;reduceMotion:boolean}){
+function Scene({progress,reduceMotion,chapter}:{progress:MotionValue<number>;reduceMotion:boolean;chapter:string}){
   const [jupiterMap,marsMap] = useTexture([JUPITER,MARS]);
-  const gltf = useGLTF(DEEP_SPACE_1);
-  const spacecraft = useMemo(()=>gltf.scene.clone(true),[gltf.scene]);
+  const gltf = useGLTF(SPACECRAFT);
+  const spacecraft = useMemo(()=>{
+    const root=gltf.scene.clone(true);
+    const box=new Box3().setFromObject(root);
+    const size=box.getSize(new Vector3());
+    const center=box.getCenter(new Vector3());
+    root.position.sub(center);
+    const maxDimension=Math.max(size.x,size.y,size.z) || 1;
+    root.scale.setScalar(2.7/maxDimension);
+    root.traverse(object=>{
+      if("castShadow" in object) (object as {castShadow:boolean}).castShadow=true;
+      if("receiveShadow" in object) (object as {receiveShadow:boolean}).receiveShadow=true;
+    });
+    return root;
+  },[gltf.scene]);
   const jupiterRig = useRef<Group>(null);
   const jupiterSurface = useRef<Mesh>(null);
   const marsRig = useRef<Group>(null);
@@ -55,20 +90,21 @@ function Scene({progress,reduceMotion}:{progress:MotionValue<number>;reduceMotio
     // The spacecraft is a transition beat, not a persistent foreground prop.
     // It appears after the first scroll gesture and clears before project content.
     const jOut = compact
-      ? MathUtils.smoothstep(p,.10,.31)
-      : MathUtils.smoothstep(p,.055,.205);
-    const marsIn = MathUtils.smoothstep(p,.28,.47);
-    const marsOut = MathUtils.smoothstep(p,.57,.72);
-    const craftIn = MathUtils.smoothstep(p,.010,.045);
+      ? MathUtils.smoothstep(p,.028,.088)
+      : MathUtils.smoothstep(p,.050,.155);
+    const marsIn = MathUtils.smoothstep(p,.30,.45);
+    const marsOut = MathUtils.smoothstep(p,.52,.60);
+    const craftIn = MathUtils.smoothstep(p,.010,.035);
     const craftOut = compact
-      ? MathUtils.smoothstep(p,.090,.145)
-      : MathUtils.smoothstep(p,.115,.195);
+      ? MathUtils.smoothstep(p,.042,.073)
+      : MathUtils.smoothstep(p,.070,.115);
     const craftPresence = craftIn*(1-craftOut);
 
     if(jupiterSurface.current && !reduceMotion){
       jupiterSurface.current.rotation.y += delta*.031;
     }
     if(jupiterRig.current){
+      jupiterRig.current.visible = chapter==="home";
       const startX = compact ? 1.65 : 2.7;
       const startY = compact ? -1.04 : .10;
       jupiterRig.current.position.x = startX + jOut*(compact ? 3.9 : 5.9);
@@ -82,6 +118,7 @@ function Scene({progress,reduceMotion}:{progress:MotionValue<number>;reduceMotio
       marsSurface.current.rotation.y += delta*.045;
     }
     if(marsRig.current){
+      marsRig.current.visible = chapter==="flight-log";
       const presence = marsIn*(1-marsOut);
       marsRig.current.position.x = (compact ? -2.85 : -4.85) + presence*(compact ? 1.05 : 1.55);
       // Keep the secondary planet low in frame so it reads as depth rather than
@@ -92,22 +129,26 @@ function Scene({progress,reduceMotion}:{progress:MotionValue<number>;reduceMotio
     }
 
     if(craft.current){
-      const targetX = compact ? 1.55 - p*3.1 : 4.25 - p*8.05;
-      const targetY = compact
-        ? -1.6 + Math.sin(p*Math.PI*1.75)*.72
-        : -1.35 + Math.sin(p*Math.PI*1.75)*1.85;
-      const targetZ = (compact ? -.16 : .78) + Math.sin(p*Math.PI)*(compact ? .34 : 1.02);
-      craft.current.position.x = MathUtils.damp(craft.current.position.x,targetX,3.1,delta);
-      craft.current.position.y = MathUtils.damp(craft.current.position.y,targetY,3.1,delta);
-      craft.current.position.z = MathUtils.damp(craft.current.position.z,targetZ,2.7,delta);
-      craft.current.rotation.y = -.98 + p*1.44;
-      craft.current.rotation.x = .08 + Math.sin(p*Math.PI*2)*.08;
-      craft.current.rotation.z = -.16 + Math.sin(p*Math.PI*2.6)*.09;
-      const baseScale = compact ? .22 : .44;
-      const travelScale = Math.sin(p*Math.PI)*(compact ? .04 : .10);
+      const flybyEnd = compact ? .076 : .118;
+      const travel = MathUtils.clamp((p-.008)/(flybyEnd-.008),0,1);
+      const path = compact ? craftPathMobile : craftPathDesktop;
+      path.getPointAt(travel,craftPoint);
+
+      craft.current.position.x = MathUtils.damp(craft.current.position.x,craftPoint.x,3.6,delta);
+      craft.current.position.y = MathUtils.damp(craft.current.position.y,craftPoint.y,3.6,delta);
+      craft.current.position.z = MathUtils.damp(craft.current.position.z,craftPoint.z,3.35,delta);
+
+      // Orientation follows the flyby beat rather than simply spinning with page progress.
+      craft.current.rotation.y = MathUtils.damp(craft.current.rotation.y,-1.10+travel*1.72,3.1,delta);
+      craft.current.rotation.x = MathUtils.damp(craft.current.rotation.x,.18-Math.sin(travel*Math.PI)*.17,3.1,delta);
+      craft.current.rotation.z = MathUtils.damp(craft.current.rotation.z,-.08+Math.sin(travel*Math.PI*1.6)*.19,3.1,delta);
+
+      const baseScale = compact ? .62 : 1.08;
+      const approach = Math.sin(travel*Math.PI);
+      const travelScale = approach*(compact ? .09 : .24);
       const presenceScale = .18 + craftPresence*.82;
       craft.current.scale.setScalar((baseScale + travelScale)*presenceScale);
-      craft.current.visible = !reduceMotion && craftPresence > .025;
+      craft.current.visible = !reduceMotion && chapter==="home" && craftPresence > .025;
     }
 
     const cameraX = Math.sin(p*Math.PI*1.1)*(compact ? .16 : .44) - p*(compact ? .05 : .18);
@@ -125,10 +166,15 @@ function Scene({progress,reduceMotion}:{progress:MotionValue<number>;reduceMotio
 
   return <>
     <fog attach="fog" args={["#020306",8.8,18.5]}/>
-    <ambientLight intensity={.21}/>
-    <hemisphereLight args={["#6f8fd8","#170a07",.40]}/>
-    <directionalLight position={[-5.5,4.2,8]} intensity={3.65} color="#ffc394"/>
-    <pointLight position={[5.2,-2.1,3]} intensity={4.4} color="#6caaff" distance={18}/>
+    <ambientLight intensity={.18}/>
+    <hemisphereLight args={["#6f8fd8","#170a07",.34]}/>
+    <directionalLight position={[-5.5,4.2,8]} intensity={3.45} color="#ffc394"/>
+    <pointLight position={[5.2,-2.1,3]} intensity={3.6} color="#6caaff" distance={18}/>
+    <Environment resolution={compact?64:128}>
+      <Lightformer form="rect" intensity={3.2} color="#fff0df" position={[4.5,3.2,4.5]} rotation={[0,-.6,0]} scale={[4.5,4.5,1]}/>
+      <Lightformer form="rect" intensity={2.4} color="#779dff" position={[-4,-1.5,2.4]} rotation={[0,.8,0]} scale={[3.4,4,1]}/>
+      <Lightformer form="ring" intensity={1.3} color="#ff7b43" position={[0,-3.8,1.2]} rotation={[Math.PI/2,0,0]} scale={3.2}/>
+    </Environment>
 
     <group ref={jupiterRig} position={[compact?1.65:2.7,compact?-1.04:.10,-1.8]}>
       <mesh ref={jupiterSurface}>
@@ -152,11 +198,28 @@ function Scene({progress,reduceMotion}:{progress:MotionValue<number>;reduceMotio
       </mesh>
     </group>
 
-    <group ref={craft} position={[compact?1.55:4.25,compact?-1.6:-1.35,compact?-.16:.78]} rotation={[.08,-.98,-.16]} scale={compact?.22:.44}>
+    <group ref={craft} position={[compact?1.55:4.25,compact?-1.6:-1.35,compact?-.16:.78]} rotation={[.18,-1.16,-.08]} scale={compact?.62:1.08}>
       <primitive object={spacecraft}/>
       <pointLight position={[0,-.2,-.8]} color="#ff7f42" intensity={2.1} distance={3}/>
     </group>
   </>;
+}
+
+function CinematicFX(){
+  const {size}=useThree();
+  const reduceMotion=useReducedMotion() ?? false;
+  if(reduceMotion) return null;
+  const compact=size.width<720;
+  return <EffectComposer multisampling={compact?0:4}>
+    <Bloom
+      intensity={compact?.22:.46}
+      luminanceThreshold={.78}
+      luminanceSmoothing={.28}
+      mipmapBlur
+    />
+    <Noise opacity={compact?.005:.012}/>
+    <Vignette eskil={false} offset={compact?.24:.18} darkness={compact?.58:.78}/>
+  </EffectComposer>;
 }
 
 function SceneLoadStatus(){
@@ -169,7 +232,7 @@ function SceneLoadStatus(){
   </div>;
 }
 
-export function GalaxyScene({progress}:{progress:MotionValue<number>}){
+export function GalaxyScene({progress,chapter}:{progress:MotionValue<number>;chapter:string}){
   const reduceMotion = useReducedMotion() ?? false;
   return <SceneErrorBoundary>
     <SceneLoadStatus/>
@@ -186,7 +249,9 @@ export function GalaxyScene({progress}:{progress:MotionValue<number>}){
         }}
       >
         <Suspense fallback={null}>
-          <Scene progress={progress} reduceMotion={reduceMotion}/>
+          <Scene progress={progress} reduceMotion={reduceMotion} chapter={chapter}/>
+          <AdaptiveDpr pixelated={false}/>
+          <CinematicFX/>
           <Preload all/>
         </Suspense>
       </Canvas>
@@ -194,4 +259,4 @@ export function GalaxyScene({progress}:{progress:MotionValue<number>}){
   </SceneErrorBoundary>;
 }
 
-useGLTF.preload(DEEP_SPACE_1);
+useGLTF.preload(SPACECRAFT);

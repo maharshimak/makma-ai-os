@@ -31,7 +31,7 @@
   background:rgba(4,5,8,.68);
   backdrop-filter:blur(10px);
   color:#777c86;
-  font:500 7px/1 DM Mono,monospace;
+  font:500 7px/1 var(--font-dm-mono),monospace;
   letter-spacing:.12em;
   text-transform:uppercase;
   opacity:0;
@@ -77,7 +77,7 @@
   gap:6px;
   margin-left:auto;
   color:#84dfad;
-  font:500 7px/1 DM Mono,monospace;
+  font:500 7px/1 var(--font-dm-mono),monospace;
   letter-spacing:.12em;
 }
 .live-pulse i{
@@ -110,12 +110,12 @@
 }
 .mission-proof>span{
   color:var(--accent);
-  font:500 7px/1.35 DM Mono,monospace;
+  font:500 7px/1.35 var(--font-dm-mono),monospace;
   letter-spacing:.13em;
 }
 .mission-proof strong{
   color:#878b95;
-  font:400 8px/1.45 DM Mono,monospace;
+  font:400 8px/1.45 var(--font-dm-mono),monospace;
   letter-spacing:.025em;
 }
 .mission-stack{
@@ -129,7 +129,7 @@
   border:1px solid rgba(255,255,255,.08);
   background:rgba(255,255,255,.025);
   color:#6f747e;
-  font:500 7px/1 DM Mono,monospace;
+  font:500 7px/1 var(--font-dm-mono),monospace;
   letter-spacing:.08em;
   text-transform:uppercase;
 }
@@ -149,7 +149,7 @@
   padding:0;
   background:none;
   color:#858a94;
-  font:500 7px/1 DM Mono,monospace;
+  font:500 7px/1 var(--font-dm-mono),monospace;
   letter-spacing:.12em;
   cursor:pointer;
   transition:color .18s ease,transform .18s ease;
@@ -166,7 +166,7 @@
   gap:9px 18px;
   margin-top:24px;
   color:#747982;
-  font:500 8px/1.25 DM Mono,monospace;
+  font:500 8px/1.25 var(--font-dm-mono),monospace;
   letter-spacing:.12em;
   text-transform:uppercase;
 }
@@ -224,7 +224,7 @@
   gap:16px;
   align-items:center;
   color:rgba(232,234,239,.76);
-  font:500 8px/1 DM Mono,monospace;
+  font:500 8px/1 var(--font-dm-mono),monospace;
   letter-spacing:.16em;
   text-transform:uppercase;
 }
@@ -239,7 +239,7 @@
 .observation-copy p{
   margin:0 0 18px;
   color:#e59a66;
-  font:500 9px/1.2 DM Mono,monospace;
+  font:500 9px/1.2 var(--font-dm-mono),monospace;
   letter-spacing:.17em;
   text-transform:uppercase;
 }
@@ -262,7 +262,7 @@
   gap:7px;
   justify-items:end;
   color:rgba(216,219,226,.58);
-  font:400 7px/1.2 DM Mono,monospace;
+  font:400 7px/1.2 var(--font-dm-mono),monospace;
   letter-spacing:.13em;
   text-transform:uppercase;
 }
@@ -343,7 +343,7 @@
   gap:24px;
   margin-bottom:76px;
   color:#6f747f;
-  font:500 7px/1.2 DM Mono,monospace;
+  font:500 7px/1.2 var(--font-dm-mono),monospace;
   letter-spacing:.14em;
   text-transform:uppercase;
 }
@@ -352,7 +352,7 @@
   border:0;
   background:none;
   color:#b4b8c1;
-  font:500 7px/1 DM Mono,monospace;
+  font:500 7px/1 var(--font-dm-mono),monospace;
   letter-spacing:.13em;
   cursor:pointer;
 }
@@ -411,7 +411,7 @@
   display:block;
   margin-bottom:12px;
   color:#dd9867;
-  font:500 7px/1 DM Mono,monospace;
+  font:500 7px/1 var(--font-dm-mono),monospace;
   letter-spacing:.15em;
 }
 .dossier-grid p{
@@ -458,7 +458,7 @@
   border:1px solid rgba(255,255,255,.10);
   background:rgba(255,255,255,.025);
   color:#777c86;
-  font:500 7px/1 DM Mono,monospace;
+  font:500 7px/1 var(--font-dm-mono),monospace;
   letter-spacing:.10em;
   text-transform:uppercase;
 }
@@ -477,7 +477,7 @@
   padding:0 14px;
   border:1px solid rgba(255,255,255,.12);
   color:#c5c8cf;
-  font:500 8px/1 DM Mono,monospace;
+  font:500 8px/1 var(--font-dm-mono),monospace;
   letter-spacing:.10em;
   transition:background .18s ease,border-color .18s ease;
 }
@@ -492,4 +492,272 @@
   .dossier-panel>h2{font-size:clamp(3rem,15vw,4.8rem)}
   .dossier-summary{font-size:13px;margin-bottom:32px}
   .dossier-actions{grid-template-columns:1fr}
+}
+
+
+/* V5 ART LAYER — a living editorial atmosphere tied to scroll, pointer position
+   and the currently active chapter. It deliberately stays DOM/CSS based so the
+   Three.js scene remains the only heavyweight graphics runtime. */
+.reactive-art-layer{
+  position:fixed;
+  z-index:-1;
+  inset:-10vh -8vw;
+  pointer-events:none;
+  overflow:hidden;
+  transform-origin:50% 50%;
+  will-change:transform,opacity;
+}
+.reactive-art-surface{
+  --px:58%;
+  --py:38%;
+  --mx:0;
+  --my:0;
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at var(--px) var(--py),color-mix(in srgb,var(--art-a) 14%,transparent),transparent 16%),
+    radial-gradient(ellipse at 24% 70%,color-mix(in srgb,var(--art-b) 7%,transparent),transparent 30%),
+    radial-gradient(ellipse at 82% 21%,color-mix(in srgb,var(--art-a) 6%,transparent),transparent 27%);
+  filter:saturate(1.08);
+}
+.art-lens{
+  position:absolute;
+  left:var(--px);
+  top:var(--py);
+  width:min(38vw,560px);
+  aspect-ratio:1;
+  transform:translate(-50%,-50%) scale(calc(1 + (var(--my) * .025)));
+  border:1px solid color-mix(in srgb,var(--art-a) 14%,transparent);
+  border-radius:50%;
+  opacity:.52;
+  background:
+    radial-gradient(circle at 44% 42%,rgba(255,255,255,.055),transparent 8%),
+    radial-gradient(circle,color-mix(in srgb,var(--art-a) 7%,transparent),transparent 57%);
+  box-shadow:
+    inset 0 0 80px color-mix(in srgb,var(--art-b) 5%,transparent),
+    0 0 100px color-mix(in srgb,var(--art-a) 4%,transparent);
+  transition:left .12s linear,top .12s linear;
+}
+.art-lens:before,
+.art-lens:after{
+  content:"";
+  position:absolute;
+  inset:8%;
+  border:1px solid color-mix(in srgb,var(--art-b) 10%,transparent);
+  border-radius:50%;
+  transform:rotate(calc(17deg + var(--mx) * 4deg)) scaleY(.42);
+}
+.art-lens:after{
+  inset:23%;
+  border-style:dashed;
+  opacity:.65;
+  transform:rotate(calc(-31deg + var(--my) * 6deg)) scaleY(.58);
+}
+.art-prism{
+  position:absolute;
+  display:block;
+  border-radius:50%;
+  filter:blur(42px);
+  mix-blend-mode:screen;
+  opacity:.22;
+  will-change:transform;
+}
+.art-prism-a{
+  left:10%;
+  top:12%;
+  width:28vw;
+  height:10vw;
+  min-height:110px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--art-a) 74%,transparent),transparent);
+  transform:rotate(-24deg) translate3d(calc(var(--mx) * 18px),calc(var(--my) * 10px),0);
+  animation:artPrismA 13s ease-in-out infinite alternate;
+}
+.art-prism-b{
+  right:-3%;
+  top:48%;
+  width:34vw;
+  height:13vw;
+  min-height:130px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--art-b) 62%,transparent),transparent);
+  transform:rotate(18deg) translate3d(calc(var(--mx) * -13px),calc(var(--my) * -14px),0);
+  animation:artPrismB 17s ease-in-out infinite alternate;
+}
+.art-prism-c{
+  left:39%;
+  bottom:5%;
+  width:22vw;
+  height:9vw;
+  min-height:90px;
+  opacity:.12;
+  background:color-mix(in srgb,var(--art-a) 60%,var(--art-b));
+  transform:rotate(-7deg);
+  animation:artPrismC 21s ease-in-out infinite alternate;
+}
+@keyframes artPrismA{to{transform:rotate(-19deg) translate3d(6vw,4vh,0) scale(1.13)}}
+@keyframes artPrismB{to{transform:rotate(12deg) translate3d(-5vw,-3vh,0) scale(.92)}}
+@keyframes artPrismC{to{transform:rotate(4deg) translate3d(-3vw,-6vh,0) scale(1.2)}}
+.art-orbit{
+  position:absolute;
+  display:block;
+  border:1px solid color-mix(in srgb,var(--art-a) 10%,transparent);
+  border-radius:50%;
+  opacity:.32;
+}
+.art-orbit-a{
+  right:9%;
+  top:8%;
+  width:42vw;
+  height:42vw;
+  max-width:690px;
+  max-height:690px;
+  transform:rotate(27deg) scaleY(.28);
+}
+.art-orbit-b{
+  left:-9%;
+  bottom:6%;
+  width:54vw;
+  height:54vw;
+  transform:rotate(-14deg) scaleY(.18);
+  border-color:color-mix(in srgb,var(--art-b) 9%,transparent);
+}
+.art-vector{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  opacity:.18;
+  mix-blend-mode:screen;
+}
+.art-vector path{
+  fill:none;
+  vector-effect:non-scaling-stroke;
+  stroke-width:.08;
+  stroke-dasharray:1.4 2.8 9 5;
+}
+.vector-primary{
+  stroke:color-mix(in srgb,var(--art-a) 75%,transparent);
+  animation:artVectorTravel 18s linear infinite;
+}
+.vector-secondary{
+  stroke:color-mix(in srgb,var(--art-b) 58%,transparent);
+  animation:artVectorTravel 25s linear infinite reverse;
+}
+@keyframes artVectorTravel{to{stroke-dashoffset:-72}}
+.art-horizon{
+  position:absolute;
+  left:8%;
+  right:8%;
+  top:50%;
+  height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--art-a) 18%,transparent),rgba(255,255,255,.07),color-mix(in srgb,var(--art-b) 15%,transparent),transparent);
+  transform:rotate(calc(-3deg + var(--mx) * 1deg));
+  box-shadow:0 0 28px color-mix(in srgb,var(--art-a) 5%,transparent);
+}
+
+/* Oversized editorial identity: visible as texture, never as primary content. */
+.hero-art-wordmark{
+  position:absolute;
+  z-index:0;
+  left:clamp(-42px,-2.5vw,-12px);
+  top:25%;
+  display:grid;
+  gap:0;
+  pointer-events:none;
+  user-select:none;
+  transform:rotate(-4.5deg);
+  transform-origin:left center;
+  mix-blend-mode:screen;
+  opacity:.13;
+  mask-image:linear-gradient(90deg,#000 0%,#000 54%,transparent 96%);
+}
+.hero-art-wordmark span{
+  display:block;
+  margin-top:-.1em;
+  color:transparent;
+  -webkit-text-stroke:1px rgba(239,239,244,.46);
+  font-family:var(--font-manrope),Arial,sans-serif;
+  font-size:clamp(6.4rem,15.3vw,14.8rem);
+  font-weight:300;
+  line-height:.69;
+  letter-spacing:-.09em;
+  white-space:nowrap;
+}
+.hero-art-wordmark span:last-child{
+  margin-left:9vw;
+  -webkit-text-stroke-color:rgba(255,151,88,.4);
+}
+
+/* The active project gets an art-directed "frequency card" outside the normal
+   project UI so hovering the constellation changes the composition itself. */
+.system-frequency-console{
+  --system-accent:#7ddfff;
+  position:absolute;
+  z-index:2;
+  right:0;
+  top:182px;
+  width:min(292px,27vw);
+  padding:15px 0 14px 16px;
+  border-left:1px solid color-mix(in srgb,var(--system-accent) 48%,transparent);
+  pointer-events:none;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--system-accent) 5%,transparent),transparent);
+  box-shadow:-18px 0 44px color-mix(in srgb,var(--system-accent) 3%,transparent);
+}
+.system-frequency-console>span{
+  display:block;
+  margin-bottom:8px;
+  color:color-mix(in srgb,var(--system-accent) 72%,#9ba1ac);
+  font:500 7px/1 var(--font-dm-mono),monospace;
+  letter-spacing:.16em;
+}
+.system-frequency-console>strong{
+  display:block;
+  max-width:260px;
+  color:#d9dbe0;
+  font-family:var(--font-manrope),Arial,sans-serif;
+  font-size:clamp(1.05rem,1.7vw,1.55rem);
+  font-weight:400;
+  line-height:1.08;
+  letter-spacing:-.04em;
+}
+.system-frequency-console>i{
+  display:block;
+  width:100%;
+  height:1px;
+  margin:12px 0 10px;
+  transform-origin:left;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--system-accent) 62%,transparent),transparent);
+  box-shadow:0 0 14px color-mix(in srgb,var(--system-accent) 17%,transparent);
+}
+.system-frequency-console>div{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px 9px;
+}
+.system-frequency-console b{
+  color:#686e79;
+  font:500 6.5px/1 var(--font-dm-mono),monospace;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+@media(max-width:1100px){
+  .system-frequency-console{display:none}
+}
+@media(max-width:760px){
+  .reactive-art-layer{inset:-5vh -25vw;opacity:.72!important}
+  .art-lens{width:88vw;opacity:.28}
+  .art-prism{filter:blur(32px);opacity:.15}
+  .art-orbit-a{right:-35%;top:14%;width:100vw;height:100vw}
+  .art-orbit-b{left:-55%;width:110vw;height:110vw}
+  .art-vector{opacity:.11}
+  .hero-art-wordmark{top:30%;left:-18px;opacity:.095}
+  .hero-art-wordmark span{font-size:clamp(5rem,25vw,8.2rem)}
+  .hero-art-wordmark span:last-child{margin-left:3vw}
+}
+@media(prefers-reduced-motion:reduce){
+  .reactive-art-layer{transform:none!important;opacity:.58!important}
+  .art-prism,.art-vector path{animation:none}
+  .art-lens{left:62%;top:38%;transition:none}
 }
