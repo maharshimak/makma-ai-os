@@ -2,7 +2,9 @@
 
 import {AnimatePresence, motion, useReducedMotion} from "motion/react";
 import {useEffect, useRef} from "react";
+import type {CSSProperties} from "react";
 import type {projects} from "@/lib/content";
+import {ProjectGlyph} from "./ProjectGlyph";
 
 type Project = (typeof projects)[number];
 
@@ -86,20 +88,46 @@ export function ProjectDossier({project,onClose}:{project:Project|null;onClose:(
         aria-labelledby={titleId}
         aria-describedby={summaryId}
         tabIndex={-1}
-        initial={reduceMotion?false:{x:"105%"}}
-        animate={{x:0}}
-        exit={reduceMotion?{opacity:0}:{x:"105%"}}
-        transition={reduceMotion?{duration:0}:{type:"spring",stiffness:210,damping:28,mass:.85}}
+        style={{"--accent":project.accent} as CSSProperties}
+        initial={reduceMotion?false:{clipPath:"polygon(100% 0,100% 0,100% 100%,82% 100%)",opacity:.72}}
+        animate={{clipPath:"polygon(0 0,100% 0,100% 100%,0 100%)",opacity:1}}
+        exit={reduceMotion?{opacity:0}:{clipPath:"polygon(100% 0,100% 0,100% 100%,82% 100%)",opacity:.4}}
+        transition={reduceMotion?{duration:0}:{duration:.72,ease:[.16,1,.3,1]}}
       >
         <div className="dossier-topline">
           <span>SYSTEM DOSSIER // {project.domain}</span>
           <button ref={closeRef} type="button" onClick={onClose} aria-label="Close project dossier">CLOSE ×</button>
         </div>
 
+        <div className="dossier-scan" aria-hidden="true"/>
         <div className="dossier-orbit" aria-hidden="true"><i/><i/><i/></div>
+        <div className="dossier-visual" aria-hidden="true">
+          <ProjectGlyph slug={project.slug} layoutId={`system-glyph-${project.slug}`}/>
+          <span>SYSTEM TRACE // {project.domain}</span>
+        </div>
         <p className="eyebrow">LIVE ENGINEERING FILE</p>
         <h2 id={titleId}>{project.name}</h2>
         <p id={summaryId} className="dossier-summary">{project.summary}</p>
+        <div className="dossier-status" aria-label="Project status">
+          <span><i/> LIVE PRODUCT</span>
+          <span><i/> SOURCE AVAILABLE</span>
+          <span><i/> BOUNDARIES DECLARED</span>
+        </div>
+
+        <div className="dossier-architecture" aria-label="System architecture">
+          <span className="dossier-label">SYSTEM ROUTE</span>
+          <div className="architecture-route">
+            {project.architecture.map((item,index)=><motion.div
+              key={item}
+              className="architecture-node"
+              initial={reduceMotion?false:{opacity:0,y:12}}
+              animate={{opacity:1,y:0}}
+              transition={reduceMotion?{duration:0}:{delay:.14+index*.055,duration:.38}}
+            >
+              <i>{String(index+1).padStart(2,"0")}</i><b>{item}</b>{index<project.architecture.length-1&&<span aria-hidden="true">→</span>}
+            </motion.div>)}
+          </div>
+        </div>
 
         <div className="dossier-grid">
           <section>
@@ -108,7 +136,12 @@ export function ProjectDossier({project,onClose}:{project:Project|null;onClose:(
           </section>
           <section>
             <span className="dossier-label">IMPLEMENTED NOW</span>
-            <ul>{project.implemented.map(item=><li key={item}>{item}</li>)}</ul>
+            <ul>{project.implemented.map((item,index)=><motion.li
+              key={item}
+              initial={reduceMotion?false:{opacity:0,x:12}}
+              animate={{opacity:1,x:0}}
+              transition={reduceMotion?{duration:0}:{delay:.18+index*.05,duration:.35}}
+            >{item}</motion.li>)}</ul>
           </section>
           <section>
             <span className="dossier-label">ENGINEERING BOUNDARY</span>
