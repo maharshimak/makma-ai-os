@@ -2,10 +2,21 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {WorldCanvas} from "./WorldCanvas";
-import {RecruiterMode} from "./RecruiterMode";\nimport {VisualAtmosphere} from "./VisualAtmosphere";
+import {RecruiterMode} from "./RecruiterMode";
 import {experience,profile,projects,skillSystems,type Project} from "@/lib/content";
 
 const sceneNames=["ACCESS","IDENTITY","FOUNDATION","KNOWLEDGE","AGENCY","RELIABILITY","REVISION","SYNTHESIS","CONTINUATION"];
+const route=[
+  {id:"access",label:"Access"},
+  {id:"identity",label:"Identity"},
+  {id:"foundation",label:"Foundation"},
+  {id:"knowledge",label:"Knowledge"},
+  {id:"agency",label:"Agency"},
+  {id:"reliability",label:"Reliability"},
+  {id:"revision",label:"Experience"},
+  {id:"synthesis",label:"Synthesis"},
+  {id:"continuation",label:"Connect"}
+];
 
 function useJourney(){
   const [progress,setProgress]=useState(0);
@@ -31,10 +42,12 @@ function ProjectInspector({project,onClose}:{project:Project;onClose:()=>void}){
   const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
   return <div className="inspector-backdrop" onMouseDown={onClose}>
     <article className="inspector" onMouseDown={e=>e.stopPropagation()} role="dialog" aria-modal="true" aria-label={project.name}>
+      <div className="inspector-corners" aria-hidden="true"><i/><i/><i/><i/></div>
       <button className="icon-button inspector-close" onClick={onClose} aria-label="Close project">×</button>
-      <span className="micro">{project.family.toUpperCase()}</span>
+      <span className="micro">MODULE / {project.family.toUpperCase()}</span>
       <h2>{project.name}</h2>
       <p className="inspector-lead">{project.summary}</p>
+      <div className="inspector-status"><span><i/>SYSTEM ONLINE</span><span>ARCHITECTURE EXPOSED</span></div>
       <div className="inspector-rule"/>
       <div className="inspector-columns">
         <div><span className="micro">WHY IT EXISTS</span><p>{project.purpose}</p></div>
@@ -65,20 +78,30 @@ export function SynthesisPortfolio(){
   const [selected,setSelected]=useState<Project|null>(null);
   const scene=Math.min(sceneNames.length-1,Math.floor(progress*sceneNames.length));
   const projectFamilies=useMemo(()=>[
-    {name:"KNOWLEDGE & MEMORY",items:projects.filter(p=>p.family.startsWith("Knowledge"))},
-    {name:"AUTONOMOUS SYSTEMS",items:projects.filter(p=>p.family.startsWith("Agency"))},
-    {name:"RELIABILITY CORE",items:projects.filter(p=>p.family.startsWith("Reliability"))}
+    {id:"knowledge",name:"KNOWLEDGE & MEMORY",note:"Raw information is parsed, connected, retrieved and returned with evidence.",items:projects.filter(p=>p.family.startsWith("Knowledge"))},
+    {id:"agency",name:"AUTONOMOUS SYSTEMS",note:"Knowledge becomes planning, tools and controlled action.",items:projects.filter(p=>p.family.startsWith("Agency"))},
+    {id:"reliability",name:"RELIABILITY CORE",note:"Intelligence is measured, gated, promoted and monitored before it earns trust.",items:projects.filter(p=>p.family.startsWith("Reliability"))}
   ],[]);
 
   useEffect(()=>{
-    const key=(e:KeyboardEvent)=>{if(e.key.toLowerCase()==="r"&&!selected)setRecruiter(v=>!v);if(e.key==="Escape"){setRecruiter(false);setSelected(null);}};
+    const key=(e:KeyboardEvent)=>{
+      if(e.key.toLowerCase()==="r"&&!selected)setRecruiter(v=>!v);
+      if(e.key==="Escape"){setRecruiter(false);setSelected(null);}
+    };
     window.addEventListener("keydown",key);
     return ()=>window.removeEventListener("keydown",key);
   },[selected]);
 
-  return <main className="synthesis">
+  return <main className="synthesis" style={{"--journey":progress} as React.CSSProperties}>
+    <div className="ambient-stage" aria-hidden="true">
+      <div className="ambient-glow warm"/>
+      <div className="ambient-glow cool"/>
+      <div className="scan-field"/>
+      <div className="dust-field"/>
+    </div>
     <WorldCanvas progress={progress} reducedMotion={reducedMotion}/>
     <div className="grain" aria-hidden="true"/>
+    <div className="cinematic-vignette" aria-hidden="true"/>
     <header className="hud">
       <a className="brand" href="#access"><span>MP</span><b>THE SYNTHESIS ENGINE</b></a>
       <div className="hud-center"><span>{String(scene+1).padStart(2,"0")}/{String(sceneNames.length).padStart(2,"0")}</span><b>{sceneNames[scene]}</b></div>
@@ -86,59 +109,71 @@ export function SynthesisPortfolio(){
     </header>
     <div className="progress-rail" aria-hidden="true"><span style={{transform:"scaleX("+progress+")"}}/></div>
 
+    <nav className="journey-nav" aria-label="Portfolio chapters">
+      {route.map((item,i)=><a key={item.id} href={"#"+item.id} className={scene===i?"active":""} aria-label={item.label}><i/><span>{item.label}</span></a>)}
+    </nav>
+
+    <div className="system-telemetry" aria-hidden="true">
+      <span>SYNC {Math.round(progress*100).toString().padStart(3,"0")}%</span>
+      <i/>
+      <b>{sceneNames[scene]}</b>
+    </div>
+
     <SectionShell id="access" index="00" label="ACCESS APERTURE" className="opening">
       <div className="opening-copy">
-        <span className="micro">AUTHORIZED SYSTEMS INSPECTION / PARIS / 2026</span>
+        <div className="access-line"><span className="micro">AUTHORIZED SYSTEMS INSPECTION / PARIS / 2026</span><b><i/>LINK ESTABLISHED</b></div>
         <div className="identity-lockup">
-          <div className="identity-plate">
-            <div className="plate-serial"><span>MP / SYNTHESIS ENGINE</span><b>AUTH // 2026</b></div>
-            <small>IDENTIFICATION FRAME</small>
-            <h1>MAHARSHI<br/>PATEL</h1>
-            <p>AI ENGINEER / INTELLIGENT SYSTEMS</p>
-            <div className="plate-status"><span>KNOWLEDGE</span><span>AGENCY</span><span>RELIABILITY</span><i>ONLINE</i></div>
-          </div>
+          <div className="plate-label"><span>IDENTIFICATION FRAME</span><em>MP-2026-AI</em></div>
+          <h1>MAHARSHI<br/>PATEL</h1>
+          <p>AI ENGINEER / INTELLIGENT SYSTEMS</p>
+          <div className="identity-subline"><span>AGENTIC AI</span><span>KNOWLEDGE SYSTEMS</span><span>PRODUCTION ML</span></div>
         </div>
-        <div className="scroll-cue"><i/>SCROLL TO INSPECT</div>
+        <div className="scroll-cue"><i/>SCROLL TO INSPECT <span>↓</span></div>
       </div>
     </SectionShell>
 
-    <SectionShell id="identity" index="01" label="IDENTIFICATION">
+    <SectionShell id="identity" index="01" label="IDENTIFICATION" className="identity-scene">
       <div className="split-copy">
-        <div><span className="micro">SYSTEM OWNER</span><h2>I build systems where knowledge becomes action.</h2></div>
+        <div><span className="micro">SYSTEM OWNER / OPERATING PRINCIPLE</span><h2>I build systems where knowledge becomes action.</h2></div>
         <div className="identity-facts">
-          <p>Agentic AI</p><p>RAG & knowledge systems</p><p>LLM engineering</p><p>AI infrastructure</p><p>ML systems & MLOps</p>
+          <p><span>01</span>Agentic AI</p><p><span>02</span>RAG & knowledge systems</p><p><span>03</span>LLM engineering</p><p><span>04</span>AI infrastructure</p><p><span>05</span>ML systems & MLOps</p>
         </div>
       </div>
     </SectionShell>
 
-    <SectionShell id="foundation" index="02" label="FOUNDATION">
+    <SectionShell id="foundation" index="02" label="FOUNDATION" className="foundation-scene">
       <div className="foundation-copy">
         <span className="micro">LOAD-BEARING SYSTEMS</span>
         <h2>The machine is only as strong as what it rests on.</h2>
         <div className="foundation-grid">
-          <div><b>COMPUTING</b><span>Software engineering · algorithms · systems</span></div>
-          <div><b>DATA</b><span>Analytics · pipelines · SQL · experimentation</span></div>
-          <div><b>INTELLIGENCE</b><span>ML · NLP · LLMs · deep learning</span></div>
-          <div><b>EDUCATION</b><span>{profile.school}</span></div>
-          <div><b>VERIFIED</b><span>{profile.certification}</span></div>
+          <div><b>COMPUTING</b><span>Software engineering · algorithms · systems</span><i>01</i></div>
+          <div><b>DATA</b><span>Analytics · pipelines · SQL · experimentation</span><i>02</i></div>
+          <div><b>INTELLIGENCE</b><span>ML · NLP · LLMs · deep learning</span><i>03</i></div>
+          <div><b>EDUCATION</b><span>{profile.school}</span><i>04</i></div>
+          <div><b>VERIFIED</b><span>{profile.certification}</span><i>05</i></div>
         </div>
       </div>
     </SectionShell>
 
-    {projectFamilies.map((family,fi)=><SectionShell key={family.name} id={"family-"+fi} index={String(fi+3).padStart(2,"0")} label={family.name}>
+    {projectFamilies.map((family,fi)=><SectionShell key={family.name} id={family.id} index={String(fi+3).padStart(2,"0")} label={family.name} className={"machine-scene machine-"+family.id}>
       <div className="systems-layout">
-        <div className="systems-intro"><span className="module-signal" aria-hidden="true"/><span className="micro">MACHINE SUBSYSTEM</span><h2>{family.name}</h2><p>{fi===0?"Raw information is parsed, connected, retrieved and returned with evidence.":fi===1?"Knowledge becomes planning, tools and controlled action.":"Intelligence is measured, gated, promoted and monitored before it earns trust."}</p></div>
+        <div className="systems-intro">
+          <span className="micro">MACHINE SUBSYSTEM / 0{fi+1}</span>
+          <h2>{family.name}</h2>
+          <p>{family.note}</p>
+          <div className="subsystem-meter"><span style={{width:(58+fi*14)+"%"}}/><b>{58+fi*14}% INTEGRATED</b></div>
+        </div>
         <div className="module-list">
           {family.items.map((p,i)=><button key={p.slug} className="module-terminal" onClick={()=>setSelected(p)}>
             <span className="module-no">{String(i+1).padStart(2,"0")}</span>
-            <span className="module-main"><b>{p.name}</b><small>{p.summary}</small></span>
+            <span className="module-main"><b>{p.name}</b><small>{p.summary}</small><em>{p.stack.slice(0,3).join(" / ")}</em></span>
             <span className="module-open">INSPECT ↗</span>
           </button>)}
         </div>
       </div>
     </SectionShell>)}
 
-    <SectionShell id="revision" index="06" label="REVISION RAIL">
+    <SectionShell id="revision" index="06" label="REVISION RAIL" className="revision-scene">
       <div className="revision-layout">
         <div className="revision-heading"><span className="micro">SYSTEM REVISION HISTORY</span><h2>Each role changed what the machine could do next.</h2></div>
         <div className="revision-list">{experience.map((e,i)=><div className="revision-row" key={e.company+e.period}>
@@ -147,12 +182,12 @@ export function SynthesisPortfolio(){
       </div>
     </SectionShell>
 
-    <SectionShell id="synthesis" index="07" label="SYNTHESIS CHAMBER">
+    <SectionShell id="synthesis" index="07" label="SYNTHESIS CHAMBER" className="synthesis-scene">
       <div className="synthesis-copy">
         <span className="micro">ALL SUBSYSTEMS / CONNECTED</span>
         <h2>Knowledge. Agency. Reliability.<br/><i>One engineering direction.</i></h2>
         <p>Building intelligent systems where retrieval, reasoning, tools, evaluation and infrastructure work together.</p>
-        <div className="skill-system">{skillSystems.map(s=><div key={s.name}><b>{s.name}</b><span>{s.items.join(" / ")}</span></div>)}</div>
+        <div className="skill-system">{skillSystems.map((s,i)=><div key={s.name}><b><span>0{i+1}</span>{s.name}</b><em>{s.items.join(" / ")}</em></div>)}</div>
       </div>
     </SectionShell>
 
@@ -162,9 +197,9 @@ export function SynthesisPortfolio(){
         <h2>The system is still being built.</h2>
         <p>What should exist next?</p>
         <div className="contact-actions">
-          <a href={profile.email}>EMAIL</a>
-          <a href={profile.linkedin} target="_blank" rel="noreferrer">LINKEDIN ↗</a>
-          <a href={profile.github} target="_blank" rel="noreferrer">GITHUB ↗</a>
+          <a href={profile.email}><span>01</span>EMAIL</a>
+          <a href={profile.linkedin} target="_blank" rel="noreferrer"><span>02</span>LINKEDIN ↗</a>
+          <a href={profile.github} target="_blank" rel="noreferrer"><span>03</span>GITHUB ↗</a>
         </div>
         <small>© 2026 MAHARSHI PATEL / THE SYNTHESIS ENGINE</small>
       </div>
