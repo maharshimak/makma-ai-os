@@ -45,6 +45,8 @@ function ProjectInspector({project,onClose}:{project:Project;onClose:()=>void}){
   const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
   return <div className="inspector-backdrop" onMouseDown={onClose}>
     <article className="inspector" onMouseDown={e=>e.stopPropagation()} role="dialog" aria-modal="true" aria-label={project.name}>
+      <img className="inspector-generated-nebula" src={base+"/assets/v5/nebula-generated.webp"} alt="" aria-hidden="true"/>
+      <img className="inspector-generated-frame" src={base+"/assets/v5/hud-frame.svg"} alt="" aria-hidden="true"/>
       <div className="inspector-corners" aria-hidden="true"><i/><i/><i/><i/></div>
       <button className="icon-button inspector-close" onClick={onClose} aria-label="Close project">×</button>
       <span className="micro">MODULE / {project.family.toUpperCase()}</span>
@@ -104,7 +106,10 @@ export function SynthesisPortfolio(){
     return ()=>{document.body.style.overflow=previous;};
   },[recruiter,selected]);
 
-  return <main className={"synthesis"+((recruiter||selected)?" focus-mode":"")} style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`,"--cloud-art":`url(${base}/assets/v5/cloud-generated.webp)`} as React.CSSProperties}>
+  const scenePhase=(progress*sceneNames.length)%1;
+  const sceneEnergy=Math.sin(scenePhase*Math.PI);
+
+  return <main className={"synthesis"+((recruiter||selected)?" focus-mode":"")} style={{"--journey":progress,"--scene-phase":scenePhase,"--scene-energy":sceneEnergy,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`,"--cloud-art":`url(${base}/assets/v5/cloud-generated.webp)`} as React.CSSProperties}>
     <SystemLoader/>
     <AmbientSound enabled={sound} progress={progress}/>
     <VisualAtmosphere progress={progress} reducedMotion={reducedMotion} base={base}/>
@@ -117,6 +122,13 @@ export function SynthesisPortfolio(){
     <WorldCanvas progress={progress} reducedMotion={reducedMotion}/>
     <div className="grain" aria-hidden="true"/>
     <div className="cinematic-vignette" aria-hidden="true"/>
+    <div className="optical-frame" aria-hidden="true"><i/><i/><i/><i/></div>
+    <div className="depth-ruler" aria-hidden="true">{Array.from({length:12}).map((_,i)=><i key={i}/>)}</div>
+    <div className="cinema-readout" aria-hidden="true">
+      <span><b>NODE</b>{String(scene+1).padStart(2,"0")}</span>
+      <span><b>DEPTH</b>{Math.round(progress*86).toString().padStart(2,"0")}M</span>
+      <span><b>SIGNAL</b>{Math.round(72+progress*27)}%</span>
+    </div>
     <header className="hud">
       <a className="brand" href="#access"><span>MP</span><b>THE SYNTHESIS ENGINE</b></a>
       <div className="hud-center"><span>{String(scene+1).padStart(2,"0")}/{String(sceneNames.length).padStart(2,"0")}</span><b>{sceneNames[scene]}</b></div>
@@ -205,7 +217,10 @@ export function SynthesisPortfolio(){
 
     <SectionShell id="synthesis" index="07" label="SYNTHESIS CHAMBER" className="synthesis-scene">
       <div className="synthesis-copy">
-        <div className="authored-reactor" aria-hidden="true"><img src={base+"/assets/v5/reactor-core.svg"} alt=""/></div>
+        <div className="authored-reactor" aria-hidden="true">
+          <img className="reactor-cloud" src={base+"/assets/v5/cloud-wisp.svg"} alt=""/>
+          <img className="reactor-machine" src={base+"/assets/v5/reactor-core.svg"} alt=""/>
+        </div>
         <span className="micro">ALL SUBSYSTEMS / CONNECTED</span>
         <h2>Knowledge. Agency. Reliability.<br/><i>One engineering direction.</i></h2>
         <p>Building intelligent systems where retrieval, reasoning, tools, evaluation and infrastructure work together.</p>
