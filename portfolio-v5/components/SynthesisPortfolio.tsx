@@ -106,7 +106,7 @@ export function SynthesisPortfolio(){
 
   return <main className={"synthesis"+((recruiter||selected)?" focus-mode":"")} style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`,"--cloud-art":`url(${base}/assets/v5/cloud-generated.webp)`} as React.CSSProperties}>
     <SystemLoader/>
-    <AmbientSound enabled={sound}/>
+    <AmbientSound enabled={sound} progress={progress}/>
     <VisualAtmosphere progress={progress} reducedMotion={reducedMotion} base={base}/>
     <div className="ambient-stage" aria-hidden="true">
       <div className="ambient-glow warm"/>
