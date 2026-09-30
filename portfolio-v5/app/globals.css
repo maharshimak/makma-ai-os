@@ -330,3 +330,202 @@ background-size:143px 127px,233px 211px,191px 173px,269px 239px;animation:microS
 .focus-mode .signal-lattice,.focus-mode .global-hud-frame{opacity:.025!important}
 @media(max-width:640px){.signal-lattice{inset:11% -14%;width:128%;height:78%;opacity:.03!important}.cloud-authored{left:-55%;width:210%}.micro-stars{opacity:.12}.spectrum-flare{filter:blur(78px)}}
 @media(prefers-reduced-motion:reduce){.micro-stars,.cloud-authored,.reactor-halo,.reactor-orbit{animation:none!important}}
+
+
+/* V5.6 — generated asset integration: image-model art becomes part of the machine. */
+.sr-only{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+.generated-identity-lockup{
+  width:min(820px,76vw)!important;
+  border:0!important;
+  background:none!important;
+  padding:0!important;
+  clip-path:none!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+.generated-identity-lockup:after{display:none!important}
+.generated-identity-shell{
+  position:relative;
+  isolation:isolate;
+  padding-bottom:72px;
+  transform:translateZ(0);
+  filter:drop-shadow(0 30px 72px rgba(0,0,0,.62));
+}
+.generated-identity-shell:before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:10% 8% 25%;
+  border-radius:42%;
+  background:
+    radial-gradient(circle at 64% 48%,rgba(255,157,56,.24),transparent 38%),
+    radial-gradient(circle at 24% 62%,rgba(119,198,223,.12),transparent 42%);
+  filter:blur(42px);
+  opacity:.82;
+}
+.generated-identity-badge{
+  display:block;
+  width:100%;
+  height:auto;
+  opacity:.98;
+  filter:saturate(.78) contrast(1.06) brightness(.9);
+  transform:perspective(1200px) rotateX(.35deg);
+  transform-origin:50% 50%;
+  will-change:filter,transform;
+  animation:generatedPlateBreath 8s ease-in-out infinite alternate;
+}
+@keyframes generatedPlateBreath{
+  to{
+    filter:saturate(.88) contrast(1.08) brightness(.96) drop-shadow(0 0 15px rgba(255,157,56,.13));
+    transform:perspective(1200px) rotateX(-.35deg) translateY(-2px);
+  }
+}
+.generated-identity-scan{
+  position:absolute;
+  z-index:2;
+  left:9%;
+  right:9%;
+  top:18%;
+  height:1px;
+  opacity:0;
+  background:linear-gradient(90deg,transparent,#72d7f3 16%,#fff6df 49%,#ff9d38 78%,transparent);
+  box-shadow:0 0 10px rgba(119,198,223,.42),0 0 24px rgba(255,157,56,.22);
+  mix-blend-mode:screen;
+  animation:generatedPlateScan 5.6s ease-in-out infinite;
+}
+@keyframes generatedPlateScan{
+  0%,10%{top:18%;opacity:0}
+  22%{opacity:.74}
+  76%{top:68%;opacity:.17}
+  86%,100%{top:68%;opacity:0}
+}
+.generated-identity-subline{
+  position:absolute;
+  left:7%;
+  right:7%;
+  bottom:41px;
+  display:flex;
+  justify-content:center;
+  gap:clamp(10px,2.4vw,28px);
+  color:#aab1b2;
+  font:600 7px/1 ui-monospace,SFMono-Regular,monospace;
+  letter-spacing:.14em;
+}
+.generated-identity-subline span{
+  position:relative;
+  padding-left:13px;
+}
+.generated-identity-subline span:before{
+  content:"";
+  position:absolute;
+  left:0;top:50%;
+  width:5px;height:5px;
+  transform:translateY(-50%) rotate(45deg);
+  border:1px solid rgba(255,180,87,.54);
+}
+.generated-plate-status{
+  position:absolute!important;
+  left:7%;
+  right:7%;
+  bottom:5px;
+  margin:0!important;
+  padding:12px 0 0!important;
+  border-top-color:rgba(233,231,223,.1)!important;
+}
+.generated-plate-status i{
+  color:#9dc19f!important;
+  text-shadow:0 0 12px rgba(135,168,139,.32);
+}
+.reactor-visual img,
+.authored-reactor .reactor-machine{
+  object-fit:contain;
+  filter:saturate(.92) contrast(1.08) brightness(.82) drop-shadow(0 0 24px rgba(255,126,34,.34));
+}
+.reactor-visual:after{
+  content:"";
+  position:absolute;
+  inset:29%;
+  border-radius:50%;
+  background:radial-gradient(circle,#fff4d2 0 3%,rgba(255,157,56,.72) 7%,rgba(255,103,20,.18) 34%,transparent 70%);
+  filter:blur(10px);
+  opacity:.78;
+  animation:reactorInnerPulse 2.6s ease-in-out infinite alternate;
+}
+@keyframes reactorInnerPulse{to{transform:scale(1.08);opacity:.5}}
+.authored-reactor{
+  opacity:.28!important;
+  width:min(55vw,760px)!important;
+}
+.authored-reactor .reactor-machine{
+  position:relative;
+  width:100%;
+  height:100%;
+  animation:authoredReactorSpin 38s linear infinite;
+}
+.authored-reactor .reactor-cloud{
+  position:absolute;
+  left:50%;top:50%;
+  width:150%;
+  height:auto;
+  transform:translate(-50%,-50%);
+  opacity:.18;
+  mix-blend-mode:screen;
+  filter:blur(1.2px) saturate(.8) brightness(.78);
+  animation:reactorCloudDrift 16s ease-in-out infinite alternate;
+}
+@keyframes reactorCloudDrift{
+  to{transform:translate(-54%,-47%) scale(1.06);opacity:.25}
+}
+.inspector-generated-frame{
+  position:absolute;
+  z-index:0;
+  inset:10px;
+  width:calc(100% - 20px);
+  height:calc(100% - 20px);
+  object-fit:fill;
+  opacity:.11;
+  pointer-events:none;
+  filter:drop-shadow(0 0 15px rgba(255,157,56,.11));
+}
+.inspector-generated-nebula{
+  position:absolute;
+  z-index:0;
+  inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  opacity:.065;
+  mix-blend-mode:screen;
+  filter:saturate(.75) brightness(.58) contrast(1.12);
+  pointer-events:none;
+}
+.inspector>*:not(.inspector-generated-frame):not(.inspector-generated-nebula){position:relative;z-index:2}
+@media(max-width:980px){
+  .generated-identity-lockup{width:min(780px,88vw)!important}
+  .authored-reactor{right:-42vw!important;width:92vw!important;opacity:.19!important}
+}
+@media(max-width:640px){
+  .generated-identity-lockup{width:100%!important}
+  .generated-identity-shell{padding-bottom:66px}
+  .generated-identity-badge{width:118%;margin-left:-9%}
+  .generated-identity-subline{left:0;right:0;gap:8px;letter-spacing:.08em;font-size:6px}
+  .generated-plate-status{left:0;right:0}
+  .generated-plate-status span:nth-child(3){display:none}
+  .authored-reactor{right:-67vw!important;width:126vw!important;opacity:.12!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .generated-identity-badge,
+  .generated-identity-scan,
+  .authored-reactor .reactor-machine,
+  .authored-reactor .reactor-cloud,
+  .reactor-visual:after{animation:none!important}
+}
