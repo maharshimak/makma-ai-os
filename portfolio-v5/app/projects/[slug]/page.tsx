@@ -1,4 +1,5 @@
-import {notFound} from "next/navigation";\nimport type {CSSProperties} from "react";
+import {notFound} from "next/navigation";
+import type {CSSProperties} from "react";
 import {profile,projects} from "@/lib/content";
 
 export function generateStaticParams(){
