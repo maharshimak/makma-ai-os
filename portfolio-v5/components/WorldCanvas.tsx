@@ -1,9 +1,9 @@
 "use client";
 
-import {AdaptiveDpr,Line,Sparkles,useTexture} from "@react-three/drei";
+import {AdaptiveDpr,Line,PerformanceMonitor,Sparkles,useTexture} from "@react-three/drei";
 import {Canvas,useFrame} from "@react-three/fiber";
 import {Bloom,EffectComposer} from "@react-three/postprocessing";
-import {useMemo,useRef} from "react";
+import {Suspense,useMemo,useRef,useState} from "react";
 import * as THREE from "three";
 
 const CAMERA_POINTS=[
@@ -402,7 +402,7 @@ function SceneLighting({progress}:{progress:number}){
   </>;
 }
 
-function MachineWorld({progress,reducedMotion}:{progress:number;reducedMotion:boolean}){
+function MachineWorld({progress,reducedMotion,quality}:{progress:number;reducedMotion:boolean;quality:"high"|"medium"|"low"}){
   const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
   const metalMap=useTexture(base+"/assets/v5/metal-generated.webp");
   useMemo(()=>{
@@ -411,13 +411,15 @@ function MachineWorld({progress,reducedMotion}:{progress:number;reducedMotion:bo
     metalMap.wrapT=THREE.RepeatWrapping;
     metalMap.repeat.set(5,32);
   },[metalMap]);
+  const primarySparkles=quality==="low"?260:quality==="medium"?560:900;
+  const accentSparkles=quality==="low"?55:quality==="medium"?110:180;
   return <group>
     <NebulaBackdrop/>
     <GeneratedAssetPlanes reducedMotion={reducedMotion}/>
     <ambientLight intensity={.22}/>
     <SceneLighting progress={progress}/>
-    <Sparkles count={900} scale={[14,10,96]} size={1.25} speed={.12} opacity={.32} color="#d9e7eb"/>
-    <Sparkles count={180} scale={[11,8,78]} size={2.1} speed={.2} opacity={.42} color="#ffae55"/>
+    <Sparkles count={primarySparkles} scale={[14,10,96]} size={1.25} speed={.12} opacity={.32} color="#d9e7eb"/>
+    <Sparkles count={accentSparkles} scale={[11,8,78]} size={2.1} speed={.2} opacity={.42} color="#ffae55"/>
     <Aperture progress={progress}/>
     <InspectionArm progress={progress}/>
     {Array.from({length:18}).map((_,i)=><Frame key={i} index={i} z={8-i*5.2} scale={1-(i*.006)}/>)}
@@ -434,14 +436,22 @@ function MachineWorld({progress,reducedMotion}:{progress:number;reducedMotion:bo
 }
 
 export function WorldCanvas({progress,reducedMotion}:{progress:number;reducedMotion:boolean}){
+  const [quality,setQuality]=useState<"high"|"medium"|"low">("high");
   return <div className="world-canvas" aria-hidden="true">
     <Canvas dpr={[.85,1.55]} camera={{position:[0,1.7,15],fov:40,near:.1,far:170}} gl={{antialias:true,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.02}}>
       <color attach="background" args={["#080b0d"]}/>
       <fog attach="fog" args={["#11171a",15,58]}/>
       <AdaptiveDpr pixelated/>
-      <CameraRig progress={progress} reducedMotion={reducedMotion}/>
-      <MachineWorld progress={progress} reducedMotion={reducedMotion}/>
-      {!reducedMotion&&<EffectComposer multisampling={0}><Bloom intensity={.72} luminanceThreshold={.62} luminanceSmoothing={.28} mipmapBlur/></EffectComposer>}
+      <PerformanceMonitor
+        flipflops={3}
+        onDecline={()=>setQuality(q=>q==="high"?"medium":"low")}
+        onIncline={()=>setQuality(q=>q==="low"?"medium":"high")}
+      />
+      <Suspense fallback={null}>
+        <CameraRig progress={progress} reducedMotion={reducedMotion}/>
+        <MachineWorld progress={progress} reducedMotion={reducedMotion} quality={quality}/>
+        {!reducedMotion&&quality!=="low"&&<EffectComposer multisampling={0}><Bloom intensity={quality==="high"?.72:.48} luminanceThreshold={.62} luminanceSmoothing={.28} mipmapBlur/></EffectComposer>}
+      </Suspense>
     </Canvas>
   </div>;
 }

@@ -5,7 +5,6 @@ import {WorldCanvas} from "./WorldCanvas";
 import {RecruiterMode} from "./RecruiterMode";
 import {VisualAtmosphere} from "./VisualAtmosphere";
 import {SystemLoader} from "./SystemLoader";
-import {AmbientSound} from "./AmbientSound";
 import {experience,profile,projects,skillSystems,type Project} from "@/lib/content";
 
 const sceneNames=["ACCESS","IDENTITY","FOUNDATION","KNOWLEDGE","AGENCY","RELIABILITY","REVISION","SYNTHESIS","CONTINUATION"];
@@ -50,7 +49,7 @@ function ProjectInspector({project,onClose}:{project:Project;onClose:()=>void}){
       <span className="micro">MODULE / {project.family.toUpperCase()}</span>
       <h2>{project.name}</h2>
       <p className="inspector-lead">{project.summary}</p>
-      <div className="inspector-status"><span><i/>SYSTEM ONLINE</span><span>ARCHITECTURE EXPOSED</span></div>
+      <div className="inspector-status"><span><i/>SOURCE MAPPED</span><span>ARCHITECTURE EXPOSED</span></div>
       <div className="inspector-rule"/>
       <div className="inspector-columns">
         <div><span className="micro">WHY IT EXISTS</span><p>{project.purpose}</p></div>
@@ -80,7 +79,6 @@ export function SynthesisPortfolio(){
   const {progress,reducedMotion}=useJourney();
   const [recruiter,setRecruiter]=useState(false);
   const [selected,setSelected]=useState<Project|null>(null);
-  const [sound,setSound]=useState(false);
   const scene=Math.min(sceneNames.length-1,Math.floor(progress*sceneNames.length));
   const projectFamilies=useMemo(()=>[
     {id:"knowledge",name:"KNOWLEDGE & MEMORY",note:"Raw information is parsed, connected, retrieved and returned with evidence.",flow:["SOURCES","RETRIEVE","FUSE","EVIDENCE"],items:projects.filter(p=>p.family.startsWith("Knowledge"))},
@@ -106,7 +104,6 @@ export function SynthesisPortfolio(){
 
   return <main className={"synthesis"+((recruiter||selected)?" focus-mode":"")} style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`,"--cloud-art":`url(${base}/assets/v5/cloud-generated.webp)`} as React.CSSProperties}>
     <SystemLoader/>
-    <AmbientSound enabled={sound}/>
     <VisualAtmosphere progress={progress} reducedMotion={reducedMotion} base={base}/>
     <div className="ambient-stage" aria-hidden="true">
       <div className="ambient-glow warm"/>
@@ -120,7 +117,7 @@ export function SynthesisPortfolio(){
     <header className="hud">
       <a className="brand" href="#access"><span>MP</span><b>THE SYNTHESIS ENGINE</b></a>
       <div className="hud-center"><span>{String(scene+1).padStart(2,"0")}/{String(sceneNames.length).padStart(2,"0")}</span><b>{sceneNames[scene]}</b></div>
-      <div className="hud-actions"><button className={"sound-trigger"+(sound?" active":"")} onClick={()=>setSound(v=>!v)} aria-pressed={sound}><i/>{sound?"SOUND ON":"SOUND OFF"}</button><button className="recruiter-trigger" onClick={()=>setRecruiter(true)}>QUICK ACCESS <kbd>R</kbd></button></div>
+      <button className="recruiter-trigger" onClick={()=>setRecruiter(true)}>QUICK ACCESS <kbd>R</kbd></button>
     </header>
     <div className="progress-rail" aria-hidden="true"><span style={{transform:"scaleX("+progress+")"}}/></div>
 
@@ -183,7 +180,10 @@ export function SynthesisPortfolio(){
           <span className="micro">MACHINE SUBSYSTEM / 0{fi+1}</span>
           <h2>{family.name}</h2>
           <p>{family.note}</p>
-          <div className="subsystem-meter"><span style={{width:(58+fi*14)+"%"}}/><b>{58+fi*14}% INTEGRATED</b></div>
+          <div className="subsystem-flow" aria-label={family.name+" system flow"}>
+            {family.flow.map((step,i)=><span key={step}><b>{String(i+1).padStart(2,"0")}</b>{step}{i<family.flow.length-1&&<i>→</i>}</span>)}
+          </div>
+          <div className="subsystem-meter"><span/><b>CONNECTED / INSPECTABLE</b></div>
         </div>
         <div className="module-list">
           {family.items.map((p,i)=><button key={p.slug} className="module-terminal" onClick={()=>setSelected(p)}>

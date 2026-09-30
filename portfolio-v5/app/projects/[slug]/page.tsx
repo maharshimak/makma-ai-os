@@ -17,11 +17,12 @@ export default async function ProjectPage({params}:{params:Promise<{slug:string}
   const {slug}=await params;
   const project=projects.find(p=>p.slug===slug);
   if(!project) notFound();
-  return <main className="project-page">
+  const accent=project.family.startsWith("Knowledge")?"#73bfd8":project.family.startsWith("Agency")?"#ffad50":"#87a88b";
+  return <main className="project-page" style={{"--project-accent":accent} as CSSProperties}>
     <div className="project-art" aria-hidden="true"><img className="project-nebula" src={base+"/assets/v5/nebula-generated.webp"} alt=""/><img className="project-hud" src={base+"/assets/v5/hud-frame.svg"} alt=""/></div>
     <nav><a href={base+"/"}>← THE SYNTHESIS ENGINE</a><span>{profile.name}</span></nav>
     <article>
-      <div className="project-kicker"><span className="micro">MODULE / {project.family.toUpperCase()}</span><b><i/>SYSTEM ONLINE</b></div>
+      <div className="project-kicker"><span className="micro">MODULE / {project.family.toUpperCase()}</span><b><i/>SOURCE MAPPED</b></div>
       <h1>{project.name}</h1>
       <p className="project-summary">{project.summary}</p>
       <div className="project-grid">
