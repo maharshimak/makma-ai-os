@@ -1,43 +1,31 @@
 import type {Metadata, Viewport} from "next";
-import {DM_Mono, Manrope} from "next/font/google";
-import {SmoothScroll} from "@/components/SmoothScroll";
 import "./globals.css";
-import "./cinematic.css";
-import "./polish.css";
-import "./story.css";
-import "lenis/dist/lenis.css";
-
-const manrope=Manrope({subsets:["latin"],variable:"--font-manrope",display:"swap"});
-const dmMono=DM_Mono({subsets:["latin"],weight:["300","400","500"],variable:"--font-dm-mono",display:"swap"});
 
 export const metadata:Metadata={
-  title:"Maharshi Patel — Galactic Systems",
-  description:"AI, data and software systems by Maharshi Patel: agent runtimes, retrieval, document intelligence, knowledge systems and LLM evaluation.",
-  keywords:["AI Engineer","Data Engineer","RAG","LLM","Agents","MLOps","Paris","Maharshi Patel"],
+  metadataBase:new URL("https://maharshimak.github.io/makma-ai-os/portfolio-v5/"),
+  title:"Maharshi Patel — The Synthesis Engine",
+  description:"An interactive portfolio about intelligent systems: agents, RAG, knowledge, evaluation, MLOps and production AI by Maharshi Patel.",
+  keywords:["Maharshi Patel","AI Engineer","Agentic AI","RAG","LLM","Knowledge Systems","MLOps","Paris"],
   authors:[{name:"Maharshi Patel"}],
   creator:"Maharshi Patel",
   openGraph:{
-    title:"Maharshi Patel — Galactic Systems",
-    description:"A cinematic engineering portfolio for production-minded AI, data and software systems.",
+    title:"Maharshi Patel — The Synthesis Engine",
+    description:"Inspect the systems behind Maharshi Patel's work in agentic AI, retrieval, knowledge, evaluation and production ML.",
     type:"website"
   },
   twitter:{
     card:"summary_large_image",
-    title:"Maharshi Patel — Galactic Systems",
-    description:"A cinematic engineering portfolio for production-minded AI, data and software systems."
-  }
+    title:"Maharshi Patel — The Synthesis Engine",
+    description:"An interactive world for intelligent systems."
+  },
+  robots:{index:true,follow:true}
 };
 
 export const viewport:Viewport={
-  themeColor:"#030408",
+  themeColor:"#111315",
   colorScheme:"dark"
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}){
-  return <html lang="en">
-    <head>
-      <link rel="preconnect" href="https://assets.science.nasa.gov" crossOrigin="anonymous"/>
-    </head>
-    <body className={`${manrope.variable} ${dmMono.variable}`}><SmoothScroll>{children}</SmoothScroll></body>
-  </html>;
+  return <html lang="en"><body>{children}</body></html>;
 }

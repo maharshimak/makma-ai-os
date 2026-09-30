@@ -1,5 +1,5 @@
-import {GalacticPortfolio} from "@/components/GalacticPortfolio";
+import {SynthesisPortfolio} from "@/components/SynthesisPortfolio";
 
 export default function Page(){
-  return <GalacticPortfolio/>;
+  return <SynthesisPortfolio/>;
 }
