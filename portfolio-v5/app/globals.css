@@ -529,3 +529,12 @@ background-size:143px 127px,233px 211px,191px 173px,269px 239px;animation:microS
   .authored-reactor .reactor-cloud,
   .reactor-visual:after{animation:none!important}
 }
+
+
+/* V5.9 — opt-in machine ambience control */
+.hud-actions{justify-self:end;display:flex;align-items:center;gap:18px}
+.sound-trigger{display:flex;align-items:center;gap:7px;border:0;background:none;color:#737d80;cursor:pointer;padding:12px 0;font:600 8px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:.12em;transition:color .2s ease}
+.sound-trigger i{width:5px;height:5px;border-radius:50%;background:#586267;box-shadow:0 0 0 transparent;transition:.25s}
+.sound-trigger:hover,.sound-trigger:focus-visible{color:#c8cbc7;outline:none}
+.sound-trigger.active{color:#b7c2bd}.sound-trigger.active i{background:#87a88b;box-shadow:0 0 10px rgba(135,168,139,.85)}
+@media(max-width:640px){.hud-actions{gap:10px}.sound-trigger{font-size:0}.sound-trigger:after{content:"SND";font-size:7px;letter-spacing:.1em}.sound-trigger.active:after{content:"SND ON"}}
