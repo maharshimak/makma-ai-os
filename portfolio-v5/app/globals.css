@@ -155,3 +155,15 @@ radial-gradient(circle at 14% 62%,rgba(119,198,223,.05),transparent 30%),
 .identity-lockup:after,.module-terminal:after,.inspector:after{content:"";position:absolute;inset:0;background-image:var(--metal-art);background-size:280px 280px;mix-blend-mode:soft-light;opacity:.16;pointer-events:none}
 .module-terminal:after{opacity:.08}
 .inspector:after{opacity:.1}
+
+/* V5.4 — interaction focus */
+.world-canvas,.ambient-stage,.authored-art{transition:filter .38s ease,opacity .38s ease,transform .55s cubic-bezier(.2,.8,.2,1)}
+.focus-mode .world-canvas{filter:brightness(.5) saturate(.72);transform:scale(1.012)}
+.focus-mode .ambient-stage{filter:brightness(.48) saturate(.68)}
+.focus-mode .authored-hud-frame{opacity:.025!important}
+.focus-mode .journey-nav,.focus-mode .system-telemetry{opacity:.22;pointer-events:none}
+.inspector-backdrop,.recruiter-backdrop{animation:focusFade .28s ease both}
+.inspector,.recruiter-panel{animation:dossierEnter .42s cubic-bezier(.16,.8,.24,1) both}
+@keyframes focusFade{from{opacity:0}to{opacity:1}}
+@keyframes dossierEnter{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.world-canvas,.ambient-stage,.authored-art{transition:none}.inspector-backdrop,.recruiter-backdrop,.inspector,.recruiter-panel{animation:none!important}}

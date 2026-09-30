@@ -93,7 +93,14 @@ export function SynthesisPortfolio(){
     return ()=>window.removeEventListener("keydown",key);
   },[selected]);
 
-  return <main className="synthesis" style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`} as React.CSSProperties}>
+  useEffect(()=>{
+    const locked=Boolean(recruiter||selected);
+    const previous=document.body.style.overflow;
+    if(locked) document.body.style.overflow="hidden";
+    return ()=>{document.body.style.overflow=previous;};
+  },[recruiter,selected]);
+
+  return <main className={"synthesis"+((recruiter||selected)?" focus-mode":"")} style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`} as React.CSSProperties}>
     <div className="ambient-stage" aria-hidden="true">
       <div className="authored-art">
         <img className="authored-nebula" src={base+"/assets/v5/nebula-field.svg"} alt=""/>

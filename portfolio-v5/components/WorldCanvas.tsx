@@ -293,13 +293,40 @@ function SynthesisCore(){
   </group>;
 }
 
+function SceneLighting({progress}:{progress:number}){
+  const knowledge=useRef<THREE.PointLight>(null);
+  const agency=useRef<THREE.PointLight>(null);
+  const reliability=useRef<THREE.PointLight>(null);
+  const synthesis=useRef<THREE.PointLight>(null);
+  const directional=useRef<THREE.DirectionalLight>(null);
+  const targetColor=useMemo(()=>new THREE.Color(),[]);
+  useFrame((_,delta)=>{
+    const band=(center:number,width:number)=>Math.max(0,1-Math.abs(progress-center)/width);
+    const k=band(.39,.16),a=band(.56,.16),r=band(.69,.14),sy=band(.9,.15);
+    if(knowledge.current) knowledge.current.intensity=THREE.MathUtils.damp(knowledge.current.intensity,5+k*18,3.5,delta);
+    if(agency.current) agency.current.intensity=THREE.MathUtils.damp(agency.current.intensity,6+a*23,3.5,delta);
+    if(reliability.current) reliability.current.intensity=THREE.MathUtils.damp(reliability.current.intensity,4+r*16,3.5,delta);
+    if(synthesis.current) synthesis.current.intensity=THREE.MathUtils.damp(synthesis.current.intensity,5+sy*30,3.5,delta);
+    if(directional.current){
+      directional.current.intensity=THREE.MathUtils.damp(directional.current.intensity,1.15+(1-r)*.42,3.2,delta);
+      targetColor.set(r>.35?"#e9edf0":"#f2eee3");
+      directional.current.color.lerp(targetColor,1-Math.exp(-delta*2.6));
+    }
+  });
+  return <>
+    <directionalLight ref={directional} position={[5,8,10]} intensity={1.55} color="#f2eee3"/>
+    <pointLight ref={knowledge} position={[-2,1,-20]} intensity={7} distance={20} color="#6fb9d1"/>
+    <pointLight ref={agency} position={[1,2,-34]} intensity={8} distance={20} color="#ff9d38"/>
+    <pointLight ref={reliability} position={[0,3,-49]} intensity={6} distance={18} color="#dce8ec"/>
+    <pointLight ref={synthesis} position={[0,2,-72]} intensity={8} distance={24} color="#ff8a23"/>
+  </>;
+}
+
 function MachineWorld({progress}:{progress:number}){
   return <group>
     <NebulaBackdrop/>
-    <ambientLight intensity={.24}/>
-    <directionalLight position={[5,8,10]} intensity={1.65} color="#f2eee3"/>
-    <pointLight position={[0,2,-34]} intensity={14} distance={18} color="#ff9d38"/>
-    <pointLight position={[-2,3,-68]} intensity={9} distance={20} color="#6fb9d1"/>
+    <ambientLight intensity={.22}/>
+    <SceneLighting progress={progress}/>
     <Sparkles count={900} scale={[14,10,96]} size={1.25} speed={.12} opacity={.32} color="#d9e7eb"/>
     <Sparkles count={180} scale={[11,8,78]} size={2.1} speed={.2} opacity={.42} color="#ffae55"/>
     <Aperture progress={progress}/>
