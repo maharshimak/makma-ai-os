@@ -11,7 +11,8 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
   return project?{title:project.name+" — Maharshi Patel",description:project.summary}:{};
 }
 
-export default async function ProjectPage({params}:{params:Promise<{slug:string}>}){\n  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
+export default async function ProjectPage({params}:{params:Promise<{slug:string}>}){
+  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
   const {slug}=await params;
   const project=projects.find(p=>p.slug===slug);
   if(!project) notFound();

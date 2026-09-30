@@ -28,6 +28,7 @@ function useJourney(){
 }
 
 function ProjectInspector({project,onClose}:{project:Project;onClose:()=>void}){
+  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
   return <div className="inspector-backdrop" onMouseDown={onClose}>
     <article className="inspector" onMouseDown={e=>e.stopPropagation()} role="dialog" aria-modal="true" aria-label={project.name}>
       <button className="icon-button inspector-close" onClick={onClose} aria-label="Close project">×</button>
@@ -58,7 +59,7 @@ function SectionShell({id,index,label,children,className=""}:{id:string;index:st
   </section>;
 }
 
-export function SynthesisPortfolio(){\n  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
+export function SynthesisPortfolio(){
   const {progress,reducedMotion}=useJourney();
   const [recruiter,setRecruiter]=useState(false);
   const [selected,setSelected]=useState<Project|null>(null);

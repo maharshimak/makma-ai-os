@@ -2,7 +2,8 @@
 
 import {experience,profile,projects,skillSystems} from "@/lib/content";
 
-export function RecruiterMode({open,onClose}:{open:boolean;onClose:()=>void}){\n  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
+export function RecruiterMode({open,onClose}:{open:boolean;onClose:()=>void}){
+  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
   if(!open) return null;
   return <div className="recruiter-backdrop" role="dialog" aria-modal="true" aria-label="Recruiter mode">
     <div className="recruiter-panel">
