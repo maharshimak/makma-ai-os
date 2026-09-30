@@ -5,6 +5,7 @@ import {WorldCanvas} from "./WorldCanvas";
 import {RecruiterMode} from "./RecruiterMode";
 import {VisualAtmosphere} from "./VisualAtmosphere";
 import {SystemLoader} from "./SystemLoader";
+import {AmbientSound} from "./AmbientSound";
 import {experience,profile,projects,skillSystems,type Project} from "@/lib/content";
 
 const sceneNames=["ACCESS","IDENTITY","FOUNDATION","KNOWLEDGE","AGENCY","RELIABILITY","REVISION","SYNTHESIS","CONTINUATION"];
@@ -79,6 +80,7 @@ export function SynthesisPortfolio(){
   const {progress,reducedMotion}=useJourney();
   const [recruiter,setRecruiter]=useState(false);
   const [selected,setSelected]=useState<Project|null>(null);
+  const [sound,setSound]=useState(false);
   const scene=Math.min(sceneNames.length-1,Math.floor(progress*sceneNames.length));
   const projectFamilies=useMemo(()=>[
     {id:"knowledge",name:"KNOWLEDGE & MEMORY",note:"Raw information is parsed, connected, retrieved and returned with evidence.",flow:["SOURCES","RETRIEVE","FUSE","EVIDENCE"],items:projects.filter(p=>p.family.startsWith("Knowledge"))},
@@ -104,6 +106,7 @@ export function SynthesisPortfolio(){
 
   return <main className={"synthesis"+((recruiter||selected)?" focus-mode":"")} style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`,"--cloud-art":`url(${base}/assets/v5/cloud-generated.webp)`} as React.CSSProperties}>
     <SystemLoader/>
+    <AmbientSound enabled={sound}/>
     <VisualAtmosphere progress={progress} reducedMotion={reducedMotion} base={base}/>
     <div className="ambient-stage" aria-hidden="true">
       <div className="ambient-glow warm"/>
@@ -117,7 +120,7 @@ export function SynthesisPortfolio(){
     <header className="hud">
       <a className="brand" href="#access"><span>MP</span><b>THE SYNTHESIS ENGINE</b></a>
       <div className="hud-center"><span>{String(scene+1).padStart(2,"0")}/{String(sceneNames.length).padStart(2,"0")}</span><b>{sceneNames[scene]}</b></div>
-      <button className="recruiter-trigger" onClick={()=>setRecruiter(true)}>QUICK ACCESS <kbd>R</kbd></button>
+<div className="hud-actions"><button className={"sound-trigger"+(sound?" active":"")} onClick={()=>setSound(v=>!v)} aria-pressed={sound}><i/>{sound?"SOUND ON":"SOUND OFF"}</button><button className="recruiter-trigger" onClick={()=>setRecruiter(true)}>QUICK ACCESS <kbd>R</kbd></button></div>
     </header>
     <div className="progress-rail" aria-hidden="true"><span style={{transform:"scaleX("+progress+")"}}/></div>
 
@@ -134,17 +137,13 @@ export function SynthesisPortfolio(){
     <SectionShell id="access" index="00" label="ACCESS APERTURE" className="opening">
       <div className="opening-copy">
         <div className="access-line"><span className="micro">AUTHORIZED SYSTEMS INSPECTION / PARIS / 2026</span><b><i/>LINK ESTABLISHED</b></div>
-        <div className="identity-lockup generated-identity-lockup">
-          <div className="generated-identity-shell">
-            <img className="generated-identity-badge" src={base+"/assets/v5/identity-plate-generated.webp"} alt="" aria-hidden="true"/>
-            <div className="generated-identity-scan" aria-hidden="true"/>
-            <div className="identity-subline generated-identity-subline"><span>AGENTIC AI</span><span>KNOWLEDGE SYSTEMS</span><span>PRODUCTION ML</span></div>
-            <div className="plate-status generated-plate-status"><span>PARIS / FR</span><span>AI SYSTEMS</span><span>BUILD 05</span><i>● ONLINE</i></div>
-            <div className="sr-only">
-              <span>Identification frame. Maharshi Patel.</span>
-              <h1>MAHARSHI PATEL</h1>
-              <p>AI Engineer / Intelligent Systems</p>
-            </div>
+        <div className="identity-lockup">
+          <div className="identity-plate">
+            <div className="plate-serial"><span>IDENTIFICATION FRAME</span><b>MP-2026-AI / VERIFIED</b></div>
+            <h1>MAHARSHI<br/>PATEL</h1>
+            <p>AI ENGINEER / INTELLIGENT SYSTEMS</p>
+            <div className="identity-subline"><span>AGENTIC AI</span><span>KNOWLEDGE SYSTEMS</span><span>PRODUCTION ML</span></div>
+            <div className="plate-status"><span>PARIS / FR</span><span>AI SYSTEMS</span><span>BUILD 05</span><i>● ACTIVE</i></div>
           </div>
         </div>
         <div className="scroll-cue"><i/>SCROLL TO INSPECT <span>↓</span></div>
@@ -206,7 +205,7 @@ export function SynthesisPortfolio(){
 
     <SectionShell id="synthesis" index="07" label="SYNTHESIS CHAMBER" className="synthesis-scene">
       <div className="synthesis-copy">
-        <div className="authored-reactor" aria-hidden="true"><img src={base+"/assets/v5/reactor-generated.webp"} alt=""/></div>
+        <div className="authored-reactor" aria-hidden="true"><img src={base+"/assets/v5/reactor-core.svg"} alt=""/></div>
         <span className="micro">ALL SUBSYSTEMS / CONNECTED</span>
         <h2>Knowledge. Agency. Reliability.<br/><i>One engineering direction.</i></h2>
         <p>Building intelligent systems where retrieval, reasoning, tools, evaluation and infrastructure work together.</p>

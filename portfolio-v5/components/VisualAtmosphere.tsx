@@ -58,7 +58,7 @@ export function VisualAtmosphere({progress,reducedMotion,base}:{progress:number;
       transform:`translate(-50%,-50%) scale(${.76+reactor*.30}) rotate(${reducedMotion?0:progress*38}deg)`
     } as CSSProperties}>
       <div className="reactor-halo"/>
-      <img src={base+"/assets/v5/reactor-generated.webp"} alt=""/>
+      <img src={base+"/assets/v5/reactor-core.svg"} alt=""/>
       <div className="reactor-orbit orbit-a"/>
       <div className="reactor-orbit orbit-b"/>
     </div>
