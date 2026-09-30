@@ -73,6 +73,7 @@ function SectionShell({id,index,label,children,className=""}:{id:string;index:st
 }
 
 export function SynthesisPortfolio(){
+  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
   const {progress,reducedMotion}=useJourney();
   const [recruiter,setRecruiter]=useState(false);
   const [selected,setSelected]=useState<Project|null>(null);
@@ -94,6 +95,12 @@ export function SynthesisPortfolio(){
 
   return <main className="synthesis" style={{"--journey":progress} as React.CSSProperties}>
     <div className="ambient-stage" aria-hidden="true">
+      <div className="authored-art">
+        <img className="authored-nebula" src={base+"/assets/v5/nebula-field.svg"} alt=""/>
+        <img className="authored-cloud authored-cloud-light" src={base+"/assets/v5/cloud-wisp.svg"} alt=""/>
+        <img className="authored-cloud authored-cloud-dark" src={base+"/assets/v5/cloud-storm.svg"} alt=""/>
+        <img className="authored-hud-frame" src={base+"/assets/v5/hud-frame.svg"} alt=""/>
+      </div>
       <div className="ambient-glow warm"/>
       <div className="ambient-glow cool"/>
       <div className="scan-field"/>
@@ -184,6 +191,7 @@ export function SynthesisPortfolio(){
 
     <SectionShell id="synthesis" index="07" label="SYNTHESIS CHAMBER" className="synthesis-scene">
       <div className="synthesis-copy">
+        <div className="authored-reactor" aria-hidden="true"><img src={base+"/assets/v5/reactor-core.svg"} alt=""/></div>
         <span className="micro">ALL SUBSYSTEMS / CONNECTED</span>
         <h2>Knowledge. Agency. Reliability.<br/><i>One engineering direction.</i></h2>
         <p>Building intelligent systems where retrieval, reasoning, tools, evaluation and infrastructure work together.</p>
