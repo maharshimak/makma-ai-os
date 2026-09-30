@@ -149,3 +149,9 @@ radial-gradient(circle at 14% 62%,rgba(119,198,223,.05),transparent 30%),
 @media(max-width:980px){.authored-cloud{left:-30%;width:160%}.authored-reactor{right:-38vw;width:86vw;opacity:.12}.authored-hud-frame{inset:2%;width:96%;height:96%}}
 @media(max-width:640px){.authored-nebula{opacity:.08}.authored-cloud-dark{display:none}.authored-cloud-light{top:12%;opacity:.09}.authored-hud-frame{opacity:.035}.authored-reactor{right:-62vw;width:120vw;opacity:.08}}
 @media(prefers-reduced-motion:reduce){.authored-nebula,.authored-cloud,.authored-hud-frame,.authored-reactor img{animation:none!important}}
+
+/* Generated visual assets: intentionally subtle, never a flat wallpaper. */
+.ambient-stage:before{content:"";position:absolute;inset:-4%;background-image:var(--hero-art);background-size:cover;background-position:center;opacity:.16;filter:saturate(.78) contrast(1.12) brightness(.68);mix-blend-mode:screen;transform:scale(1.08) translate3d(calc(var(--journey)*-1.5%),calc(var(--journey)*1.2%),0);will-change:transform}
+.identity-lockup:after,.module-terminal:after,.inspector:after{content:"";position:absolute;inset:0;background-image:var(--metal-art);background-size:280px 280px;mix-blend-mode:soft-light;opacity:.16;pointer-events:none}
+.module-terminal:after{opacity:.08}
+.inspector:after{opacity:.1}

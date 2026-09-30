@@ -93,7 +93,7 @@ export function SynthesisPortfolio(){
     return ()=>window.removeEventListener("keydown",key);
   },[selected]);
 
-  return <main className="synthesis" style={{"--journey":progress} as React.CSSProperties}>
+  return <main className="synthesis" style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`} as React.CSSProperties}>
     <div className="ambient-stage" aria-hidden="true">
       <div className="authored-art">
         <img className="authored-nebula" src={base+"/assets/v5/nebula-field.svg"} alt=""/>
