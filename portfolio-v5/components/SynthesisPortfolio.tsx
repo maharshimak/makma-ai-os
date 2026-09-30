@@ -137,13 +137,17 @@ export function SynthesisPortfolio(){
     <SectionShell id="access" index="00" label="ACCESS APERTURE" className="opening">
       <div className="opening-copy">
         <div className="access-line"><span className="micro">AUTHORIZED SYSTEMS INSPECTION / PARIS / 2026</span><b><i/>LINK ESTABLISHED</b></div>
-        <div className="identity-lockup">
-          <div className="identity-plate">
-            <div className="plate-serial"><span>IDENTIFICATION FRAME</span><b>MP-2026-AI / VERIFIED</b></div>
-            <h1>MAHARSHI<br/>PATEL</h1>
-            <p>AI ENGINEER / INTELLIGENT SYSTEMS</p>
-            <div className="identity-subline"><span>AGENTIC AI</span><span>KNOWLEDGE SYSTEMS</span><span>PRODUCTION ML</span></div>
-            <div className="plate-status"><span>PARIS / FR</span><span>AI SYSTEMS</span><span>BUILD 05</span><i>● ACTIVE</i></div>
+        <div className="identity-lockup generated-identity-lockup">
+          <div className="generated-identity-shell">
+            <img className="generated-identity-badge" src={base+"/assets/v5/identity-plate-generated.webp"} alt="" aria-hidden="true"/>
+            <div className="generated-identity-scan" aria-hidden="true"/>
+            <div className="identity-subline generated-identity-subline"><span>AGENTIC AI</span><span>KNOWLEDGE SYSTEMS</span><span>PRODUCTION ML</span></div>
+            <div className="plate-status generated-plate-status"><span>PARIS / FR</span><span>AI SYSTEMS</span><span>BUILD 05</span><i>● ACTIVE</i></div>
+            <div className="sr-only">
+              <span>Identification frame. Maharshi Patel.</span>
+              <h1>MAHARSHI PATEL</h1>
+              <p>AI Engineer / Intelligent Systems</p>
+            </div>
           </div>
         </div>
         <div className="scroll-cue"><i/>SCROLL TO INSPECT <span>↓</span></div>
@@ -205,7 +209,7 @@ export function SynthesisPortfolio(){
 
     <SectionShell id="synthesis" index="07" label="SYNTHESIS CHAMBER" className="synthesis-scene">
       <div className="synthesis-copy">
-        <div className="authored-reactor" aria-hidden="true"><img src={base+"/assets/v5/reactor-core.svg"} alt=""/></div>
+        <div className="authored-reactor" aria-hidden="true"><img src={base+"/assets/v5/reactor-generated.webp"} alt=""/></div>
         <span className="micro">ALL SUBSYSTEMS / CONNECTED</span>
         <h2>Knowledge. Agency. Reliability.<br/><i>One engineering direction.</i></h2>
         <p>Building intelligent systems where retrieval, reasoning, tools, evaluation and infrastructure work together.</p>
