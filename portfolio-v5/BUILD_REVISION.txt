@@ -1,2 +1,2 @@
-V5.4 — Synthesis Engine
-Scene-aware lighting, inspection focus state, authored visual layers, generated nebula + metal textures.
+V5.5 — Synthesis Engine
+Release candidate: generated nebula + metal + cloud art, authored atmosphere/HUD/reactor layers, cinematic WebGL machinery, scene-aware lighting, inspection focus mode, and upgraded project subsystem dossiers.
