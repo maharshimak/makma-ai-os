@@ -271,3 +271,28 @@ radial-gradient(circle at 14% 62%,rgba(119,198,223,.05),transparent 30%),
   .subsystem-flow>span{min-height:58px;padding:11px 9px}
   .visual-atmosphere .global-hud-frame{opacity:.035}
 }
+
+
+/* V5.7 — real boot state + project-family signal */
+.system-loader{
+  position:fixed;inset:0;z-index:140;display:grid;place-items:center;padding:24px;
+  background:#0b0e10;color:#e9e7df;transition:opacity .32s ease,visibility .32s ease;
+}
+.system-loader.ready{opacity:.96}
+.loader-shell{width:min(720px,92vw);border:1px solid rgba(233,231,223,.14);padding:clamp(24px,5vw,52px);background:linear-gradient(145deg,rgba(30,35,38,.96),rgba(10,13,15,.98));box-shadow:0 35px 130px rgba(0,0,0,.6)}
+.loader-kicker,.loader-meta{display:flex;justify-content:space-between;gap:18px;font:600 8px ui-monospace,monospace;letter-spacing:.14em;color:#747d80}
+.loader-kicker b{color:#ffb457;font-weight:600}
+.loader-title{margin:34px 0 24px;font-size:clamp(2rem,5vw,4.7rem);line-height:.9;letter-spacing:-.045em;font-weight:450}
+.loader-track{height:2px;background:rgba(233,231,223,.1);overflow:hidden}
+.loader-track i{display:block;height:100%;background:linear-gradient(90deg,#ffb457,#93afbd);box-shadow:0 0 16px rgba(255,180,87,.45);transition:width .18s ease}
+.loader-meta{margin-top:11px}
+.loader-stages{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:36px;background:rgba(233,231,223,.08)}
+.loader-stages span{padding:12px;background:#111619;color:#697275;font:600 7px ui-monospace,monospace;letter-spacing:.1em}
+.project-page{--project-accent:#ffad50}
+.project-kicker>b i{background:var(--project-accent);box-shadow:0 0 10px color-mix(in srgb,var(--project-accent) 72%,transparent)}
+.project-page .architecture{border-top-color:color-mix(in srgb,var(--project-accent) 42%,transparent)}
+.project-page .architecture span,.project-page .architecture i{color:var(--project-accent)}
+.project-page .action-row a:hover{border-color:var(--project-accent);background:color-mix(in srgb,var(--project-accent) 8%,transparent)}
+.project-page .architecture-signal{background:linear-gradient(90deg,transparent,var(--project-accent),transparent)!important;box-shadow:0 0 18px color-mix(in srgb,var(--project-accent) 45%,transparent)}
+@media(max-width:640px){.loader-stages{grid-template-columns:1fr 1fr}.loader-title{margin-top:28px}}
+@media(prefers-reduced-motion:reduce){.system-loader,.loader-track i{transition:none}}

@@ -2,7 +2,9 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {WorldCanvas} from "./WorldCanvas";
-import {RecruiterMode} from "./RecruiterMode";\nimport {VisualAtmosphere} from "./VisualAtmosphere";
+import {RecruiterMode} from "./RecruiterMode";
+import {VisualAtmosphere} from "./VisualAtmosphere";
+import {SystemLoader} from "./SystemLoader";
 import {experience,profile,projects,skillSystems,type Project} from "@/lib/content";
 
 const sceneNames=["ACCESS","IDENTITY","FOUNDATION","KNOWLEDGE","AGENCY","RELIABILITY","REVISION","SYNTHESIS","CONTINUATION"];
@@ -101,6 +103,7 @@ export function SynthesisPortfolio(){
   },[recruiter,selected]);
 
   return <main className={"synthesis"+((recruiter||selected)?" focus-mode":"")} style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`,"--cloud-art":`url(${base}/assets/v5/cloud-generated.webp)`} as React.CSSProperties}>
+    <SystemLoader/>
     <VisualAtmosphere progress={progress} reducedMotion={reducedMotion} base={base}/>
     <div className="ambient-stage" aria-hidden="true">
       <div className="ambient-glow warm"/>

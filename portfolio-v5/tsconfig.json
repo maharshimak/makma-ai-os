@@ -36,6 +36,7 @@
     "components/SynthesisPortfolio.tsx",
     "components/WorldCanvas.tsx",
     "components/RecruiterMode.tsx",
+    "components/SystemLoader.tsx",
     "components/VisualAtmosphere.tsx",
     "lib/content.ts",
     ".next/types/**/*.ts"

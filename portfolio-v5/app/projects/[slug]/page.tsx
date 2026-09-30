@@ -1,4 +1,4 @@
-import {notFound} from "next/navigation";
+import {notFound} from "next/navigation";\nimport type {CSSProperties} from "react";
 import {profile,projects} from "@/lib/content";
 
 export function generateStaticParams(){
@@ -16,7 +16,8 @@ export default async function ProjectPage({params}:{params:Promise<{slug:string}
   const {slug}=await params;
   const project=projects.find(p=>p.slug===slug);
   if(!project) notFound();
-  return <main className="project-page">\n    <div className="project-art" aria-hidden="true"><img className="project-nebula" src={base+"/assets/v5/nebula-generated.webp"} alt=""/><img className="project-hud" src={base+"/assets/v5/hud-frame.svg"} alt=""/></div>
+  return <main className="project-page">
+    <div className="project-art" aria-hidden="true"><img className="project-nebula" src={base+"/assets/v5/nebula-generated.webp"} alt=""/><img className="project-hud" src={base+"/assets/v5/hud-frame.svg"} alt=""/></div>
     <nav><a href={base+"/"}>← THE SYNTHESIS ENGINE</a><span>{profile.name}</span></nav>
     <article>
       <div className="project-kicker"><span className="micro">MODULE / {project.family.toUpperCase()}</span><b><i/>SYSTEM ONLINE</b></div>
