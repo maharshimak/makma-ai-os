@@ -171,6 +171,14 @@ function Aperture({progress}:{progress:number}){
     <group ref={ring}>
       <mesh><torusGeometry args={[4.7,.16,12,96]}/><meshStandardMaterial color="#41494d" metalness={.95} roughness={.23}/></mesh>
       <mesh><torusGeometry args={[4.34,.025,8,96]}/><meshBasicMaterial color="#ff9d38" toneMapped={false}/></mesh>
+      <mesh><torusGeometry args={[4.02,.055,8,96]}/><meshStandardMaterial color="#1e2529" metalness={.96} roughness={.2}/></mesh>
+      {Array.from({length:24}).map((_,i)=>{
+        const a=i/24*Math.PI*2;
+        return <mesh key={i} position={[Math.cos(a)*4.68,Math.sin(a)*4.68,.18]}>
+          <cylinderGeometry args={[.055,.055,.09,8]}/>
+          <meshStandardMaterial color={i%6===0?"#d8d4c8":"#596268"} metalness={.95} roughness={.18}/>
+        </mesh>;
+      })}
     </group>
     <group ref={blades}>
       {Array.from({length:10}).map((_,i)=>{
@@ -402,6 +410,59 @@ function SceneLighting({progress}:{progress:number}){
   </>;
 }
 
+
+function MachineShell(){
+  const sweep=useRef<THREE.Mesh>(null);
+  const pulse=useRef<THREE.Group>(null);
+  useFrame((state,delta)=>{
+    const t=state.clock.elapsedTime;
+    if(sweep.current){
+      const cycle=(t*.055)%1;
+      sweep.current.position.z=9-cycle*91;
+      const material=sweep.current.material as THREE.MeshBasicMaterial;
+      material.opacity=.035+Math.sin(cycle*Math.PI)*.09;
+    }
+    if(pulse.current){
+      pulse.current.children.forEach((child,i)=>{
+        const mesh=child as THREE.Mesh;
+        const material=mesh.material as THREE.MeshBasicMaterial;
+        material.opacity=.1+Math.max(0,Math.sin(t*1.15-i*.62))*.28;
+      });
+    }
+  });
+  return <group>
+    {[-5.72,5.72].map((x,side)=><group key={x}>
+      <mesh position={[x,-3.95,-38]}><boxGeometry args={[.16,.18,94]}/><meshStandardMaterial color="#343d42" metalness={.92} roughness={.28}/></mesh>
+      <mesh position={[x,4.28,-38]}><boxGeometry args={[.12,.14,94]}/><meshStandardMaterial color="#2a3236" metalness={.9} roughness={.31}/></mesh>
+      {Array.from({length:12}).map((_,i)=>{
+        const z=7-i*7.55;
+        return <group key={i} position={[x,0,z]}>
+          <mesh rotation={[0,side===0?Math.PI/2:-Math.PI/2,0]}>
+            <boxGeometry args={[3.4,6.9,.14]}/>
+            <meshStandardMaterial color={i%3===0?"#353e42":"#242b2f"} metalness={.78} roughness={.42}/>
+          </mesh>
+          <mesh position={[side===0?.09:-.09,2.5,.45]}>
+            <boxGeometry args={[.035,1.25,.78]}/>
+            <meshBasicMaterial color={i%4===0?"#ffae55":"#6fb9d1"} transparent opacity={i%4===0?.34:.12} toneMapped={false}/>
+          </mesh>
+        </group>;
+      })}
+    </group>)}
+    <group ref={pulse}>
+      {Array.from({length:10}).map((_,i)=><mesh key={i} position={[i%2===0?-5.45:5.45,3.35,5-i*9.1]}>
+        <boxGeometry args={[.06,.32,2.5]}/>
+        <meshBasicMaterial color={i%3===0?"#ffad54":"#78c7df"} transparent opacity={.16} toneMapped={false}/>
+      </mesh>)}
+    </group>
+    <mesh ref={sweep} position={[0,.2,8.5]}>
+      <boxGeometry args={[11.1,8.2,.018]}/>
+      <meshBasicMaterial color="#ffc17c" transparent opacity={.06} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false}/>
+    </mesh>
+    <mesh position={[0,4.45,-38]}><boxGeometry args={[7.8,.12,94]}/><meshStandardMaterial color="#20282c" metalness={.9} roughness={.38}/></mesh>
+    <mesh position={[0,-4.48,-38]}><boxGeometry args={[7.8,.14,94]}/><meshStandardMaterial color="#20282c" metalness={.88} roughness={.42}/></mesh>
+  </group>;
+}
+
 function MachineWorld({progress,reducedMotion,quality}:{progress:number;reducedMotion:boolean;quality:"high"|"medium"|"low"}){
   const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
   const metalMap=useTexture(base+"/assets/v5/metal-generated.webp");
@@ -421,6 +482,7 @@ function MachineWorld({progress,reducedMotion,quality}:{progress:number;reducedM
     <Sparkles count={primarySparkles} scale={[14,10,96]} size={1.25} speed={.12} opacity={.32} color="#d9e7eb"/>
     <Sparkles count={accentSparkles} scale={[11,8,78]} size={2.1} speed={.2} opacity={.42} color="#ffae55"/>
     <Aperture progress={progress}/>
+    <MachineShell/>
     <InspectionArm progress={progress}/>
     {Array.from({length:18}).map((_,i)=><Frame key={i} index={i} z={8-i*5.2} scale={1-(i*.006)}/>)}
     <mesh position={[0,-4.8,-38]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[13,92]}/><meshStandardMaterial map={metalMap} color="#5f6465" roughness={.58} metalness={.62}/></mesh>
