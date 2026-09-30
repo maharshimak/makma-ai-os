@@ -171,3 +171,32 @@ radial-gradient(circle at 14% 62%,rgba(119,198,223,.05),transparent 30%),
 .ambient-stage:after{content:"";position:absolute;left:-12%;right:-12%;bottom:-7%;height:42vh;background-image:var(--cloud-art);background-repeat:no-repeat;background-position:center bottom;background-size:116% auto;opacity:.19;filter:saturate(.7) contrast(1.08) brightness(.7);mix-blend-mode:screen;transform:translate3d(calc(var(--journey)*4vw),calc(var(--journey)*-8vh),0) scale(1.08);will-change:transform;pointer-events:none}
 @media(max-width:640px){.ambient-stage:after{height:34vh;background-size:190% auto;opacity:.12}}
 @media(prefers-reduced-motion:reduce){.ambient-stage:after{transform:none!important}}
+
+/* V5.5 — project subsystem dossiers */
+.project-page{position:relative;overflow:hidden;isolation:isolate}
+.project-page>nav,.project-page>article{position:relative;z-index:3}
+.project-art{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.project-nebula{position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;opacity:.12;mix-blend-mode:screen;filter:saturate(.68) brightness(.66) contrast(1.12);animation:projectNebula 24s ease-in-out infinite alternate}
+.project-hud{position:absolute;inset:4%;width:92%;height:92%;object-fit:fill;opacity:.045;filter:drop-shadow(0 0 15px rgba(255,157,56,.1))}
+@keyframes projectNebula{to{transform:translate3d(-2%,1%,0) scale(1.04);opacity:.16}}
+.project-kicker{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.project-kicker>b{display:flex;align-items:center;gap:8px;color:#8c9a96;font:600 7px ui-monospace,monospace;letter-spacing:.12em}
+.project-kicker>b i{width:6px;height:6px;border-radius:50%;background:#87a88b;box-shadow:0 0 10px rgba(135,168,139,.8)}
+.project-grid section{position:relative;padding:22px 0 10px;border-top:1px solid rgba(233,231,223,.1)}
+.architecture{position:relative;padding:30px 0 16px;border-top:1px solid rgba(255,157,56,.18);border-bottom:1px solid rgba(233,231,223,.1);overflow:hidden}
+.architecture-head{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.architecture-head>b{color:#596367;font:600 7px ui-monospace,monospace;letter-spacing:.11em}
+.architecture-map{position:relative;display:flex;align-items:stretch;margin-top:28px;overflow-x:auto;padding:0 0 20px;scrollbar-width:thin}
+.architecture-map:before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,rgba(119,198,223,.22),rgba(255,157,56,.52),rgba(233,231,223,.16))}
+.architecture-signal{position:absolute;left:-12%;top:calc(50% - 1px);height:2px;width:15%;background:linear-gradient(90deg,transparent,#ffd09a,#ff9d38);box-shadow:0 0 12px rgba(255,157,56,.6);animation:architectureSignal 5.5s linear infinite}
+@keyframes architectureSignal{to{left:112%}}
+.architecture-node{position:relative;z-index:2;min-width:155px;min-height:128px;display:flex;flex-direction:column;justify-content:space-between;padding:18px;background:linear-gradient(150deg,rgba(31,37,40,.94),rgba(12,16,18,.96));border:1px solid rgba(233,231,223,.13);border-right:0;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.architecture-node:last-child{border-right:1px solid rgba(233,231,223,.13)}
+.architecture-node>span{color:#ff9d38!important;margin:0!important;font:600 8px ui-monospace,monospace!important}
+.architecture-node>b{font-size:13px;letter-spacing:-.01em;max-width:110px}
+.architecture-node>small{color:#657075;font:600 7px ui-monospace,monospace;letter-spacing:.12em}
+.architecture-node>i{position:absolute;right:-5px;top:50%;z-index:4;color:#ff9d38;font-style:normal;text-shadow:0 0 9px rgba(255,157,56,.8)}
+.project-proof{display:flex;flex-wrap:wrap;gap:8px;margin-top:38px}
+.project-proof span{padding:8px 10px;border:1px solid rgba(135,168,139,.18);color:#82938a;background:rgba(135,168,139,.035);font:600 7px ui-monospace,monospace;letter-spacing:.11em}
+@media(max-width:640px){.project-kicker>b{display:none}.architecture-head>b{display:none}.project-nebula{opacity:.08}.project-hud{opacity:.025}.architecture-node{min-width:140px}.project-proof{margin-top:26px}}
+@media(prefers-reduced-motion:reduce){.project-nebula,.architecture-signal{animation:none!important}.architecture-signal{display:none}}
