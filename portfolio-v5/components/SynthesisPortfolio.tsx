@@ -2,7 +2,7 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {WorldCanvas} from "./WorldCanvas";
-import {RecruiterMode} from "./RecruiterMode";
+import {RecruiterMode} from "./RecruiterMode";\nimport {VisualAtmosphere} from "./VisualAtmosphere";
 import {experience,profile,projects,skillSystems,type Project} from "@/lib/content";
 
 const sceneNames=["ACCESS","IDENTITY","FOUNDATION","KNOWLEDGE","AGENCY","RELIABILITY","REVISION","SYNTHESIS","CONTINUATION"];
@@ -90,9 +90,13 @@ export function SynthesisPortfolio(){
       <div className="opening-copy">
         <span className="micro">AUTHORIZED SYSTEMS INSPECTION / PARIS / 2026</span>
         <div className="identity-lockup">
-          <small>IDENTIFICATION FRAME</small>
-          <h1>MAHARSHI<br/>PATEL</h1>
-          <p>AI ENGINEER / INTELLIGENT SYSTEMS</p>
+          <div className="identity-plate">
+            <div className="plate-serial"><span>MP / SYNTHESIS ENGINE</span><b>AUTH // 2026</b></div>
+            <small>IDENTIFICATION FRAME</small>
+            <h1>MAHARSHI<br/>PATEL</h1>
+            <p>AI ENGINEER / INTELLIGENT SYSTEMS</p>
+            <div className="plate-status"><span>KNOWLEDGE</span><span>AGENCY</span><span>RELIABILITY</span><i>ONLINE</i></div>
+          </div>
         </div>
         <div className="scroll-cue"><i/>SCROLL TO INSPECT</div>
       </div>
@@ -123,7 +127,7 @@ export function SynthesisPortfolio(){
 
     {projectFamilies.map((family,fi)=><SectionShell key={family.name} id={"family-"+fi} index={String(fi+3).padStart(2,"0")} label={family.name}>
       <div className="systems-layout">
-        <div className="systems-intro"><span className="micro">MACHINE SUBSYSTEM</span><h2>{family.name}</h2><p>{fi===0?"Raw information is parsed, connected, retrieved and returned with evidence.":fi===1?"Knowledge becomes planning, tools and controlled action.":"Intelligence is measured, gated, promoted and monitored before it earns trust."}</p></div>
+        <div className="systems-intro"><span className="module-signal" aria-hidden="true"/><span className="micro">MACHINE SUBSYSTEM</span><h2>{family.name}</h2><p>{fi===0?"Raw information is parsed, connected, retrieved and returned with evidence.":fi===1?"Knowledge becomes planning, tools and controlled action.":"Intelligence is measured, gated, promoted and monitored before it earns trust."}</p></div>
         <div className="module-list">
           {family.items.map((p,i)=><button key={p.slug} className="module-terminal" onClick={()=>setSelected(p)}>
             <span className="module-no">{String(i+1).padStart(2,"0")}</span>

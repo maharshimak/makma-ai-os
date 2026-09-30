@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 420">
+<defs>
+ <filter id="f" x="-30%" y="-60%" width="160%" height="220%">
+  <feTurbulence type="fractalNoise" baseFrequency=".009 .024" numOctaves="5" seed="29" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="52"/>
+  <feGaussianBlur stdDeviation="8"/>
+ </filter>
+ <linearGradient id="g" x1="0" x2="1"><stop stop-color="#93afbd" stop-opacity=".12"/><stop offset=".47" stop-color="#e9e7df" stop-opacity=".62"/><stop offset=".72" stop-color="#ffb457" stop-opacity=".38"/><stop offset="1" stop-color="#d8d4c8" stop-opacity=".08"/></linearGradient>
+</defs>
+<g filter="url(#f)">
+ <ellipse cx="260" cy="226" rx="250" ry="70" fill="url(#g)"/><ellipse cx="520" cy="184" rx="310" ry="105" fill="url(#g)"/>
+ <ellipse cx="830" cy="212" rx="350" ry="122" fill="url(#g)"/><ellipse cx="1130" cy="188" rx="240" ry="76" fill="url(#g)"/>
+</g>
+</svg>
