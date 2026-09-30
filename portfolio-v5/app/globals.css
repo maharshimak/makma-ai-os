@@ -167,3 +167,7 @@ radial-gradient(circle at 14% 62%,rgba(119,198,223,.05),transparent 30%),
 @keyframes focusFade{from{opacity:0}to{opacity:1}}
 @keyframes dossierEnter{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.world-canvas,.ambient-stage,.authored-art{transition:none}.inspector-backdrop,.recruiter-backdrop,.inspector,.recruiter-panel{animation:none!important}}
+
+.ambient-stage:after{content:"";position:absolute;left:-12%;right:-12%;bottom:-7%;height:42vh;background-image:var(--cloud-art);background-repeat:no-repeat;background-position:center bottom;background-size:116% auto;opacity:.19;filter:saturate(.7) contrast(1.08) brightness(.7);mix-blend-mode:screen;transform:translate3d(calc(var(--journey)*4vw),calc(var(--journey)*-8vh),0) scale(1.08);will-change:transform;pointer-events:none}
+@media(max-width:640px){.ambient-stage:after{height:34vh;background-size:190% auto;opacity:.12}}
+@media(prefers-reduced-motion:reduce){.ambient-stage:after{transform:none!important}}
