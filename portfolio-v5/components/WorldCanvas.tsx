@@ -236,6 +236,44 @@ function InspectionArm({progress}:{progress:number}){
   </group>;
 }
 
+
+function FoundationSubstrate(){
+  const scanner=useRef<THREE.Mesh>(null);
+  const core=useRef<THREE.Group>(null);
+  useFrame((state,delta)=>{
+    if(scanner.current) scanner.current.position.z=THREE.MathUtils.lerp(scanner.current.position.z,-7.4+(Math.sin(state.clock.elapsedTime*.48)+1)*3.8,1-Math.exp(-delta*3));
+    if(core.current) core.current.rotation.y+=delta*.035;
+  });
+  return <group position={[0,-1.3,-8.5]}>
+    {[-3.9,-1.3,1.3,3.9].map((x,i)=><group key={x} position={[x,0,0]}>
+      <mesh position={[0,-1.4,0]}><boxGeometry args={[1.8,5.6,2.1]}/><meshStandardMaterial color={i%2?"#252d31":"#d1cdc2"} metalness={.84} roughness={.31}/></mesh>
+      <mesh position={[0,1.15,1.08]}><boxGeometry args={[1.16,.08,.04]}/><meshBasicMaterial color={i%2?"#77c6df":"#ff9d38"} transparent opacity={.42} toneMapped={false}/></mesh>
+    </group>)}
+    <group ref={core} position={[0,-3.7,-.4]}>
+      <mesh rotation={[Math.PI/2,0,0]}><torusGeometry args={[3.1,.16,12,72]}/><meshStandardMaterial color="#4b555b" metalness={.94} roughness={.22}/></mesh>
+      <mesh rotation={[Math.PI/2,0,0]}><torusGeometry args={[2.45,.035,8,72]}/><meshBasicMaterial color="#77c6df" transparent opacity={.55} toneMapped={false}/></mesh>
+    </group>
+    <mesh ref={scanner} position={[0,-.6,-7.4]}><boxGeometry args={[10,.04,.12]}/><meshBasicMaterial color="#ffbf74" transparent opacity={.48} toneMapped={false}/></mesh>
+    <pointLight position={[0,-2,1]} intensity={9} distance={15} color="#77c6df"/>
+  </group>;
+}
+
+function ConduitNetwork(){
+  const paths=useMemo(()=>[
+    [new THREE.Vector3(-5,-2,-10),new THREE.Vector3(-4,1,-19),new THREE.Vector3(-2,2,-27)],
+    [new THREE.Vector3(4,-1,-22),new THREE.Vector3(5,1,-34),new THREE.Vector3(3,2,-46)],
+    [new THREE.Vector3(-4,2,-42),new THREE.Vector3(-2,3,-56),new THREE.Vector3(0,3,-70)]
+  ],[]);
+  return <group>{paths.map((pts,i)=>{
+    const curve=new THREE.CatmullRomCurve3(pts);
+    const line=curve.getPoints(64);
+    return <group key={i}>
+      <Line points={line} color={i===1?"#77c6df":"#ff9d38"} transparent opacity={.22} lineWidth={.7}/>
+      <Line points={line.map(p=>p.clone().add(new THREE.Vector3(.045,.02,.015)))} color="#e8e5db" transparent opacity={.055} lineWidth={.35}/>
+    </group>;
+  })}</group>;
+}
+
 function MemoryAssembly(){
   const ref=useRef<THREE.Group>(null);
   useFrame((state,delta)=>{
@@ -384,6 +422,8 @@ function MachineWorld({progress,reducedMotion}:{progress:number;reducedMotion:bo
     <InspectionArm progress={progress}/>
     {Array.from({length:18}).map((_,i)=><Frame key={i} index={i} z={8-i*5.2} scale={1-(i*.006)}/>)}
     <mesh position={[0,-4.8,-38]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[13,92]}/><meshStandardMaterial map={metalMap} color="#5f6465" roughness={.58} metalness={.62}/></mesh>
+    <FoundationSubstrate/>
+    <ConduitNetwork/>
     <MemoryAssembly/>
     <AgentHall/>
     <ReliabilityCore/>
