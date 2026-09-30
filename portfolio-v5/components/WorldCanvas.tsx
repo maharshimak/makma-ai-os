@@ -1,6 +1,6 @@
 "use client";
 
-import {AdaptiveDpr,Line,Sparkles} from "@react-three/drei";
+import {AdaptiveDpr,Line,Sparkles,useTexture} from "@react-three/drei";
 import {Canvas,useFrame} from "@react-three/fiber";
 import {Bloom,EffectComposer} from "@react-three/postprocessing";
 import {useMemo,useRef} from "react";
@@ -107,6 +107,48 @@ function NebulaBackdrop(){
       `}
     />
   </mesh>;
+}
+
+function GeneratedAssetPlanes({reducedMotion}:{reducedMotion:boolean}){
+  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
+  const [nebula,cloud]=useTexture([
+    base+"/assets/v5/nebula-generated.webp",
+    base+"/assets/v5/cloud-generated.webp"
+  ]);
+  const a=useRef<THREE.Mesh>(null);
+  const b=useRef<THREE.Mesh>(null);
+  useMemo(()=>{
+    nebula.colorSpace=THREE.SRGBColorSpace;
+    cloud.colorSpace=THREE.SRGBColorSpace;
+  },[nebula,cloud]);
+  useFrame((state)=>{
+    if(reducedMotion) return;
+    const t=state.clock.elapsedTime;
+    if(a.current){
+      a.current.position.x=-5+Math.sin(t*.08)*1.4;
+      a.current.position.y=5+Math.cos(t*.065)*.55;
+      a.current.rotation.z=Math.sin(t*.045)*.018;
+    }
+    if(b.current){
+      b.current.position.x=6+Math.cos(t*.06)*1.8;
+      b.current.position.y=-1.8+Math.sin(t*.05)*.7;
+      b.current.rotation.z=-.08+Math.cos(t*.04)*.02;
+    }
+  });
+  return <group>
+    <mesh position={[0,5,-111]} scale={[1.18,1,1]}>
+      <planeGeometry args={[176,99]}/>
+      <meshBasicMaterial map={nebula} transparent opacity={.24} depthWrite={false} toneMapped={false}/>
+    </mesh>
+    <mesh ref={a} position={[-5,5,-25]} scale={[24,8,1]}>
+      <planeGeometry args={[1,1]}/>
+      <meshBasicMaterial map={cloud} transparent opacity={.13} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending}/>
+    </mesh>
+    <mesh ref={b} position={[6,-1.8,-52]} scale={[-29,9.7,1]}>
+      <planeGeometry args={[1,1]}/>
+      <meshBasicMaterial map={cloud} transparent opacity={.105} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending}/>
+    </mesh>
+  </group>;
 }
 
 function Aperture({progress}:{progress:number}){
@@ -322,9 +364,18 @@ function SceneLighting({progress}:{progress:number}){
   </>;
 }
 
-function MachineWorld({progress}:{progress:number}){
+function MachineWorld({progress,reducedMotion}:{progress:number;reducedMotion:boolean}){
+  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
+  const metalMap=useTexture(base+"/assets/v5/metal-generated.webp");
+  useMemo(()=>{
+    metalMap.colorSpace=THREE.SRGBColorSpace;
+    metalMap.wrapS=THREE.RepeatWrapping;
+    metalMap.wrapT=THREE.RepeatWrapping;
+    metalMap.repeat.set(5,32);
+  },[metalMap]);
   return <group>
     <NebulaBackdrop/>
+    <GeneratedAssetPlanes reducedMotion={reducedMotion}/>
     <ambientLight intensity={.22}/>
     <SceneLighting progress={progress}/>
     <Sparkles count={900} scale={[14,10,96]} size={1.25} speed={.12} opacity={.32} color="#d9e7eb"/>
@@ -332,7 +383,7 @@ function MachineWorld({progress}:{progress:number}){
     <Aperture progress={progress}/>
     <InspectionArm progress={progress}/>
     {Array.from({length:18}).map((_,i)=><Frame key={i} index={i} z={8-i*5.2} scale={1-(i*.006)}/>)}
-    <mesh position={[0,-4.8,-38]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[13,92]}/><meshStandardMaterial color="#14191c" roughness={.66} metalness={.42}/></mesh>
+    <mesh position={[0,-4.8,-38]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[13,92]}/><meshStandardMaterial map={metalMap} color="#5f6465" roughness={.58} metalness={.62}/></mesh>
     <MemoryAssembly/>
     <AgentHall/>
     <ReliabilityCore/>
@@ -349,7 +400,7 @@ export function WorldCanvas({progress,reducedMotion}:{progress:number;reducedMot
       <fog attach="fog" args={["#11171a",15,58]}/>
       <AdaptiveDpr pixelated/>
       <CameraRig progress={progress} reducedMotion={reducedMotion}/>
-      <MachineWorld progress={progress}/>
+      <MachineWorld progress={progress} reducedMotion={reducedMotion}/>
       {!reducedMotion&&<EffectComposer multisampling={0}><Bloom intensity={.72} luminanceThreshold={.62} luminanceSmoothing={.28} mipmapBlur/></EffectComposer>}
     </Canvas>
   </div>;

@@ -79,9 +79,9 @@ export function SynthesisPortfolio(){
   const [selected,setSelected]=useState<Project|null>(null);
   const scene=Math.min(sceneNames.length-1,Math.floor(progress*sceneNames.length));
   const projectFamilies=useMemo(()=>[
-    {id:"knowledge",name:"KNOWLEDGE & MEMORY",note:"Raw information is parsed, connected, retrieved and returned with evidence.",items:projects.filter(p=>p.family.startsWith("Knowledge"))},
-    {id:"agency",name:"AUTONOMOUS SYSTEMS",note:"Knowledge becomes planning, tools and controlled action.",items:projects.filter(p=>p.family.startsWith("Agency"))},
-    {id:"reliability",name:"RELIABILITY CORE",note:"Intelligence is measured, gated, promoted and monitored before it earns trust.",items:projects.filter(p=>p.family.startsWith("Reliability"))}
+    {id:"knowledge",name:"KNOWLEDGE & MEMORY",note:"Raw information is parsed, connected, retrieved and returned with evidence.",flow:["SOURCES","RETRIEVE","FUSE","EVIDENCE"],items:projects.filter(p=>p.family.startsWith("Knowledge"))},
+    {id:"agency",name:"AUTONOMOUS SYSTEMS",note:"Knowledge becomes planning, tools and controlled action.",flow:["MEMORY","PLAN","TOOLS","OBSERVE"],items:projects.filter(p=>p.family.startsWith("Agency"))},
+    {id:"reliability",name:"RELIABILITY CORE",note:"Intelligence is measured, gated, promoted and monitored before it earns trust.",flow:["EVALUATE","GATE","PROMOTE","MONITOR"],items:projects.filter(p=>p.family.startsWith("Reliability"))}
   ],[]);
 
   useEffect(()=>{
@@ -178,7 +178,7 @@ export function SynthesisPortfolio(){
         <div className="module-list">
           {family.items.map((p,i)=><button key={p.slug} className="module-terminal" onClick={()=>setSelected(p)}>
             <span className="module-no">{String(i+1).padStart(2,"0")}</span>
-            <span className="module-main"><b>{p.name}</b><small>{p.summary}</small><em>{p.stack.slice(0,3).join(" / ")}</em></span>
+            <span className="module-main"><i className="module-signal"/><b>{p.name}</b><small>{p.summary}</small><em>{p.stack.slice(0,3).join(" / ")}</em></span>
             <span className="module-open">INSPECT ↗</span>
           </button>)}
         </div>
