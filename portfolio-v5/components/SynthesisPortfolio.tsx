@@ -2,7 +2,7 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {WorldCanvas} from "./WorldCanvas";
-import {RecruiterMode} from "./RecruiterMode";
+import {RecruiterMode} from "./RecruiterMode";\nimport {VisualAtmosphere} from "./VisualAtmosphere";
 import {experience,profile,projects,skillSystems,type Project} from "@/lib/content";
 
 const sceneNames=["ACCESS","IDENTITY","FOUNDATION","KNOWLEDGE","AGENCY","RELIABILITY","REVISION","SYNTHESIS","CONTINUATION"];
@@ -101,13 +101,8 @@ export function SynthesisPortfolio(){
   },[recruiter,selected]);
 
   return <main className={"synthesis"+((recruiter||selected)?" focus-mode":"")} style={{"--journey":progress,"--hero-art":`url(${base}/assets/v5/nebula-generated.webp)`,"--metal-art":`url(${base}/assets/v5/metal-generated.webp)`,"--cloud-art":`url(${base}/assets/v5/cloud-generated.webp)`} as React.CSSProperties}>
+    <VisualAtmosphere progress={progress} reducedMotion={reducedMotion} base={base}/>
     <div className="ambient-stage" aria-hidden="true">
-      <div className="authored-art">
-        <img className="authored-nebula" src={base+"/assets/v5/nebula-field.svg"} alt=""/>
-        <img className="authored-cloud authored-cloud-light" src={base+"/assets/v5/cloud-wisp.svg"} alt=""/>
-        <img className="authored-cloud authored-cloud-dark" src={base+"/assets/v5/cloud-storm.svg"} alt=""/>
-        <img className="authored-hud-frame" src={base+"/assets/v5/hud-frame.svg"} alt=""/>
-      </div>
       <div className="ambient-glow warm"/>
       <div className="ambient-glow cool"/>
       <div className="scan-field"/>
@@ -137,10 +132,13 @@ export function SynthesisPortfolio(){
       <div className="opening-copy">
         <div className="access-line"><span className="micro">AUTHORIZED SYSTEMS INSPECTION / PARIS / 2026</span><b><i/>LINK ESTABLISHED</b></div>
         <div className="identity-lockup">
-          <div className="plate-label"><span>IDENTIFICATION FRAME</span><em>MP-2026-AI</em></div>
-          <h1>MAHARSHI<br/>PATEL</h1>
-          <p>AI ENGINEER / INTELLIGENT SYSTEMS</p>
-          <div className="identity-subline"><span>AGENTIC AI</span><span>KNOWLEDGE SYSTEMS</span><span>PRODUCTION ML</span></div>
+          <div className="identity-plate">
+            <div className="plate-serial"><span>IDENTIFICATION FRAME</span><b>MP-2026-AI / VERIFIED</b></div>
+            <h1>MAHARSHI<br/>PATEL</h1>
+            <p>AI ENGINEER / INTELLIGENT SYSTEMS</p>
+            <div className="identity-subline"><span>AGENTIC AI</span><span>KNOWLEDGE SYSTEMS</span><span>PRODUCTION ML</span></div>
+            <div className="plate-status"><span>PARIS / FR</span><span>AI SYSTEMS</span><span>BUILD 05</span><i>● ONLINE</i></div>
+          </div>
         </div>
         <div className="scroll-cue"><i/>SCROLL TO INSPECT <span>↓</span></div>
       </div>

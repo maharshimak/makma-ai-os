@@ -1,23 +1,45 @@
 "use client";
 
-export function VisualAtmosphere({progress,reducedMotion}:{progress:number;reducedMotion:boolean}){
-  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
-  const gate=Math.min(1,Math.max(0,progress/.075));
-  const synth=Math.min(1,Math.max(0,(progress-.76)/.14));
-  const depth=reducedMotion?0:progress;
+import type {CSSProperties} from "react";
+
+function clamp01(v:number){return Math.min(1,Math.max(0,v));}
+function smooth01(v:number){const x=clamp01(v);return x*x*(3-2*x);}
+
+export function VisualAtmosphere({progress,reducedMotion,base}:{progress:number;reducedMotion:boolean;base:string}){
+  const aperture=smooth01(progress/.115);
+  const synthesisIn=smooth01((progress-.73)/.12);
+  const synthesisOut=1-smooth01((progress-.95)/.045);
+  const reactor=synthesisIn*synthesisOut;
+  const journey=reducedMotion?0:progress;
+
   return <div className="visual-atmosphere" aria-hidden="true">
-    <div className="nebula-plate" style={{transform:`translate3d(0,${depth*-4}%,0) scale(${1+depth*.06})`,opacity:.26+Math.min(.28,progress*.36)}}>
-      <img src={base+"/assets/v5/nebula-field.svg"} alt=""/>
+    <div className="nebula-plate" style={{
+      opacity:.12+(progress*.06),
+      transform:reducedMotion?"scale(1.04)":`translate3d(${-journey*1.9}%,${journey*1.1}%,0) scale(${1.04+journey*.035})`
+    }}>
+      <img src={base+"/assets/v5/nebula-generated.webp"} alt=""/>
     </div>
-    <img className="cloud-layer cloud-layer-a" src={base+"/assets/v5/cloud-wisp.svg"} alt="" style={{transform:`translate3d(${depth*-8}vw,${depth*-3}vh,0) scale(${1.08+depth*.05})`}}/>
-    <img className="cloud-layer cloud-layer-b" src={base+"/assets/v5/cloud-storm.svg"} alt="" style={{transform:`translate3d(${depth*7}vw,${depth*4}vh,0) scale(${1.12+depth*.08})`}}/>
+
+    <img className="cloud-layer cloud-layer-a" src={base+"/assets/v5/cloud-generated.webp"} alt="" style={{
+      transform:reducedMotion?"none":`translate3d(${journey*-5.5}vw,${journey*2.2}vh,0) scale(${1.03+journey*.04})`
+    }}/>
+
+    <img className="cloud-layer cloud-layer-b" src={base+"/assets/v5/cloud-generated.webp"} alt="" style={{
+      transform:reducedMotion?"scaleX(-1)":`translate3d(${journey*6.5}vw,${journey*-3.4}vh,0) scaleX(-1) scale(${1.08+journey*.05})`
+    }}/>
+
     <div className="particle-field"/>
     <div className="scanner-sweep"/>
-    <img className="global-hud-frame" src={base+"/assets/v5/hud-frame.svg"} alt="" style={{opacity:.14+Math.sin(progress*Math.PI)*.17}}/>
-    <div className="aperture aperture-left" style={{transform:`translate3d(${-gate*105}%,0,0)`}}/>
-    <div className="aperture aperture-right" style={{transform:`translate3d(${gate*105}%,0,0)`}}/>
-    <div className="aperture-seam" style={{opacity:1-gate}}/>
-    <div className="reactor-visual" style={{opacity:synth,transform:`translate3d(-50%,-50%,0) scale(${.72+synth*.28}) rotate(${reducedMotion?0:progress*32}deg)`}}>
+    <img className="global-hud-frame" src={base+"/assets/v5/hud-frame.svg"} alt=""/>
+
+    <div className="aperture aperture-left" style={{transform:`translate3d(${-aperture*101}%,0,0)`}}/>
+    <div className="aperture aperture-right" style={{transform:`translate3d(${aperture*101}%,0,0)`}}/>
+    <div className="aperture-seam" style={{opacity:1-aperture}}/>
+
+    <div className="reactor-visual" style={{
+      opacity:reactor*.32,
+      transform:`translate(-50%,-50%) scale(${.78+reactor*.26}) rotate(${reducedMotion?0:progress*38}deg)`
+    } as CSSProperties}>
       <img src={base+"/assets/v5/reactor-core.svg"} alt=""/>
     </div>
   </div>;
