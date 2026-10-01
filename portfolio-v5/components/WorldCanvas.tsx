@@ -48,12 +48,17 @@ function CameraRig({progress,reducedMotion,focusSystem}:{progress:number;reduced
     target.lerp(look,1-Math.exp(-delta*4.2));
     state.camera.lookAt(target);
     if(!reducedMotion)state.camera.rotation.z=THREE.MathUtils.lerp(state.camera.rotation.z,(state.pointer.x*.006)+(Math.sin(t*Math.PI*2)*.0045),.042);
-    const fovStops=[37,34,39,31,43,33,38,46,36];
-    const scaled=t*(fovStops.length-1);
-    const index=Math.min(fovStops.length-2,Math.floor(scaled));
-    const local=scaled-index;
-    const fov=THREE.MathUtils.lerp(fovStops[index],fovStops[index+1],local);
-    if(Math.abs(state.camera.fov-fov)>.02){state.camera.fov=THREE.MathUtils.damp(state.camera.fov,fov,3.6,delta);state.camera.updateProjectionMatrix();}
+    if(state.camera instanceof THREE.PerspectiveCamera){
+      const fovStops=[37,34,39,31,43,33,38,46,36];
+      const scaled=t*(fovStops.length-1);
+      const index=Math.min(fovStops.length-2,Math.floor(scaled));
+      const local=scaled-index;
+      const fov=THREE.MathUtils.lerp(fovStops[index],fovStops[index+1],local);
+      if(Math.abs(state.camera.fov-fov)>.02){
+        state.camera.fov=THREE.MathUtils.damp(state.camera.fov,fov,3.6,delta);
+        state.camera.updateProjectionMatrix();
+      }
+    }
   });
   return null;
 }
