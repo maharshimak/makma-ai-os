@@ -258,7 +258,7 @@ button{font:inherit}
 .architecture-node span{color:#a88970;font:600 8px ui-monospace,monospace}
 .architecture-node b{font-size:12px;font-weight:560}.architecture-node small{color:#5f6868;font:600 7px ui-monospace,monospace}
 .architecture-node i{position:absolute;right:-5px;top:50%;z-index:2;color:#a88970;font-style:normal}
-.architecture-signal,.project-art,.project-proof{display:none}
+.project-art{display:block}.architecture-signal,.project-proof{display:block}
 
 @media(max-width:1050px){
   .topbar{grid-template-columns:1fr 1fr}.topbar-center{display:none}
@@ -344,3 +344,47 @@ button{font:inherit}
 .project-orbit:hover .project-no i,.project-orbit:focus-visible .project-no i{background:var(--scene-secondary);box-shadow:0 0 9px color-mix(in srgb,var(--scene-secondary) 75%,transparent)}
 @media(max-width:700px){.telemetry-scan{display:none}}
 @media(prefers-reduced-motion:reduce){.cosmic-portfolio:before,.progress-line span,.mission-telemetry i,.mission-telemetry em{transition:none}}
+
+
+/* V5.12 — cosmic project dossiers + recruiter brief */
+.project-page{overflow:hidden;isolation:isolate;background:
+  radial-gradient(circle at 78% 16%,rgba(208,154,106,.08),transparent 26%),
+  radial-gradient(circle at 18% 70%,rgba(126,174,191,.075),transparent 30%),
+  #030506;
+}
+.project-page:before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:
+  radial-gradient(circle at 12% 17%,rgba(255,255,255,.65) 0 1px,transparent 1.4px),
+  radial-gradient(circle at 67% 42%,rgba(169,196,204,.5) 0 1px,transparent 1.4px),
+  radial-gradient(circle at 83% 78%,rgba(208,154,106,.48) 0 1px,transparent 1.4px);
+  background-size:173px 163px,229px 211px,277px 251px;opacity:.18;
+}
+.project-page>nav,.project-page>article{position:relative;z-index:3}
+.project-art{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.project-nebula{position:absolute;inset:-10%;width:120%;height:120%;object-fit:cover;opacity:.09;mix-blend-mode:screen;filter:saturate(.55) brightness(.58) contrast(1.12);animation:projectNebulaDrift 24s ease-in-out infinite alternate}
+.project-hud{position:absolute;inset:4%;width:92%;height:92%;object-fit:fill;opacity:.025}
+@keyframes projectNebulaDrift{to{transform:translate3d(-2%,1%,0) scale(1.035);opacity:.12}}
+.project-kicker>b i{background:var(--project-accent);box-shadow:0 0 10px color-mix(in srgb,var(--project-accent) 55%,transparent)}
+.project-page h1{text-shadow:0 18px 60px rgba(0,0,0,.5)}
+.architecture{position:relative;overflow:hidden}
+.architecture-map{position:relative;padding-bottom:14px}
+.architecture-signal{
+  position:absolute;left:-14%;top:calc(50% - 1px);z-index:4;width:15%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--project-accent),rgba(255,255,255,.85),transparent);
+  box-shadow:0 0 15px color-mix(in srgb,var(--project-accent) 52%,transparent);
+  animation:architectureFlight 5.2s linear infinite;pointer-events:none;
+}
+@keyframes architectureFlight{to{left:112%}}
+.architecture-node{background:linear-gradient(155deg,rgba(14,18,20,.94),rgba(6,8,9,.98));box-shadow:0 18px 55px rgba(0,0,0,.2)}
+.architecture-node span,.architecture-node i{color:var(--project-accent)}
+.project-proof{display:flex;flex-wrap:wrap;gap:8px;margin-top:34px}
+.project-proof span{padding:7px 9px;border:1px solid color-mix(in srgb,var(--project-accent) 24%,transparent);color:#798483;background:color-mix(in srgb,var(--project-accent) 4%,transparent);font:600 7px ui-monospace,monospace;letter-spacing:.1em}
+.project-page .action-row a:hover{border-color:color-mix(in srgb,var(--project-accent) 55%,transparent);background:color-mix(in srgb,var(--project-accent) 6%,transparent)}
+.recruiter-backdrop{background:rgba(1,2,3,.86)}
+.recruiter-panel{position:relative;overflow:hidden;background:
+  linear-gradient(145deg,rgba(239,236,226,.985),rgba(223,222,214,.985));
+  box-shadow:0 42px 150px rgba(0,0,0,.68);
+}
+.recruiter-panel:before{content:"";position:absolute;inset:10px;border:1px solid rgba(21,23,25,.08);pointer-events:none}
+.recruiter-top,.recruiter-grid{position:relative;z-index:1}
+.quick-projects a{transition:padding .2s ease,background .2s ease}.quick-projects a:hover{padding-left:8px;background:rgba(21,23,25,.025)}
+@media(prefers-reduced-motion:reduce){.project-nebula,.architecture-signal{animation:none!important}.architecture-signal{display:none}}

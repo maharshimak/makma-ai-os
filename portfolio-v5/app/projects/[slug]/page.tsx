@@ -20,17 +20,17 @@ export default async function ProjectPage({params}:{params:Promise<{slug:string}
   const accent=project.family.startsWith("Knowledge")?"#73bfd8":project.family.startsWith("Agency")?"#ffad50":"#87a88b";
   return <main className="project-page" style={{"--project-accent":accent} as CSSProperties}>
     <div className="project-art" aria-hidden="true"><img className="project-nebula" src={base+"/assets/v5/nebula-generated.webp"} alt=""/><img className="project-hud" src={base+"/assets/v5/hud-frame.svg"} alt=""/></div>
-    <nav><a href={base+"/"}>← THE SYNTHESIS ENGINE</a><span>{profile.name}</span></nav>
+    <nav><a href={base+"/"}>← SYSTEMS MISSION / V5</a><span>{profile.name}</span></nav>
     <article>
-      <div className="project-kicker"><span className="micro">MODULE / {project.family.toUpperCase()}</span><b><i/>SOURCE MAPPED</b></div>
+      <div className="project-kicker"><span className="micro">SYSTEM / {project.family.toUpperCase()}</span><b><i/>MISSION FILE</b></div>
       <h1>{project.name}</h1>
       <p className="project-summary">{project.summary}</p>
       <div className="project-grid">
-        <section><span className="micro">WHY IT EXISTS</span><p>{project.purpose}</p></section>
+        <section><span className="micro">MISSION PURPOSE</span><p>{project.purpose}</p></section>
         <section><span className="micro">STACK</span><p>{project.stack.join(" · ")}</p></section>
       </div>
       <section className="architecture">
-        <div className="architecture-head"><span className="micro">SYSTEM ARCHITECTURE</span><b>{project.architecture.length} STAGES / TRACEABLE FLOW</b></div>
+        <div className="architecture-head"><span className="micro">SYSTEM FLIGHT PATH</span><b>{project.architecture.length} STAGES / TRACEABLE SYSTEM FLOW</b></div>
         <div className="architecture-map">
           <div className="architecture-signal" aria-hidden="true"/>
           {project.architecture.map((a,i)=><div className="architecture-node" key={a}>
