@@ -388,3 +388,17 @@ button{font:inherit}
 .recruiter-top,.recruiter-grid{position:relative;z-index:1}
 .quick-projects a{transition:padding .2s ease,background .2s ease}.quick-projects a:hover{padding-left:8px;background:rgba(21,23,25,.025)}
 @media(prefers-reduced-motion:reduce){.project-nebula,.architecture-signal{animation:none!important}.architecture-signal{display:none}}
+
+
+/* V5.13 — cinematic project focus */
+.inspector-backdrop{background:rgba(1,2,3,.58);backdrop-filter:blur(8px) saturate(.78)}
+.inspector{
+  background:linear-gradient(150deg,rgba(9,12,14,.94),rgba(4,6,7,.9));
+  border-color:rgba(240,237,229,.18);
+  box-shadow:0 48px 180px rgba(0,0,0,.7),0 0 0 1px rgba(158,192,204,.035) inset;
+}
+.inspector:before{content:"";position:absolute;inset:8px;pointer-events:none;border:1px solid rgba(240,237,229,.035);clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px)}
+.inspector h2{text-shadow:0 18px 55px rgba(0,0,0,.65)}
+.inspector-grid{background:linear-gradient(180deg,rgba(255,255,255,.012),transparent);padding-inline:2px}
+.inspector-backdrop:after{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 72% 44%,rgba(145,190,205,.055),transparent 30%),radial-gradient(circle at 24% 65%,rgba(208,154,106,.045),transparent 32%)}
+@media(max-width:700px){.inspector-backdrop{background:rgba(1,2,3,.8);backdrop-filter:blur(10px)}}

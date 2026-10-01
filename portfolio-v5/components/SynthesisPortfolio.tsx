@@ -103,6 +103,7 @@ export function SynthesisPortfolio(){
   const [selected,setSelected]=useState<Project|null>(null);
   const [sound,setSound]=useState(false);
   const active=Math.min(chapters.length-1,Math.floor(progress*chapters.length));
+  const focusSystem=selected?.family.startsWith("Knowledge")?"knowledge":selected?.family.startsWith("Agency")?"agency":selected?.family.startsWith("Reliability")?"reliability":null;
 
   const families=useMemo(()=>[
     {
@@ -147,7 +148,7 @@ export function SynthesisPortfolio(){
   return <main className="cosmic-portfolio" data-chapter={chapters[active].id} style={{"--journey":progress} as React.CSSProperties}>
     <SystemLoader/>
     <AmbientSound enabled={sound} progress={progress}/>
-    <WorldCanvas progress={progress} reducedMotion={reducedMotion}/>
+    <WorldCanvas progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
 
     <header className="topbar">
       <a className="brand" href="#departure"><span>MP</span><b>SYSTEMS MISSION / V5</b></a>

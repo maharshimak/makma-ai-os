@@ -30,7 +30,7 @@ const trajectoryPoints=[
   new THREE.Vector3(-1.2,1.5,-47),new THREE.Vector3(0,1.4,-60)
 ];
 
-function CameraRig({progress,reducedMotion}:{progress:number;reducedMotion:boolean}){
+function CameraRig({progress,reducedMotion,focusSystem}:{progress:number;reducedMotion:boolean;focusSystem:"knowledge"|"agency"|"reliability"|null}){
   const curve=useMemo(()=>new THREE.CatmullRomCurve3(cameraPoints,false,"catmullrom",.36),[]);
   const targetCurve=useMemo(()=>new THREE.CatmullRomCurve3(targetPoints,false,"catmullrom",.32),[]);
   const target=useMemo(()=>new THREE.Vector3(),[]);
@@ -38,7 +38,17 @@ function CameraRig({progress,reducedMotion}:{progress:number;reducedMotion:boole
     const t=THREE.MathUtils.clamp(progress,0,1);
     const wanted=curve.getPointAt(t);
     const look=targetCurve.getPointAt(t);
-    if(!reducedMotion){wanted.x+=state.pointer.x*.18;wanted.y+=state.pointer.y*.1;}
+    if(focusSystem==="knowledge"){
+      wanted.set(.65,.45,-17.4);
+      look.set(4.9,-.45,-23);
+    }else if(focusSystem==="agency"){
+      wanted.set(1.8,1.7,-28.3);
+      look.set(.2,1.25,-34);
+    }else if(focusSystem==="reliability"){
+      wanted.set(-.45,1.0,-33.1);
+      look.set(-4.2,.55,-39);
+    }
+    if(!reducedMotion&&!focusSystem){wanted.x+=state.pointer.x*.18;wanted.y+=state.pointer.y*.1;}
     state.camera.position.lerp(wanted,1-Math.exp(-delta*(reducedMotion?10:3.8)));
     target.lerp(look,1-Math.exp(-delta*4.2));
     state.camera.lookAt(target);
@@ -296,7 +306,7 @@ function CosmicScene({progress,reducedMotion,quality}:{progress:number;reducedMo
   </>;
 }
 
-export function WorldCanvas({progress,reducedMotion}:{progress:number;reducedMotion:boolean}){
+export function WorldCanvas({progress,reducedMotion,focusSystem=null}:{progress:number;reducedMotion:boolean;focusSystem?:"knowledge"|"agency"|"reliability"|null}){
   const [quality,setQuality]=useState<"high"|"medium"|"low">("high");
   return <div className="world-canvas" aria-hidden="true">
     <Canvas dpr={[1,1.9]} camera={{position:[0,1.2,13],fov:39,near:.08,far:140}} gl={{antialias:true,alpha:false,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.02}}>
@@ -305,7 +315,7 @@ export function WorldCanvas({progress,reducedMotion}:{progress:number;reducedMot
       <AdaptiveDpr pixelated/>
       <PerformanceMonitor flipflops={3} onDecline={()=>setQuality(value=>value==="high"?"medium":"low")} onIncline={()=>setQuality(value=>value==="low"?"medium":"high")}/>
       <Suspense fallback={null}>
-        <CameraRig progress={progress} reducedMotion={reducedMotion}/>
+        <CameraRig progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
         <CosmicScene progress={progress} reducedMotion={reducedMotion} quality={quality}/>
         {!reducedMotion&&quality!=="low"&&<EffectComposer multisampling={quality==="high"?4:0}>
           <Bloom intensity={quality==="high"?.46:.29} luminanceThreshold={.93} luminanceSmoothing={.17} mipmapBlur/>
