@@ -124,3 +124,24 @@ def test_github_pages_origin_is_allowed_by_cors() -> None:
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "https://maharshimak.github.io"
+
+
+
+def test_workflow_run_rejects_client_supplied_approvals() -> None:
+    client = build_test_client()
+    response = client.post(
+        "/v1/workflows/run",
+        json={
+            "name": "demo",
+            "session_id": "s1",
+            "steps": [
+                {
+                    "id": "a",
+                    "tool_name": "calculator",
+                    "arguments": {"expression": "1 + 1"},
+                }
+            ],
+            "approvals": ["calculator"],
+        },
+    )
+    assert response.status_code == 422

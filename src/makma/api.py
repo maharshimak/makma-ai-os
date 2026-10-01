@@ -36,13 +36,6 @@ class WorkflowRunRequest(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     session_id: str = Field(default="default", min_length=1, max_length=200)
     steps: list[WorkflowStepRequest] = Field(min_length=1, max_length=100)
-    approvals: list[str] = Field(default_factory=list, max_length=100)
-
-
-class WorkflowResumeRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    approvals: list[str] = Field(default_factory=list, max_length=100)
 
 
 def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
@@ -92,7 +85,15 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
             return
 
         client_host = request.client.host if request.client else ""
-        if client_host not in {"127.0.0.1", "::1", "localhost", "testclient"}:
+        host_header = request.headers.get("host", "").casefold()
+        local_host = (
+            host_header in {"localhost", "127.0.0.1", "[::1]", "testserver"}
+            or host_header.startswith(("localhost:", "127.0.0.1:", "[::1]:"))
+        )
+        if (
+            client_host not in {"127.0.0.1", "::1", "localhost", "testclient"}
+            or not local_host
+        ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Remote access requires MAKMA_API_TOKEN.",
@@ -220,22 +221,60 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         checkpoint = await workflow_engine.start(
             spec,
             session_id=request.session_id,
-            approvals=set(request.approvals),
         )
         return asdict(checkpoint)
 
     @app.post("/v1/workflows/{run_id}/resume", dependencies=protected)
-    async def resume_workflow(
-        run_id: str,
-        request: WorkflowResumeRequest,
-    ) -> dict[str, object]:
+    async def resume_workflow(run_id: str) -> dict[str, object]:
+        """Resume only non-privileged work. Client requests cannot grant approvals."""
         try:
-            checkpoint = await workflow_engine.resume(
-                run_id,
-                approvals=set(request.approvals),
-            )
+            checkpoint = await workflow_engine.resume(run_id)
         except KeyError as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
+        return asdict(checkpoint)
+
+    @app.post("/v1/workflows/{run_id}/approve", dependencies=protected)
+    async def approve_workflow_step(
+        run_id: str,
+        approval_token: str | None = Header(
+            default=None,
+            alias="X-Makma-Approval-Token",
+        ),
+    ) -> dict[str, object]:
+        """Approve exactly the currently paused step with a separate credential."""
+        configured = runtime.settings.approval_token
+        if not configured:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="MAKMA_APPROVAL_TOKEN is required for privileged workflow approval.",
+            )
+        if not approval_token or not secrets.compare_digest(approval_token, configured):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Valid workflow approval token required.",
+            )
+        try:
+            spec, checkpoint = workflow_store.load(run_id)
+        except KeyError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        if checkpoint.status != "paused" or checkpoint.pending_step is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Workflow is not waiting for an approval.",
+            )
+        pending = next(
+            (step for step in spec.steps if step.id == checkpoint.pending_step),
+            None,
+        )
+        if pending is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Pending workflow step is missing from the persisted specification.",
+            )
+        checkpoint = await workflow_engine.resume(
+            run_id,
+            approvals={pending.tool_name},
+        )
         return asdict(checkpoint)
 
     @app.get("/v1/workflows/{run_id}", dependencies=protected)
