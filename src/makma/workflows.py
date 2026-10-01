@@ -9,7 +9,6 @@ from uuid import uuid4
 
 from makma.tools import PermissionPolicy, ToolRegistry
 
-
 _STEP_OUTPUT_RE = re.compile(r"\$\{steps\.([A-Za-z0-9_.-]+)\.output\}")
 
 
