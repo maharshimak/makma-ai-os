@@ -6,7 +6,35 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from uuid import uuid4
 
+import re
+
 from makma.tools import PermissionPolicy, ToolRegistry
+
+
+_STEP_OUTPUT_RE = re.compile(r"^\$\{steps\.([A-Za-z0-9_-]+)\.output\}$")
+
+
+def _resolve_value(value: object, outputs: dict[str, str]) -> object:
+    if isinstance(value, str):
+        match = _STEP_OUTPUT_RE.fullmatch(value)
+        if match:
+            step_id = match.group(1)
+            if step_id not in outputs:
+                raise ValueError(f"Workflow output is not available yet: {step_id}")
+            return outputs[step_id]
+        return value
+    if isinstance(value, list):
+        return [_resolve_value(item, outputs) for item in value]
+    if isinstance(value, dict):
+        return {key: _resolve_value(item, outputs) for key, item in value.items()}
+    return value
+
+
+def _resolve_arguments(arguments: dict[str, object], outputs: dict[str, str]) -> dict[str, object]:
+    return {
+        key: _resolve_value(value, outputs)
+        for key, value in arguments.items()
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,7 +201,7 @@ class WorkflowEngine:
         spec: WorkflowSpec,
         *,
         session_id: str,
-        approvals: set[str] | None = None,
+        approved_steps: set[str] | None = None,
     ) -> WorkflowCheckpoint:
         spec.validate()
         checkpoint = WorkflowCheckpoint(
@@ -182,13 +210,13 @@ class WorkflowEngine:
             session_id=session_id,
         )
         self.store.save(spec, checkpoint)
-        return await self._advance(spec, checkpoint, approvals or set())
+        return await self._advance(spec, checkpoint, approved_steps or set())
 
     async def resume(
         self,
         run_id: str,
         *,
-        approvals: set[str] | None = None,
+        approved_steps: set[str] | None = None,
     ) -> WorkflowCheckpoint:
         spec, checkpoint = self.store.load(run_id)
         if checkpoint.status in {"succeeded", "failed"}:
@@ -197,13 +225,13 @@ class WorkflowEngine:
         checkpoint.pending_step = None
         checkpoint.error = None
         self.store.save(spec, checkpoint)
-        return await self._advance(spec, checkpoint, approvals or set())
+        return await self._advance(spec, checkpoint, approved_steps or set())
 
     async def _advance(
         self,
         spec: WorkflowSpec,
         checkpoint: WorkflowCheckpoint,
-        approvals: set[str],
+        approved_steps: set[str],
     ) -> WorkflowCheckpoint:
         completed = set(checkpoint.completed_steps)
         for step in spec.topological_order():
@@ -211,18 +239,20 @@ class WorkflowEngine:
                 continue
             if not set(step.depends_on) <= completed:
                 continue
-            if self._approval_required(step.tool_name) and step.tool_name not in approvals:
+            step_is_approved = step.id in approved_steps
+            if self._approval_required(step.tool_name) and not step_is_approved:
                 checkpoint.status = "paused"
                 checkpoint.pending_step = step.id
                 self.store.save(spec, checkpoint)
                 return checkpoint
 
+            resolved_arguments = _resolve_arguments(step.arguments, checkpoint.outputs)
             result = await self.registry.execute(
                 step.tool_name,
-                step.arguments,
+                resolved_arguments,
                 session_id=checkpoint.session_id,
                 policy=self.policy,
-                approvals=approvals,
+                approvals={step.tool_name} if step_is_approved else set(),
             )
             if not result.ok:
                 checkpoint.status = "failed"
