@@ -273,7 +273,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
             )
         checkpoint = await workflow_engine.resume(
             run_id,
-            approvals={pending.tool_name},
+            approved_steps={pending.id},
         )
         return asdict(checkpoint)
 

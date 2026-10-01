@@ -143,6 +143,7 @@ export MAKMA_API_KEY=optional-if-your-server-requires-it
 - `POST /v1/workflows/run`
 - `GET /v1/workflows/{run_id}`
 - `POST /v1/workflows/{run_id}/resume`
+- `POST /v1/workflows/{run_id}/approve` — requires the separate `X-Makma-Approval-Token` credential
 
 Example:
 
@@ -170,7 +171,7 @@ Mak'ma does **not** expose arbitrary shell execution or unrestricted filesystem 
 
 ## Scope and limitations
 
-The default local provider is deterministic, not an LLM. Memory remains lexical by default; semantic recall activates only when a compatible embedding endpoint/model is configured. OpenAI-compatible and Ollama providers stream native chunks; the local deterministic provider emits one chunk. Remote access is blocked unless `MAKMA_API_TOKEN` is configured, but the token represents a single owner rather than full multi-user identity/session ownership. Client-supplied approvals are rejected by the public chat schema. High-risk lifecycle operations are instead exposed through the durable workflow API, where a run can pause at an approval checkpoint and resume explicitly with the approved tool name. Run history and individual tool traces persist in SQLite. Telemetry is bounded and in-memory. Core SQLite operations remain synchronous under an asyncio lock. No shell, filesystem, browser or autonomous background execution is registered.
+The default local provider is deterministic, not an LLM. Memory remains lexical by default; semantic recall activates only when a compatible embedding endpoint/model is configured. OpenAI-compatible and Ollama providers stream native chunks; the local deterministic provider emits one chunk. Remote access is blocked unless `MAKMA_API_TOKEN` is configured, but the token represents a single owner rather than full multi-user identity/session ownership. Client-supplied approvals are rejected by the public chat schema. High-risk lifecycle operations are exposed through the durable workflow API. A run pauses at the exact risky step; ordinary resume calls cannot grant approval. The dedicated approval endpoint requires a separate `MAKMA_APPROVAL_TOKEN` and authorizes only the persisted pending step. Run history and individual tool traces persist in SQLite. Telemetry is bounded and in-memory. Core SQLite operations remain synchronous under an asyncio lock. No shell, filesystem, browser or autonomous background execution is registered.
 
 ## Installation and development
 
@@ -209,7 +210,7 @@ See [.env.example](.env.example). Export variables into the process environment;
 python -m uvicorn makma.main:app --host 127.0.0.1 --port 8000
 ```
 
-Interactive endpoint schemas are at `http://127.0.0.1:8000/docs`; machine-readable schemas are at `/openapi.json`. Set `MAKMA_API_TOKEN` to authorize remote access with `Authorization: Bearer <token>`. If no token is configured, runtime data/tool endpoints reject non-local clients.
+Interactive endpoint schemas are at `http://127.0.0.1:8000/docs`; machine-readable schemas are at `/openapi.json`. Set `MAKMA_API_TOKEN` to authorize remote access with `Authorization: Bearer <token>`. If no token is configured, runtime data/tool endpoints reject non-local clients. Configure a different `MAKMA_APPROVAL_TOKEN` before using privileged workflow approvals; send it only to the approval endpoint as `X-Makma-Approval-Token`.
 
 ## Container
 

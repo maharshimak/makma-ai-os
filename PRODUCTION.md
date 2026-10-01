@@ -1,13 +1,26 @@
 # Production engineering
 
-Mak'ma now includes explicit execution-budget accounting in `makma.reliability`. Agent runs can enforce hard ceilings for planning steps, tool calls, model calls, cost and elapsed time before state is committed.
+Mak'ma contains execution-budget primitives in `makma.reliability`, but they are **not yet wired into every runtime/provider/tool path**. They should therefore be treated as reusable building blocks rather than an enforced production guarantee.
 
-## Operational gates
+## Controls enforced today
 
-- Treat `BudgetExceeded` as a controlled stop, not an infrastructure failure.
-- Configure budgets per environment and workload instead of silently allowing unbounded agent loops.
-- Persist `BudgetSnapshot` with run traces so cost and tool usage are auditable.
-- Keep provider credentials outside the repository and continue using the existing history security audit.
-- Run installation, Ruff, pytest, wheel and Docker checks before release.
+- Remote runtime endpoints require `MAKMA_API_TOKEN` unless both the peer and Host header are local.
+- Privileged workflow actions pause at the exact pending step.
+- Ordinary workflow resume requests cannot grant approval.
+- Privileged approval requires a separate `MAKMA_APPROVAL_TOKEN` and authorizes only that persisted pending step.
+- Tool allow-lists, input schemas and risk metadata are enforced by the registry.
+- Run and tool-call outcomes are persisted for audit.
+- CI runs linting, tests, package/container validation and full-history secret scanning.
 
-The ledger is atomic: a rejected consumption request does not partially mutate counters. This makes it suitable for permissioned tool execution and deterministic run histories.
+## Controls not yet fully integrated
+
+- Execution budgets are implemented as primitives but are not yet mandatory around every planner, provider and tool call.
+- Retry/circuit-breaker primitives are not yet a universal runtime boundary.
+- Multi-user identity, session ownership and approver identity are not implemented.
+- Approval tokens are server-held shared secrets rather than signed, expiring per-action challenges.
+
+Do not describe the items above as enforced production controls until they are connected to the primary execution path and covered by integration tests.
+
+## Release gate
+
+Run installation, Ruff, pytest, wheel/container checks, security-history scanning and browser/product verification before release. Keep provider and approval credentials outside the repository.
