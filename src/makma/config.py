@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     otel_service_name: str = "makma-ai-os"
     otel_export_interval_ms: int = Field(default=5000, ge=1000, le=300000)
     api_token: str | None = None
+    approval_token: str | None = None
     request_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
     max_history_messages: int = Field(default=20, ge=1, le=200)
     cors_origins: str = (
