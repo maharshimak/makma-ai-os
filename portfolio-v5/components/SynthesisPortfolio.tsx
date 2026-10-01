@@ -7,6 +7,18 @@ import {SystemLoader} from "./SystemLoader";
 import {AmbientSound} from "./AmbientSound";
 import {experience,profile,projects,skillSystems,type Project} from "@/lib/content";
 
+const telemetry=[
+  {location:"EARTH / DEPARTURE",signal:"PORTFOLIO 2026"},
+  {location:"EUROPA / PROFILE",signal:"IDENTITY LOCK"},
+  {location:"EUROPA ORBIT",signal:"CAPABILITY CORE"},
+  {location:"JUPITER / KNOWLEDGE",signal:"EVIDENCE SYSTEMS"},
+  {location:"TRANSIT / AGENCY",signal:"CONTROLLED ACTION"},
+  {location:"MARS / RELIABILITY",signal:"EVALUATION GATES"},
+  {location:"ARCHIVE / FLIGHT LOG",signal:"EXPERIENCE TRACE"},
+  {location:"DEEP FIELD",signal:"OPERATING PRINCIPLE"},
+  {location:"OPEN COMMS",signal:"NEXT MISSION"}
+];
+
 const chapters=[
   {id:"departure",label:"Departure"},
   {id:"profile",label:"Mission profile"},
@@ -132,13 +144,13 @@ export function SynthesisPortfolio(){
     return ()=>{document.body.style.overflow=before;};
   },[recruiter,selected]);
 
-  return <main className="cosmic-portfolio">
+  return <main className="cosmic-portfolio" style={{"--journey":progress} as React.CSSProperties}>
     <SystemLoader/>
     <AmbientSound enabled={sound} progress={progress}/>
     <WorldCanvas progress={progress} reducedMotion={reducedMotion}/>
 
     <header className="topbar">
-      <a className="brand" href="#departure"><span>MP</span><b>GALACTIC SYSTEMS</b></a>
+      <a className="brand" href="#departure"><span>MP</span><b>SYSTEMS MISSION / V5</b></a>
       <div className="topbar-center"><span>{String(active+1).padStart(2,"0")} / {String(chapters.length).padStart(2,"0")}</span><b>{chapters[active].label}</b></div>
       <div className="topbar-actions">
         <button onClick={()=>setSound(value=>!value)} aria-pressed={sound}>{sound?"Sound on":"Sound"}</button>
@@ -153,6 +165,10 @@ export function SynthesisPortfolio(){
     </nav>
 
     <div className="progress-line" aria-hidden="true"><span style={{transform:`scaleX(${progress})`}}/></div>
+    <div className="cockpit-corners" aria-hidden="true"><i/><i/><i/><i/></div>
+    <div className="mission-telemetry" aria-hidden="true">
+      <span>{telemetry[active].location}</span><i/><b>{telemetry[active].signal}</b><em>{Math.round(progress*100).toString().padStart(3,"0")}%</em>
+    </div>
 
     <StorySection id="departure" index="00" label="Departure" className="hero-scene">
       <div className="hero-copy">
@@ -218,7 +234,7 @@ export function SynthesisPortfolio(){
         </div>
         <div className="project-constellation">
           {family.projects.map((project,projectIndex)=><button key={project.slug} className="project-orbit" onClick={()=>setSelected(project)}>
-            <span className="project-no">{String(projectIndex+1).padStart(2,"0")}</span>
+            <span className="project-no"><i/>{String(projectIndex+1).padStart(2,"0")}</span>
             <span className="project-info">
               <b>{project.name}</b>
               <small>{project.summary}</small>

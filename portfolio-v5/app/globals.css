@@ -288,3 +288,28 @@ button{font:inherit}
   html{scroll-behavior:auto}
   *{animation:none!important;transition:none!important}
 }
+
+
+/* V5.10 — mission-control depth pass */
+.cosmic-portfolio:before,.cosmic-portfolio:after{content:"";position:fixed;inset:0;z-index:2;pointer-events:none}
+.cosmic-portfolio:before{background:radial-gradient(circle at calc(14% + var(--journey)*10%) 28%,rgba(127,170,186,.065),transparent 24%),radial-gradient(circle at calc(86% - var(--journey)*12%) 74%,rgba(208,154,106,.065),transparent 27%);mix-blend-mode:screen}
+.cosmic-portfolio:after{box-shadow:inset 0 0 170px rgba(0,0,0,.72);background:linear-gradient(90deg,rgba(0,0,0,.2),transparent 14%,transparent 86%,rgba(0,0,0,.2))}
+.cockpit-corners{position:fixed;inset:94px 28px 30px;z-index:24;pointer-events:none}
+.cockpit-corners i{position:absolute;width:38px;height:38px;opacity:.3}
+.cockpit-corners i:nth-child(1){left:0;top:0;border-left:1px solid rgba(240,237,229,.2);border-top:1px solid rgba(240,237,229,.2)}
+.cockpit-corners i:nth-child(2){right:0;top:0;border-right:1px solid rgba(240,237,229,.2);border-top:1px solid rgba(240,237,229,.2)}
+.cockpit-corners i:nth-child(3){left:0;bottom:0;border-left:1px solid rgba(240,237,229,.2);border-bottom:1px solid rgba(240,237,229,.2)}
+.cockpit-corners i:nth-child(4){right:0;bottom:0;border-right:1px solid rgba(240,237,229,.2);border-bottom:1px solid rgba(240,237,229,.2)}
+.mission-telemetry{position:fixed;left:clamp(18px,3vw,48px);bottom:26px;z-index:29;display:flex;align-items:center;gap:10px;pointer-events:none;color:#626b6d;font:600 7px ui-monospace,SFMono-Regular,monospace;letter-spacing:.11em;text-transform:uppercase}
+.mission-telemetry i{width:34px;height:1px;background:linear-gradient(90deg,#8fa9af,#d09a6a)}
+.mission-telemetry b{font-weight:600;color:#9da4a3}.mission-telemetry em{font-style:normal;color:#c49a76}
+.hero-copy:after{content:"";display:block;width:min(380px,70%);height:1px;margin-top:30px;background:linear-gradient(90deg,rgba(169,196,204,.72),rgba(208,154,106,.45),transparent);box-shadow:0 0 16px rgba(169,196,204,.08)}
+.project-orbit{position:relative;overflow:hidden}
+.project-orbit:before{content:"";position:absolute;left:-22%;bottom:0;width:20%;height:1px;background:linear-gradient(90deg,transparent,#d09a6a,transparent);box-shadow:0 0 12px rgba(208,154,106,.45);transition:left .55s ease}
+.project-orbit:hover:before,.project-orbit:focus-visible:before{left:106%}
+.project-no{display:flex;align-items:center;gap:8px}.project-no i{width:4px;height:4px;border-radius:50%;background:#667174;box-shadow:0 0 0 transparent;transition:.25s}
+.project-orbit:hover .project-no i,.project-orbit:focus-visible .project-no i{background:#d09a6a;box-shadow:0 0 9px rgba(208,154,106,.75)}
+.project-open{transition:transform .2s ease,color .2s ease}.project-orbit:hover .project-open,.project-orbit:focus-visible .project-open{transform:translateX(3px);color:#d4cbc1}
+.profile-facts,.capability-grid,.project-constellation,.flight-log{backdrop-filter:blur(3px);background:linear-gradient(180deg,rgba(3,5,6,.08),rgba(3,5,6,.18))}
+@media(max-width:700px){.cockpit-corners{inset:76px 10px 12px;opacity:.45}.mission-telemetry{display:none}.cosmic-portfolio:after{box-shadow:inset 0 0 90px rgba(0,0,0,.58)}}
+@media(prefers-reduced-motion:reduce){.cosmic-portfolio:before{background:radial-gradient(circle at 20% 28%,rgba(127,170,186,.05),transparent 24%),radial-gradient(circle at 80% 74%,rgba(208,154,106,.05),transparent 27%)}}
