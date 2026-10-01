@@ -378,6 +378,8 @@ function KnowledgeParticleField({
     const agency=smoothWindow(.43,.50,progress)*(1-smoothWindow(.58,.64,progress));
     material.uniforms.uReveal.value=THREE.MathUtils.damp(material.uniforms.uReveal.value,reducedMotion?1:reveal,4.2,delta);
     material.uniforms.uVisibility.value=THREE.MathUtils.damp(material.uniforms.uVisibility.value,visibility,3.8,delta);
+    points.current.visible=material.uniforms.uVisibility.value>.006;
+    if(!points.current.visible)return;
     material.uniforms.uProject.value=THREE.MathUtils.damp(material.uniforms.uProject.value,knowledgeProjectMode(focusProject),5.1,delta);
     material.uniforms.uAgency.value=THREE.MathUtils.damp(material.uniforms.uAgency.value,agency,4.1,delta);
     material.uniforms.uTime.value=clock.elapsedTime;
