@@ -48,18 +48,28 @@ function CameraRig({progress,reducedMotion}:{progress:number;reducedMotion:boole
 }
 
 function makeFlareTexture(){
-  const canvas=document.createElement("canvas");
-  canvas.width=512;canvas.height=512;
-  const ctx=canvas.getContext("2d")!;
-  const g=ctx.createRadialGradient(256,256,0,256,256,256);
-  g.addColorStop(0,"rgba(255,248,228,1)");
-  g.addColorStop(.045,"rgba(255,218,166,.95)");
-  g.addColorStop(.14,"rgba(120,192,224,.28)");
-  g.addColorStop(.42,"rgba(87,136,170,.08)");
-  g.addColorStop(1,"rgba(0,0,0,0)");
-  ctx.fillStyle=g;ctx.fillRect(0,0,512,512);
-  const tex=new THREE.CanvasTexture(canvas);
+  const size=256;
+  const data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++){
+    for(let x=0;x<size;x++){
+      const dx=(x+.5-size/2)/(size/2);
+      const dy=(y+.5-size/2)/(size/2);
+      const d=Math.min(1,Math.sqrt(dx*dx+dy*dy));
+      const core=Math.exp(-d*d*52);
+      const halo=Math.exp(-d*d*8.5);
+      const blue=Math.exp(-d*d*3.2);
+      const i=(y*size+x)*4;
+      data[i]=Math.min(255,Math.round(255*core+235*halo));
+      data[i+1]=Math.min(255,Math.round(244*core+190*halo+120*blue));
+      data[i+2]=Math.min(255,Math.round(218*core+150*halo+220*blue));
+      data[i+3]=Math.min(255,Math.round(255*(core*.95+halo*.34+blue*.08)));
+    }
+  }
+  const tex=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+  tex.needsUpdate=true;
   tex.colorSpace=THREE.SRGBColorSpace;
+  tex.minFilter=THREE.LinearFilter;
+  tex.magFilter=THREE.LinearFilter;
   return tex;
 }
 
