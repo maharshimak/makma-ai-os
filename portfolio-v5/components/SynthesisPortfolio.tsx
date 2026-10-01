@@ -144,7 +144,7 @@ export function SynthesisPortfolio(){
     return ()=>{document.body.style.overflow=before;};
   },[recruiter,selected]);
 
-  return <main className="cosmic-portfolio" style={{"--journey":progress} as React.CSSProperties}>
+  return <main className="cosmic-portfolio" data-chapter={chapters[active].id} style={{"--journey":progress} as React.CSSProperties}>
     <SystemLoader/>
     <AmbientSound enabled={sound} progress={progress}/>
     <WorldCanvas progress={progress} reducedMotion={reducedMotion}/>
@@ -165,7 +165,7 @@ export function SynthesisPortfolio(){
     </nav>
 
     <div className="progress-line" aria-hidden="true"><span style={{transform:`scaleX(${progress})`}}/></div>
-    <div className="cockpit-corners" aria-hidden="true"><i/><i/><i/><i/></div>
+    <div className="cockpit-corners" aria-hidden="true"><i/><i/><i/><i/></div><div className="telemetry-scan" aria-hidden="true"/>
     <div className="mission-telemetry" aria-hidden="true">
       <span>{telemetry[active].location}</span><i/><b>{telemetry[active].signal}</b><em>{Math.round(progress*100).toString().padStart(3,"0")}%</em>
     </div>

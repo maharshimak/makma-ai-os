@@ -313,3 +313,34 @@ button{font:inherit}
 .profile-facts,.capability-grid,.project-constellation,.flight-log{backdrop-filter:blur(3px);background:linear-gradient(180deg,rgba(3,5,6,.08),rgba(3,5,6,.18))}
 @media(max-width:700px){.cockpit-corners{inset:76px 10px 12px;opacity:.45}.mission-telemetry{display:none}.cosmic-portfolio:after{box-shadow:inset 0 0 90px rgba(0,0,0,.58)}}
 @media(prefers-reduced-motion:reduce){.cosmic-portfolio:before{background:radial-gradient(circle at 20% 28%,rgba(127,170,186,.05),transparent 24%),radial-gradient(circle at 80% 74%,rgba(208,154,106,.05),transparent 27%)}}
+
+
+/* V5.11 — chapter-reactive color language */
+.cosmic-portfolio{--scene-accent:#a9c4cc;--scene-secondary:#d09a6a;--scene-haze:rgba(127,170,186,.065)}
+.cosmic-portfolio[data-chapter="profile"],.cosmic-portfolio[data-chapter="foundation"]{--scene-accent:#b8ced4;--scene-secondary:#b79273;--scene-haze:rgba(130,177,193,.075)}
+.cosmic-portfolio[data-chapter="knowledge"]{--scene-accent:#a7c7d1;--scene-secondary:#d0a276;--scene-haze:rgba(105,179,204,.085)}
+.cosmic-portfolio[data-chapter="agency"]{--scene-accent:#d3ab84;--scene-secondary:#95b7c1;--scene-haze:rgba(208,154,106,.085)}
+.cosmic-portfolio[data-chapter="reliability"]{--scene-accent:#ce8f72;--scene-secondary:#a5c1c9;--scene-haze:rgba(190,99,70,.085)}
+.cosmic-portfolio[data-chapter="flight-log"]{--scene-accent:#c7b49c;--scene-secondary:#91aeb7;--scene-haze:rgba(171,137,103,.07)}
+.cosmic-portfolio[data-chapter="principle"],.cosmic-portfolio[data-chapter="comms"]{--scene-accent:#ddd8ca;--scene-secondary:#c9946d;--scene-haze:rgba(205,190,168,.06)}
+.cosmic-portfolio:before{
+  background:
+    radial-gradient(circle at calc(14% + var(--journey)*10%) 28%,var(--scene-haze),transparent 24%),
+    radial-gradient(circle at calc(86% - var(--journey)*12%) 74%,color-mix(in srgb,var(--scene-secondary) 8%,transparent),transparent 27%);
+  transition:background .7s ease;
+}
+.progress-line span{background:linear-gradient(90deg,var(--scene-accent),var(--scene-secondary));transition:background .6s ease}
+.mission-telemetry i{background:linear-gradient(90deg,var(--scene-accent),var(--scene-secondary));transition:background .6s ease}
+.mission-telemetry em{color:var(--scene-secondary);transition:color .6s ease}
+.chapter-rail a.active i{background:var(--scene-accent);box-shadow:0 0 10px color-mix(in srgb,var(--scene-accent) 28%,transparent)}
+.hero-copy:after{background:linear-gradient(90deg,var(--scene-accent),color-mix(in srgb,var(--scene-secondary) 70%,transparent),transparent)}
+.telemetry-scan{
+  position:fixed;left:7vw;right:7vw;top:calc(16vh + var(--journey)*68vh);height:1px;z-index:23;pointer-events:none;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--scene-accent) 18%,transparent) 18%,color-mix(in srgb,var(--scene-secondary) 32%,transparent) 50%,color-mix(in srgb,var(--scene-accent) 18%,transparent) 82%,transparent);
+  opacity:.36;filter:blur(.1px);transition:background .6s ease;
+}
+.telemetry-scan:after{content:"";position:absolute;left:50%;top:-2px;width:5px;height:5px;border-radius:50%;background:var(--scene-accent);box-shadow:0 0 12px color-mix(in srgb,var(--scene-accent) 60%,transparent)}
+.project-orbit:before{background:linear-gradient(90deg,transparent,var(--scene-secondary),transparent);box-shadow:0 0 12px color-mix(in srgb,var(--scene-secondary) 45%,transparent)}
+.project-orbit:hover .project-no i,.project-orbit:focus-visible .project-no i{background:var(--scene-secondary);box-shadow:0 0 9px color-mix(in srgb,var(--scene-secondary) 75%,transparent)}
+@media(max-width:700px){.telemetry-scan{display:none}}
+@media(prefers-reduced-motion:reduce){.cosmic-portfolio:before,.progress-line span,.mission-telemetry i,.mission-telemetry em{transition:none}}
