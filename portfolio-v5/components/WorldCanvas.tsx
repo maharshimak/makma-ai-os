@@ -1,15 +1,15 @@
 "use client";
 
-import {AdaptiveDpr,PerformanceMonitor,Sparkles,Stars,useGLTF,useTexture} from "@react-three/drei";
+import {PerformanceMonitor,Sparkles,Stars,useGLTF,useTexture} from "@react-three/drei";
 import {Canvas,useFrame} from "@react-three/fiber";
 import {Bloom,EffectComposer,SMAA,Vignette} from "@react-three/postprocessing";
 import {Suspense,useEffect,useMemo,useRef,useState} from "react";
 import * as THREE from "three";
 
-const WEBB="https://assets.science.nasa.gov/dynamicimage/assets/science/missions/webb/science/2022/10/STScI-01GFRYYRTCTMX197BY86MBFCR9.png?crop=faces%2Cfocalpoint&fit=clip&h=2160&w=3840";
-const EUROPA="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter---europa/preview.webp?w=4096";
-const JUPITER="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter/preview.webp?w=4096";
-const MARS="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/mars/preview.webp?w=4096";
+const WEBB="https://assets.science.nasa.gov/dynamicimage/assets/science/missions/webb/science/2022/10/STScI-01GFRYYRTCTMX197BY86MBFCR9.png?crop=faces%2Cfocalpoint&fit=clip&h=4320&w=7680";
+const EUROPA="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter---europa/preview.webp?w=8192";
+const JUPITER="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter/preview.webp?w=8192";
+const MARS="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/mars/preview.webp?w=8192";
 const SURVEYOR="https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/Mars%20Global%20Surveyor/Mars%20Global%20Surveyor%20(mapping).glb";
 
 const cameraPoints=[
@@ -52,8 +52,7 @@ function CameraRig({progress,reducedMotion,focusSystem}:{progress:number;reduced
   return null;
 }
 
-function makeFlareTexture(){
-  const size=256;
+function makeFlareTexture(size=1024){
   const data=new Uint8Array(size*size*4);
   for(let y=0;y<size;y++){
     for(let x=0;x<size;x++){
@@ -79,7 +78,7 @@ function makeFlareTexture(){
 }
 
 function DistantStar({quality}:{quality:"high"|"medium"|"low"}){
-  const flare=useMemo(()=>makeFlareTexture(),[]);
+  const flare=useMemo(()=>makeFlareTexture(quality==="high"?1024:quality==="medium"?768:512),[quality]);
   useEffect(()=>()=>flare.dispose(),[flare]);
   const scale=quality==="high"?4.8:quality==="medium"?3.8:3;
   return <group position={[13,8,-14]}>
@@ -156,7 +155,7 @@ function AtmosphereGlow({radius,color,intensity=.55}:{radius:number;color:string
   }),[color,intensity]);
   useEffect(()=>()=>material.dispose(),[material]);
   return <mesh scale={1.075}>
-    <sphereGeometry args={[radius,96,96]}/>
+    <sphereGeometry args={[radius,192,192]}/>
     <primitive object={material} attach="material"/>
   </mesh>;
 }
@@ -197,7 +196,7 @@ function JovianRing({radius,quality}:{radius:number;quality:"high"|"medium"|"low
   }),[quality]);
   useEffect(()=>()=>material.dispose(),[material]);
   return <mesh rotation={[Math.PI/2+.035,0,.025]} renderOrder={1}>
-    <ringGeometry args={[radius*1.40,radius*1.86,320,8]}/>
+    <ringGeometry args={[radius*1.40,radius*1.86,quality==="high"?768:quality==="medium"?480:256,quality==="high"?20:12]}/>
     <primitive object={material} attach="material"/>
   </mesh>;
 }
@@ -205,10 +204,10 @@ function JovianRing({radius,quality}:{radius:number;quality:"high"|"medium"|"low
 function World({textureUrl,position,radius,tilt=0,speed=.035,atmosphere,bumpScale=.025,roughness=.76,quality,ring="none"}:{textureUrl:string;position:[number,number,number];radius:number;tilt?:number;speed?:number;atmosphere:string;bumpScale?:number;roughness?:number;quality:"high"|"medium"|"low";ring?:"none"|"jupiter"}){
   const map=useTexture(textureUrl);
   const planet=useRef<THREE.Mesh>(null);
-  const segments=quality==="high"?128:quality==="medium"?96:64;
+  const segments=quality==="high"?256:quality==="medium"?160:96;
   useMemo(()=>{
     map.colorSpace=THREE.SRGBColorSpace;
-    map.anisotropy=quality==="high"?12:quality==="medium"?8:4;
+    map.anisotropy=quality==="high"?16:quality==="medium"?12:6;
     map.minFilter=THREE.LinearMipmapLinearFilter;
     map.magFilter=THREE.LinearFilter;
     map.generateMipmaps=true;
@@ -242,7 +241,7 @@ function ThrusterPlume(){
 
 function Surveyor({progress,reducedMotion,quality}:{progress:number;reducedMotion:boolean;quality:"high"|"medium"|"low"}){
   const {scene}=useGLTF(SURVEYOR);
-  const flareTexture=useMemo(()=>makeFlareTexture(),[]);
+  const flareTexture=useMemo(()=>makeFlareTexture(quality==="high"?1024:quality==="medium"?768:512),[quality]);
   const craft=useMemo(()=>{
     const clone=scene.clone(true);
     const initial=new THREE.Box3().setFromObject(clone);
@@ -261,7 +260,7 @@ function Surveyor({progress,reducedMotion,quality}:{progress:number;reducedMotio
           material.envMapIntensity=.72;
           material.roughness=Math.max(.28,material.roughness*.82);
           material.metalness=Math.min(1,material.metalness+.08);
-          if(material.map){material.map.anisotropy=quality==="high"?12:6;material.map.minFilter=THREE.LinearMipmapLinearFilter;}
+          if(material.map){material.map.anisotropy=quality==="high"?16:quality==="medium"?12:8;material.map.minFilter=THREE.LinearMipmapLinearFilter;material.map.magFilter=THREE.LinearFilter;}
         }
       });
     });
@@ -342,16 +341,15 @@ function CosmicScene({progress,reducedMotion,quality}:{progress:number;reducedMo
 export function WorldCanvas({progress,reducedMotion,focusSystem=null}:{progress:number;reducedMotion:boolean;focusSystem?:"knowledge"|"agency"|"reliability"|null}){
   const [quality,setQuality]=useState<"high"|"medium"|"low">("high");
   return <div className="world-canvas" aria-hidden="true">
-    <Canvas dpr={[1,1.9]} camera={{position:[0,1.2,13],fov:39,near:.08,far:140}} gl={{antialias:true,alpha:false,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.06}}>
+    <Canvas dpr={quality==="high"?2:quality==="medium"?1.5:1} camera={{position:[0,1.2,13],fov:39,near:.08,far:140}} gl={{antialias:true,alpha:false,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.06,preserveDrawingBuffer:false}}>
       <color attach="background" args={["#010203"]}/>
       <fog attach="fog" args={["#040608",42,114]}/>
-      <AdaptiveDpr pixelated/>
       <PerformanceMonitor flipflops={3} onDecline={()=>setQuality(value=>value==="high"?"medium":"low")} onIncline={()=>setQuality(value=>value==="low"?"medium":"high")}/>
       <Suspense fallback={null}>
         <CameraRig progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
         <CosmicScene progress={progress} reducedMotion={reducedMotion} quality={quality}/>
         {!reducedMotion&&quality!=="low"&&<EffectComposer multisampling={quality==="high"?4:0}>
-          <Bloom intensity={quality==="high"?.34:.22} luminanceThreshold={1.02} luminanceSmoothing={.2} mipmapBlur/>
+          <Bloom intensity={quality==="high"?.31:.20} luminanceThreshold={1.06} luminanceSmoothing={.22} mipmapBlur/>
           <SMAA/>
           <Vignette eskil={false} offset={.17} darkness={.38}/>
         </EffectComposer>}
