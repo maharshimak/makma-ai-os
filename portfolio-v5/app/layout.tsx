@@ -27,5 +27,5 @@ export const viewport:Viewport={
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}){
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><head><link rel="preconnect" href="https://assets.science.nasa.gov" crossOrigin="anonymous"/><link rel="preconnect" href="https://raw.githubusercontent.com" crossOrigin="anonymous"/></head><body>{children}</body></html>;
 }

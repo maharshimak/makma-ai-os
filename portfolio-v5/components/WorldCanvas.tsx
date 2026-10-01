@@ -83,6 +83,45 @@ function makeFlareTexture(){
   return tex;
 }
 
+function DistantStar({quality}:{quality:"high"|"medium"|"low"}){
+  const flare=useMemo(()=>makeFlareTexture(),[]);
+  useEffect(()=>()=>flare.dispose(),[flare]);
+  const scale=quality==="high"?4.8:quality==="medium"?3.8:3;
+  return <group position={[13,8,-14]}>
+    <sprite scale={[scale,scale,1]}>
+      <spriteMaterial map={flare} color="#fff0d8" transparent opacity={quality==="low"?.38:.62} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/>
+    </sprite>
+    <mesh><sphereGeometry args={[.065,16,16]}/><meshBasicMaterial color="#fff7e8" toneMapped={false}/></mesh>
+  </group>;
+}
+
+function Moonlet({orbit,size,speed,phase,color,tilt=0}:{orbit:number;size:number;speed:number;phase:number;color:string;tilt?:number}){
+  const ref=useRef<THREE.Group>(null);
+  useFrame(({clock})=>{
+    if(!ref.current)return;
+    const a=clock.elapsedTime*speed+phase;
+    ref.current.position.set(Math.cos(a)*orbit,Math.sin(a*.73)*orbit*.12,Math.sin(a)*orbit);
+  });
+  return <group ref={ref} rotation={[0,0,tilt]}>
+    <mesh>
+      <sphereGeometry args={[size,24,24]}/>
+      <meshStandardMaterial color={color} roughness={.95} metalness={0}/>
+    </mesh>
+  </group>;
+}
+
+function MoonSystem({kind}:{kind:"jupiter"|"mars"}){
+  if(kind==="jupiter")return <group position={[4.9,-.45,-23]}>
+    <Moonlet orbit={6.1} size={.11} speed={.065} phase={.4} color="#c8b99d"/>
+    <Moonlet orbit={6.8} size={.085} speed={-.052} phase={2.3} color="#b7aaa0"/>
+    <Moonlet orbit={7.45} size={.095} speed={.042} phase={4.2} color="#d0c8b8"/>
+  </group>;
+  return <group position={[-4.2,.55,-39]}>
+    <Moonlet orbit={4.0} size={.072} speed={.09} phase={1.2} color="#8e776b"/>
+    <Moonlet orbit={4.65} size={.055} speed={-.068} phase={3.8} color="#a58d7c"/>
+  </group>;
+}
+
 function DeepField({reducedMotion}:{reducedMotion:boolean}){
   const texture=useTexture(WEBB);
   const group=useRef<THREE.Group>(null);
@@ -298,10 +337,12 @@ function CosmicScene({progress,reducedMotion,quality}:{progress:number;reducedMo
     <Stars radius={82} depth={42} count={starCount} factor={quality==="high"?2.45:2.05} saturation={0} fade speed={.12}/>
     <Sparkles count={dustCount} scale={[30,17,86]} size={quality==="high"?1.35:1} speed={.095} opacity={.19} color="#d8e3e7"/>
     <ReactiveLighting progress={progress}/>
+    <DistantStar quality={quality}/>
     <FlightPath progress={progress} reducedMotion={reducedMotion}/>
     <World textureUrl={EUROPA} position={[-4.6,.55,-8]} radius={2.65} tilt={-.18} speed={.022} atmosphere="#b7d7e1" guideColor="#9fc0cc" bumpScale={.065} roughness={.7} quality={quality}/>
     <World textureUrl={JUPITER} position={[4.9,-.45,-23]} radius={4.3} tilt={.05} speed={.014} atmosphere="#e0ad79" guideColor="#d6a272" bumpScale={.009} roughness={.82} quality={quality}/>
     <World textureUrl={MARS} position={[-4.2,.55,-39]} radius={3.05} tilt={-.1} speed={.019} atmosphere="#d0724a" guideColor="#c58b70" bumpScale={.045} roughness={.88} quality={quality}/>
+    {quality!=="low"&&<><MoonSystem kind="jupiter"/><MoonSystem kind="mars"/></>}
     <Surveyor progress={progress} reducedMotion={reducedMotion} quality={quality}/>
   </>;
 }
