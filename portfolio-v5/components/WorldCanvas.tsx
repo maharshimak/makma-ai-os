@@ -1,6 +1,6 @@
 "use client";
 
-import {AdaptiveDpr,Line,PerformanceMonitor,Sparkles,Stars,useGLTF,useTexture} from "@react-three/drei";
+import {AdaptiveDpr,PerformanceMonitor,Sparkles,Stars,useGLTF,useTexture} from "@react-three/drei";
 import {Canvas,useFrame} from "@react-three/fiber";
 import {Bloom,EffectComposer,SMAA,Vignette} from "@react-three/postprocessing";
 import {Suspense,useEffect,useMemo,useRef,useState} from "react";
@@ -24,11 +24,6 @@ const targetPoints=[
   new THREE.Vector3(-4.2,.6,-39),new THREE.Vector3(0,1,-58),new THREE.Vector3(0,1,-69)
 ];
 
-const trajectoryPoints=[
-  new THREE.Vector3(3.5,2.1,-8),new THREE.Vector3(-2.4,1.1,-12),new THREE.Vector3(1.8,.5,-19),
-  new THREE.Vector3(5.5,-.2,-24),new THREE.Vector3(1.3,.8,-31),new THREE.Vector3(-4.8,.8,-39),
-  new THREE.Vector3(-1.2,1.5,-47),new THREE.Vector3(0,1.4,-60)
-];
 
 function CameraRig({progress,reducedMotion,focusSystem}:{progress:number;reducedMotion:boolean;focusSystem:"knowledge"|"agency"|"reliability"|null}){
   const curve=useMemo(()=>new THREE.CatmullRomCurve3(cameraPoints,false,"catmullrom",.36),[]);
@@ -166,41 +161,48 @@ function AtmosphereGlow({radius,color,intensity=.55}:{radius:number;color:string
   </mesh>;
 }
 
-function OrbitMarker({radius,speed,offset,color}:{radius:number;speed:number;offset:number;color:string}){
-  const ref=useRef<THREE.Group>(null);
-  useFrame(({clock})=>{
-    if(!ref.current)return;
-    const a=clock.elapsedTime*speed+offset;
-    ref.current.position.set(Math.cos(a)*radius,0,Math.sin(a)*radius);
-  });
-  return <group ref={ref}>
-    <mesh><sphereGeometry args={[.035,10,10]}/><meshBasicMaterial color={color} toneMapped={false}/></mesh>
-    <mesh scale={2.8}><sphereGeometry args={[.035,8,8]}/><meshBasicMaterial color={color} transparent opacity={.12} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/></mesh>
-  </group>;
+function JovianRing({radius,quality}:{radius:number;quality:"high"|"medium"|"low"}){
+  const material=useMemo(()=>new THREE.ShaderMaterial({
+    uniforms:{uOpacity:{value:quality==="high"?.115:quality==="medium"?.085:.055}},
+    vertexShader:`
+      varying vec2 vUv;
+      void main(){
+        vUv=uv;
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+      }
+    `,
+    fragmentShader:`
+      varying vec2 vUv;
+      uniform float uOpacity;
+      float hash(float n){return fract(sin(n)*43758.5453123);}
+      void main(){
+        vec2 p=vUv-.5;
+        float r=length(p)*2.0;
+        float angle=atan(p.y,p.x);
+        float mask=smoothstep(.735,.775,r)*(1.0-smoothstep(.985,1.0,r));
+        float bandA=.50+.50*sin((r-.74)*220.0);
+        float bandB=.50+.50*sin((r-.74)*417.0+1.3);
+        float grain=.72+.28*hash(floor((angle+3.14159)*92.0)+floor(r*340.0));
+        float density=mix(.18,1.0,pow(bandA*bandB,.72))*grain;
+        float alpha=mask*density*uOpacity;
+        vec3 dust=mix(vec3(.43,.36,.30),vec3(.72,.61,.49),clamp((r-.74)*2.4,0.0,1.0));
+        gl_FragColor=vec4(dust,alpha);
+      }
+    `,
+    transparent:true,
+    side:THREE.DoubleSide,
+    depthWrite:false,
+    blending:THREE.NormalBlending,
+    toneMapped:false
+  }),[quality]);
+  useEffect(()=>()=>material.dispose(),[material]);
+  return <mesh rotation={[Math.PI/2+.035,0,.025]} renderOrder={1}>
+    <ringGeometry args={[radius*1.40,radius*1.86,320,8]}/>
+    <primitive object={material} attach="material"/>
+  </mesh>;
 }
 
-function OrbitalSystem({radius,color,quality}:{radius:number;color:string;quality:"high"|"medium"|"low"}){
-  const rings=useMemo(()=>[
-    {r:radius*1.42,rotation:[Math.PI/2,0,0] as [number,number,number],opacity:.22},
-    {r:radius*1.68,rotation:[Math.PI/2+.23,.12,.16] as [number,number,number],opacity:.13},
-    {r:radius*1.92,rotation:[Math.PI/2-.18,-.2,.08] as [number,number,number],opacity:.085}
-  ],[radius]);
-  return <group>
-    {rings.map((ring,index)=>{
-      const pts=Array.from({length:129},(_,i)=>{const a=(i/128)*Math.PI*2;return new THREE.Vector3(Math.cos(a)*ring.r,0,Math.sin(a)*ring.r);});
-      return <group key={index} rotation={ring.rotation}>
-        <Line points={pts} color={color} transparent opacity={ring.opacity} lineWidth={index===0?.72:.42} dashed={index>0} dashSize={.16} gapSize={.13}/>
-        {quality!=="low"&&index<2&&<>
-          <OrbitMarker radius={ring.r} speed={index?-.12:.16} offset={index*2.15} color={color}/>
-          <OrbitMarker radius={ring.r} speed={index?-.095:.12} offset={2.9+index} color="#f6e6d3"/>
-        </>}
-      </group>;
-    })}
-    {quality==="high"&&<Sparkles count={32} scale={[radius*4.3,.28,radius*4.3]} size={.65} speed={.06} opacity={.18} color={color}/>}
-  </group>;
-}
-
-function World({textureUrl,position,radius,tilt=0,speed=.035,atmosphere,guideColor,bumpScale=.025,roughness=.76,quality}:{textureUrl:string;position:[number,number,number];radius:number;tilt?:number;speed?:number;atmosphere:string;guideColor:string;bumpScale?:number;roughness?:number;quality:"high"|"medium"|"low"}){
+function World({textureUrl,position,radius,tilt=0,speed=.035,atmosphere,bumpScale=.025,roughness=.76,quality,ring="none"}:{textureUrl:string;position:[number,number,number];radius:number;tilt?:number;speed?:number;atmosphere:string;bumpScale?:number;roughness?:number;quality:"high"|"medium"|"low";ring?:"none"|"jupiter"}){
   const map=useTexture(textureUrl);
   const planet=useRef<THREE.Mesh>(null);
   const segments=quality==="high"?128:quality==="medium"?96:64;
@@ -213,33 +215,12 @@ function World({textureUrl,position,radius,tilt=0,speed=.035,atmosphere,guideCol
   },[map,quality]);
   useFrame((_,delta)=>{if(planet.current)planet.current.rotation.y+=delta*speed;});
   return <group position={position} rotation={[0,0,tilt]}>
-    <OrbitalSystem radius={radius} color={guideColor} quality={quality}/>
+    {ring==="jupiter"&&<JovianRing radius={radius} quality={quality}/>} 
     <mesh ref={planet}>
       <sphereGeometry args={[radius,segments,segments]}/>
-      <meshPhysicalMaterial map={map} bumpMap={map} bumpScale={bumpScale} roughness={roughness} metalness={0} clearcoat={.06} clearcoatRoughness={.72}/>
+      <meshPhysicalMaterial map={map} bumpMap={map} bumpScale={bumpScale} roughness={roughness} metalness={0} clearcoat={.025} clearcoatRoughness={.92} envMapIntensity={.62}/>
     </mesh>
     <AtmosphereGlow radius={radius} color={atmosphere} intensity={quality==="low"?.32:.52}/>
-  </group>;
-}
-
-function FlightPath({progress,reducedMotion}:{progress:number;reducedMotion:boolean}){
-  const curve=useMemo(()=>new THREE.CatmullRomCurve3(trajectoryPoints,false,"catmullrom",.42),[]);
-  const points=useMemo(()=>curve.getPoints(220),[curve]);
-  const beacon=useRef<THREE.Group>(null);
-  useFrame(({clock})=>{
-    if(!beacon.current)return;
-    const drift=reducedMotion?0:(clock.elapsedTime*.018)%1;
-    const t=THREE.MathUtils.clamp(progress*.78+drift*.22,0,1);
-    beacon.current.position.copy(curve.getPointAt(t));
-  });
-  return <group>
-    <Line points={points} color="#a8c5cf" transparent opacity={.19} lineWidth={.68}/>
-    <Line points={points.map(point=>point.clone().add(new THREE.Vector3(.02,.02,.02)))} color="#d7a16e" transparent opacity={.1} lineWidth={.34} dashed dashSize={.2} gapSize={.14}/>
-    <group ref={beacon}>
-      <mesh><sphereGeometry args={[.07,16,16]}/><meshBasicMaterial color="#fff0d8" toneMapped={false}/></mesh>
-      <mesh scale={3.6}><sphereGeometry args={[.07,12,12]}/><meshBasicMaterial color="#d8a77d" transparent opacity={.11} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/></mesh>
-      <pointLight intensity={3.4} distance={3.2} color="#e1b07f"/>
-    </group>
   </group>;
 }
 
@@ -287,12 +268,24 @@ function Surveyor({progress,reducedMotion,quality}:{progress:number;reducedMotio
     return clone;
   },[scene,quality]);
   const group=useRef<THREE.Group>(null);
-  useFrame(({clock})=>{
+  const wanted=useMemo(()=>new THREE.Vector3(),[]);
+  useFrame(({clock},delta)=>{
     if(!group.current)return;
-    const t=clock.elapsedTime;
-    const travel=Math.min(1,Math.max(0,(progress-.18)/.66));
-    group.current.position.set(THREE.MathUtils.lerp(3.25,-1.5,travel),2.15+Math.sin(t*.22)*.16,THREE.MathUtils.lerp(-9,-43,travel));
-    if(!reducedMotion){group.current.rotation.y=t*.11+travel*1.8;group.current.rotation.z=-.16+Math.sin(t*.18)*.05;}
+    const travel=Math.min(1,Math.max(0,(progress-.12)/.76));
+    const arc=Math.sin(travel*Math.PI);
+    wanted.set(
+      THREE.MathUtils.lerp(3.8,-1.75,travel)+arc*1.25,
+      THREE.MathUtils.lerp(2.45,1.15,travel)+Math.sin(travel*Math.PI*1.7)*.42,
+      THREE.MathUtils.lerp(-8.2,-43.5,travel)
+    );
+    group.current.position.lerp(wanted,1-Math.exp(-delta*4.4));
+    if(!reducedMotion){
+      const targetYaw=-.32+travel*1.18;
+      const targetRoll=-.11+Math.sin(travel*Math.PI*2.1)*.075;
+      group.current.rotation.y=THREE.MathUtils.damp(group.current.rotation.y,targetYaw,3.2,delta);
+      group.current.rotation.z=THREE.MathUtils.damp(group.current.rotation.z,targetRoll,3.4,delta);
+      group.current.rotation.x=Math.sin(clock.elapsedTime*.17)*.018;
+    }
   });
   useEffect(()=>()=>flareTexture.dispose(),[flareTexture]);
   return <group ref={group} position={[3.25,2.15,-9]} scale={.92}>
@@ -321,27 +314,26 @@ function ReactiveLighting({progress}:{progress:number}){
     if(fill.current)fill.current.intensity=THREE.MathUtils.damp(fill.current.intensity,.22+(1-p)*.18,2.2,delta);
   });
   return <>
-    <ambientLight intensity={.2}/>
-    <hemisphereLight args={["#c7d1d8","#100905",.32]}/>
-    <directionalLight ref={key} position={[6,5,9]} intensity={2.55} color="#fff0db"/>
-    <directionalLight ref={rim} position={[-6,-1,2]} intensity={.74} color="#7c9aab"/>
-    <directionalLight ref={fill} position={[0,-5,-4]} intensity={.3} color="#b15f39"/>
+    <ambientLight intensity={.12}/>
+    <hemisphereLight args={["#b9c7cf","#080503",.23]}/>
+    <directionalLight ref={key} position={[10,7,11]} intensity={2.42} color="#fff1dc"/>
+    <directionalLight ref={rim} position={[-7,-2,1]} intensity={.58} color="#7898ab"/>
+    <directionalLight ref={fill} position={[1,-6,-5]} intensity={.2} color="#a95736"/>
   </>;
 }
 
 function CosmicScene({progress,reducedMotion,quality}:{progress:number;reducedMotion:boolean;quality:"high"|"medium"|"low"}){
-  const starCount=quality==="low"?1100:quality==="medium"?2200:3600;
-  const dustCount=quality==="low"?55:quality==="medium"?110:190;
+  const starCount=quality==="low"?700:quality==="medium"?1350:2200;
+  const dustCount=quality==="low"?26:quality==="medium"?58:96;
   return <>
     <DeepField reducedMotion={reducedMotion}/>
     <Stars radius={82} depth={42} count={starCount} factor={quality==="high"?2.45:2.05} saturation={0} fade speed={.12}/>
-    <Sparkles count={dustCount} scale={[30,17,86]} size={quality==="high"?1.35:1} speed={.095} opacity={.19} color="#d8e3e7"/>
+    <Sparkles count={dustCount} scale={[30,17,86]} size={quality==="high"?.9:.72} speed={.045} opacity={.095} color="#d8e3e7"/>
     <ReactiveLighting progress={progress}/>
     <DistantStar quality={quality}/>
-    <FlightPath progress={progress} reducedMotion={reducedMotion}/>
-    <World textureUrl={EUROPA} position={[-4.6,.55,-8]} radius={2.65} tilt={-.18} speed={.022} atmosphere="#b7d7e1" guideColor="#9fc0cc" bumpScale={.065} roughness={.7} quality={quality}/>
-    <World textureUrl={JUPITER} position={[4.9,-.45,-23]} radius={4.3} tilt={.05} speed={.014} atmosphere="#e0ad79" guideColor="#d6a272" bumpScale={.009} roughness={.82} quality={quality}/>
-    <World textureUrl={MARS} position={[-4.2,.55,-39]} radius={3.05} tilt={-.1} speed={.019} atmosphere="#d0724a" guideColor="#c58b70" bumpScale={.045} roughness={.88} quality={quality}/>
+    <World textureUrl={EUROPA} position={[-4.6,.55,-8]} radius={2.65} tilt={-.18} speed={.022} atmosphere="#b7d7e1" bumpScale={.065} roughness={.7} quality={quality}/>
+    <World textureUrl={JUPITER} position={[4.9,-.45,-23]} radius={4.3} tilt={.05} speed={.014} atmosphere="#e0ad79" bumpScale={.009} roughness={.82} quality={quality} ring="jupiter"/>
+    <World textureUrl={MARS} position={[-4.2,.55,-39]} radius={3.05} tilt={-.1} speed={.019} atmosphere="#d0724a" bumpScale={.045} roughness={.88} quality={quality}/>
     {quality!=="low"&&<><MoonSystem kind="jupiter"/><MoonSystem kind="mars"/></>}
     <Surveyor progress={progress} reducedMotion={reducedMotion} quality={quality}/>
   </>;
@@ -350,7 +342,7 @@ function CosmicScene({progress,reducedMotion,quality}:{progress:number;reducedMo
 export function WorldCanvas({progress,reducedMotion,focusSystem=null}:{progress:number;reducedMotion:boolean;focusSystem?:"knowledge"|"agency"|"reliability"|null}){
   const [quality,setQuality]=useState<"high"|"medium"|"low">("high");
   return <div className="world-canvas" aria-hidden="true">
-    <Canvas dpr={[1,1.9]} camera={{position:[0,1.2,13],fov:39,near:.08,far:140}} gl={{antialias:true,alpha:false,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.02}}>
+    <Canvas dpr={[1,1.9]} camera={{position:[0,1.2,13],fov:39,near:.08,far:140}} gl={{antialias:true,alpha:false,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.06}}>
       <color attach="background" args={["#010203"]}/>
       <fog attach="fog" args={["#040608",42,114]}/>
       <AdaptiveDpr pixelated/>
@@ -359,7 +351,7 @@ export function WorldCanvas({progress,reducedMotion,focusSystem=null}:{progress:
         <CameraRig progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
         <CosmicScene progress={progress} reducedMotion={reducedMotion} quality={quality}/>
         {!reducedMotion&&quality!=="low"&&<EffectComposer multisampling={quality==="high"?4:0}>
-          <Bloom intensity={quality==="high"?.46:.29} luminanceThreshold={.93} luminanceSmoothing={.17} mipmapBlur/>
+          <Bloom intensity={quality==="high"?.34:.22} luminanceThreshold={1.02} luminanceSmoothing={.2} mipmapBlur/>
           <SMAA/>
           <Vignette eskil={false} offset={.17} darkness={.38}/>
         </EffectComposer>}
