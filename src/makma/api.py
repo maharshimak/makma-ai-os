@@ -88,9 +88,7 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
         host_header = request.headers.get("host", "").casefold()
         local_host = (
             host_header in {"localhost", "127.0.0.1", "[::1]", "testserver"}
-            or host_header.startswith("localhost:")
-            or host_header.startswith("127.0.0.1:")
-            or host_header.startswith("[::1]:")
+            or host_header.startswith(("localhost:", "127.0.0.1:", "[::1]:"))
         )
         if (
             client_host not in {"127.0.0.1", "::1", "localhost", "testclient"}
