@@ -8,15 +8,15 @@ import {AmbientSound} from "./AmbientSound";
 import {experience,profile,projects,skillSystems,type Project} from "@/lib/content";
 
 const chapters=[
-  {id:"arrival",label:"Arrival"},
-  {id:"identity",label:"Identity"},
-  {id:"foundation",label:"Foundation"},
-  {id:"knowledge",label:"Knowledge"},
-  {id:"agency",label:"Agency"},
-  {id:"reliability",label:"Reliability"},
-  {id:"revision",label:"Experience"},
-  {id:"synthesis",label:"Synthesis"},
-  {id:"continuation",label:"Continue"}
+  {id:"departure",label:"Departure"},
+  {id:"profile",label:"Mission profile"},
+  {id:"foundation",label:"Capability core"},
+  {id:"knowledge",label:"Knowledge systems"},
+  {id:"agency",label:"Agentic systems"},
+  {id:"reliability",label:"Reliability systems"},
+  {id:"flight-log",label:"Flight log"},
+  {id:"principle",label:"Operating principle"},
+  {id:"comms",label:"Open comms"}
 ];
 
 function useJourney(){
@@ -48,16 +48,13 @@ function ProjectInspector({project,onClose}:{project:Project;onClose:()=>void}){
   return <div className="inspector-backdrop" onMouseDown={onClose}>
     <article className="inspector" onMouseDown={event=>event.stopPropagation()} role="dialog" aria-modal="true" aria-label={project.name}>
       <button className="close-button" onClick={onClose} aria-label="Close project">Close</button>
-      <div className="inspector-kicker">{project.family}</div>
+      <span className="eyebrow">{project.family}</span>
       <h2>{project.name}</h2>
       <p className="inspector-lead">{project.summary}</p>
       <div className="inspector-grid">
+        <section><span>Purpose</span><p>{project.purpose}</p></section>
         <section>
-          <span>Why it exists</span>
-          <p>{project.purpose}</p>
-        </section>
-        <section>
-          <span>System flow</span>
+          <span>Architecture</span>
           <ol>{project.architecture.map((stage,index)=><li key={stage}><b>{String(index+1).padStart(2,"0")}</b>{stage}</li>)}</ol>
         </section>
       </div>
@@ -71,10 +68,18 @@ function ProjectInspector({project,onClose}:{project:Project;onClose:()=>void}){
   </div>;
 }
 
-function Chapter({id,index,eyebrow,children,className=""}:{id:string;index:string;eyebrow:string;children:React.ReactNode;className?:string}){
-  return <section id={id} className={"chapter "+className}>
-    <div className="chapter-inner">
-      <div className="chapter-marker"><span>{index}</span><i/><b>{eyebrow}</b></div>
+function StorySection({
+  id,index,label,children,className=""
+}:{
+  id:string;
+  index:string;
+  label:string;
+  children:React.ReactNode;
+  className?:string;
+}){
+  return <section id={id} className={"story-section "+className}>
+    <div className="story-sticky">
+      <div className="scene-label"><span>{index}</span><i/><b>{label}</b></div>
       {children}
     </div>
   </section>;
@@ -90,160 +95,180 @@ export function SynthesisPortfolio(){
   const families=useMemo(()=>[
     {
       id:"knowledge",
-      title:"Knowledge becomes evidence.",
-      note:"Retrieval, document intelligence and graph structure turn raw information into something a system can reason over.",
+      kicker:"SYSTEM 01 / KNOWLEDGE",
+      title:"Turn information into evidence.",
+      note:"Retrieval, document intelligence and graph structure make knowledge traceable instead of merely plausible.",
       projects:projects.filter(project=>project.family.startsWith("Knowledge"))
     },
     {
       id:"agency",
-      title:"Evidence becomes action.",
-      note:"Memory, planning, tools and permission boundaries turn intelligence into controlled behaviour.",
+      kicker:"SYSTEM 02 / AGENCY",
+      title:"Turn evidence into action.",
+      note:"Memory, planning, tools and explicit permission boundaries move AI beyond chat while keeping behaviour inspectable.",
       projects:projects.filter(project=>project.family.startsWith("Agency"))
     },
     {
       id:"reliability",
-      title:"Action earns trust.",
-      note:"Evaluation, promotion gates and monitoring decide whether a system is ready to leave the lab.",
+      kicker:"SYSTEM 03 / RELIABILITY",
+      title:"Make action earn trust.",
+      note:"Evaluation, release gates, observability and monitoring decide whether an intelligent system is ready for reality.",
       projects:projects.filter(project=>project.family.startsWith("Reliability"))
     }
   ],[]);
 
   useEffect(()=>{
-    const onKey=(event:KeyboardEvent)=>{
+    const handleKey=(event:KeyboardEvent)=>{
       if(event.key.toLowerCase()==="r"&&!selected)setRecruiter(value=>!value);
       if(event.key==="Escape"){setRecruiter(false);setSelected(null);}
     };
-    window.addEventListener("keydown",onKey);
-    return ()=>window.removeEventListener("keydown",onKey);
+    window.addEventListener("keydown",handleKey);
+    return ()=>window.removeEventListener("keydown",handleKey);
   },[selected]);
 
   useEffect(()=>{
     if(!recruiter&&!selected)return;
-    const previous=document.body.style.overflow;
+    const before=document.body.style.overflow;
     document.body.style.overflow="hidden";
-    return ()=>{document.body.style.overflow=previous;};
+    return ()=>{document.body.style.overflow=before;};
   },[recruiter,selected]);
 
-  return <main className="portfolio">
+  return <main className="cosmic-portfolio">
     <SystemLoader/>
     <AmbientSound enabled={sound} progress={progress}/>
     <WorldCanvas progress={progress} reducedMotion={reducedMotion}/>
 
-    <header className="site-header">
-      <a href="#arrival" className="wordmark">MP</a>
-      <div className="header-role"><span>Maharshi Patel</span><b>AI Engineer · Paris</b></div>
-      <div className="header-actions">
+    <header className="topbar">
+      <a className="brand" href="#departure"><span>MP</span><b>GALACTIC SYSTEMS</b></a>
+      <div className="topbar-center"><span>{String(active+1).padStart(2,"0")} / {String(chapters.length).padStart(2,"0")}</span><b>{chapters[active].label}</b></div>
+      <div className="topbar-actions">
         <button onClick={()=>setSound(value=>!value)} aria-pressed={sound}>{sound?"Sound on":"Sound"}</button>
         <button onClick={()=>setRecruiter(true)}>Quick view <kbd>R</kbd></button>
       </div>
     </header>
 
-    <aside className="chapter-nav" aria-label="Portfolio chapters">
+    <nav className="chapter-rail" aria-label="Portfolio chapters">
       {chapters.map((chapter,index)=><a key={chapter.id} href={"#"+chapter.id} className={active===index?"active":""}>
         <i/><span>{chapter.label}</span>
       </a>)}
-    </aside>
+    </nav>
 
-    <div className="journey-progress" aria-hidden="true"><i style={{transform:`scaleX(${progress})`}}/></div>
+    <div className="progress-line" aria-hidden="true"><span style={{transform:`scaleX(${progress})`}}/></div>
 
-    <Chapter id="arrival" index="00" eyebrow="The Synthesis Engine" className="hero-chapter">
-      <div className="hero-layout">
-        <div className="hero-copy">
-          <span className="overline">AI ENGINEER · INTELLIGENT SYSTEMS</span>
-          <h1>Maharshi<br/>Patel</h1>
-          <p>I design systems that turn knowledge into controlled, measurable action.</p>
-        </div>
-        <div className="hero-note">
-          <span>01</span>
-          <p>This portfolio is one machine. Each chapter reveals a different subsystem.</p>
+    <StorySection id="departure" index="00" label="Departure" className="hero-scene">
+      <div className="hero-copy">
+        <span className="eyebrow">AI ENGINEER · PARIS / FRANCE</span>
+        <h1>MAHARSHI<br/>PATEL</h1>
+        <p>I build intelligent systems that retrieve evidence, reason over it, take controlled action and prove what happened.</p>
+        <div className="hero-links">
+          <a href={profile.github} target="_blank" rel="noreferrer">GitHub ↗</a>
+          <a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
         </div>
       </div>
-      <div className="scroll-prompt"><i/> Scroll to enter the system</div>
-    </Chapter>
+      <div className="mission-caption">
+        <span>PORTFOLIO / 2026</span>
+        <p>Career and projects are the story. Space is the cinematic language.</p>
+      </div>
+      <div className="scroll-cue"><i/>SCROLL TO DEPART</div>
+    </StorySection>
 
-    <Chapter id="identity" index="01" eyebrow="Operating principle" className="statement-chapter">
-      <div className="statement-layout">
-        <h2>Intelligence is useful only when it can <em>remember, act and be trusted.</em></h2>
-        <div className="statement-aside">
-          <p>My work sits between LLM engineering, knowledge systems, agentic workflows and production ML.</p>
-          <div className="principles"><span>Knowledge</span><span>Agency</span><span>Reliability</span></div>
+    <StorySection id="profile" index="01" label="Mission profile" className="profile-scene">
+      <div className="profile-layout">
+        <div>
+          <span className="eyebrow">MISSION PROFILE</span>
+          <h2>Engineering intelligence into systems that can remember, reason and act.</h2>
+        </div>
+        <div className="profile-facts">
+          <div><span>ROLE</span><b>{profile.role}</b></div>
+          <div><span>BASE</span><b>{profile.location}</b></div>
+          <div><span>EDUCATION</span><b>{profile.school}</b></div>
+          <div><span>CREDENTIAL</span><b>{profile.certification}</b></div>
         </div>
       </div>
-    </Chapter>
+    </StorySection>
 
-    <Chapter id="foundation" index="02" eyebrow="Foundation" className="foundation-chapter">
-      <div className="section-heading">
-        <span className="overline">LOAD-BEARING LAYER</span>
-        <h2>Built on engineering, not prompts.</h2>
+    <StorySection id="foundation" index="02" label="Capability core" className="foundation-scene">
+      <div className="foundation-layout">
+        <div className="scene-heading">
+          <span className="eyebrow">CAPABILITY CORE</span>
+          <h2>The systems underneath the systems.</h2>
+          <p>Software, data, models, retrieval, infrastructure and evaluation are treated as one engineering surface.</p>
+        </div>
+        <div className="capability-grid">
+          {skillSystems.map((system,index)=><div key={system.name}>
+            <span>{String(index+1).padStart(2,"0")}</span>
+            <b>{system.name}</b>
+            <p>{system.items.join(" · ")}</p>
+          </div>)}
+        </div>
       </div>
-      <div className="foundation-list">
-        <div><b>Computing</b><p>Software engineering · algorithms · systems</p><span>01</span></div>
-        <div><b>Data</b><p>Analytics · pipelines · SQL · experimentation</p><span>02</span></div>
-        <div><b>Intelligence</b><p>ML · NLP · LLMs · deep learning</p><span>03</span></div>
-        <div><b>Education</b><p>{profile.school}</p><span>04</span></div>
-        <div><b>Credential</b><p>{profile.certification}</p><span>05</span></div>
-      </div>
-    </Chapter>
+    </StorySection>
 
-    {families.map((family,index)=><Chapter key={family.id} id={family.id} index={String(index+3).padStart(2,"0")} eyebrow={family.id} className={"projects-chapter "+family.id}>
-      <div className="projects-layout">
-        <div className="section-heading">
-          <span className="overline">SUBSYSTEM {String(index+1).padStart(2,"0")}</span>
+    {families.map((family,index)=><StorySection
+      key={family.id}
+      id={family.id}
+      index={String(index+3).padStart(2,"0")}
+      label={family.id+" systems"}
+      className={"system-scene system-"+family.id}
+    >
+      <div className={"system-layout "+(index%2===0?"align-right":"align-left")}>
+        <div className="system-copy">
+          <span className="eyebrow">{family.kicker}</span>
           <h2>{family.title}</h2>
           <p>{family.note}</p>
         </div>
-        <div className="project-list">
-          {family.projects.map((project,projectIndex)=><button key={project.slug} onClick={()=>setSelected(project)} className="project-row">
-            <span className="project-index">{String(projectIndex+1).padStart(2,"0")}</span>
-            <span className="project-copy"><b>{project.name}</b><small>{project.summary}</small></span>
-            <span className="project-stack">{project.stack.slice(0,3).join(" · ")}</span>
-            <span className="project-arrow">↗</span>
+        <div className="project-constellation">
+          {family.projects.map((project,projectIndex)=><button key={project.slug} className="project-orbit" onClick={()=>setSelected(project)}>
+            <span className="project-no">{String(projectIndex+1).padStart(2,"0")}</span>
+            <span className="project-info">
+              <b>{project.name}</b>
+              <small>{project.summary}</small>
+              <em>{project.stack.slice(0,3).join(" · ")}</em>
+            </span>
+            <span className="project-open">Explore ↗</span>
           </button>)}
         </div>
       </div>
-    </Chapter>)}
+    </StorySection>)}
 
-    <Chapter id="revision" index="06" eyebrow="Revision history" className="experience-chapter">
-      <div className="section-heading">
-        <span className="overline">EXPERIENCE</span>
-        <h2>The machine changed with every role.</h2>
-      </div>
-      <div className="experience-list">
-        {experience.slice().reverse().map((item,index)=><div key={item.company+item.period}>
-          <span>{String(index+1).padStart(2,"0")}</span>
-          <b>{item.company}</b>
-          <p>{item.role}</p>
-          <small>{item.period}</small>
-          <em>{item.signal}</em>
-        </div>)}
-      </div>
-    </Chapter>
-
-    <Chapter id="synthesis" index="07" eyebrow="Synthesis" className="synthesis-chapter">
-      <div className="synthesis-layout">
-        <div className="section-heading">
-          <span className="overline">ALL SUBSYSTEMS CONNECTED</span>
-          <h2>One engineering direction.</h2>
-          <p>Retrieval, reasoning, tools, evaluation and infrastructure are strongest when they are designed as one system.</p>
+    <StorySection id="flight-log" index="06" label="Flight log" className="flight-scene">
+      <div className="flight-layout">
+        <div className="scene-heading">
+          <span className="eyebrow">FLIGHT LOG / EXPERIENCE</span>
+          <h2>Every mission changed what I could build next.</h2>
         </div>
-        <div className="skills-map">{skillSystems.map((system,index)=><div key={system.name}>
-          <span>{String(index+1).padStart(2,"0")}</span><b>{system.name}</b><p>{system.items.join(" · ")}</p>
-        </div>)}</div>
+        <div className="flight-log">
+          {experience.slice().reverse().map((item,index)=><div key={item.company+item.period}>
+            <span>{String(index+1).padStart(2,"0")}</span>
+            <b>{item.company}</b>
+            <p>{item.role}</p>
+            <small>{item.period}</small>
+            <em>{item.signal}</em>
+          </div>)}
+        </div>
       </div>
-    </Chapter>
+    </StorySection>
 
-    <Chapter id="continuation" index="08" eyebrow="Unfinished interface" className="contact-chapter">
-      <div className="contact-layout">
-        <span className="overline">THE NEXT SYSTEM DOES NOT EXIST YET</span>
-        <h2>What should we build next?</h2>
+    <StorySection id="principle" index="07" label="Operating principle" className="principle-scene">
+      <div className="principle-copy">
+        <span className="eyebrow">OPERATING PRINCIPLE</span>
+        <h2>Knowledge.<br/>Agency.<br/>Reliability.</h2>
+        <p>Not three themes. Three conditions for building AI systems that deserve to be used.</p>
+      </div>
+    </StorySection>
+
+    <StorySection id="comms" index="08" label="Open comms" className="contact-scene">
+      <div className="contact-copy">
+        <span className="eyebrow">OPEN COMMS</span>
+        <h2>The next mission has not launched yet.</h2>
+        <p>What should exist next?</p>
         <div className="contact-links">
           <a href={profile.email}>Email</a>
           <a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
           <a href={profile.github} target="_blank" rel="noreferrer">GitHub ↗</a>
         </div>
-        <small>© 2026 Maharshi Patel</small>
+        <small>© 2026 Maharshi Patel · Imagery & textures: NASA/JPL-Caltech · NASA/ESA/CSA/STScI</small>
       </div>
-    </Chapter>
+    </StorySection>
 
     <RecruiterMode open={recruiter} onClose={()=>setRecruiter(false)}/>
     {selected&&<ProjectInspector project={selected} onClose={()=>setSelected(null)}/>}
