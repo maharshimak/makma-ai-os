@@ -10,7 +10,7 @@ const WEBB="https://assets.science.nasa.gov/dynamicimage/assets/science/missions
 const EUROPA="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter---europa/preview.webp?w=8192";
 const JUPITER="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter/preview.webp?w=8192";
 const MARS="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/mars/preview.webp?w=8192";
-const SURVEYOR="https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/Mars%20Global%20Surveyor/Mars%20Global%20Surveyor%20(mapping).glb";
+const SURVEYOR="https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/Mars%20Global%20Surveyor/Mars%20Global%20Surveyor.glb";
 
 const cameraPoints=[
   new THREE.Vector3(0,1.2,13),new THREE.Vector3(-1.6,1.8,7),new THREE.Vector3(-2.7,1.5,1.2),
