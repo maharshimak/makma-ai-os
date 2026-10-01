@@ -1,12 +1,53 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from uuid import uuid4
 
 from makma.tools import PermissionPolicy, ToolRegistry
+
+_STEP_OUTPUT_RE = re.compile(r"\$\{steps\.([A-Za-z0-9_.-]+)\.output\}")
+
+
+def _argument_references(value: object) -> set[str]:
+    refs: set[str] = set()
+    if isinstance(value, str):
+        refs.update(_STEP_OUTPUT_RE.findall(value))
+    elif isinstance(value, dict):
+        for item in value.values():
+            refs.update(_argument_references(item))
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            refs.update(_argument_references(item))
+    return refs
+
+
+def _resolve_argument(value: object, outputs: dict[str, str]) -> object:
+    if isinstance(value, str):
+        full = _STEP_OUTPUT_RE.fullmatch(value)
+        if full is not None:
+            step_id = full.group(1)
+            if step_id not in outputs:
+                raise ValueError(f"Workflow output is unavailable for step: {step_id}")
+            return outputs[step_id]
+
+        def replace(match: re.Match[str]) -> str:
+            step_id = match.group(1)
+            if step_id not in outputs:
+                raise ValueError(f"Workflow output is unavailable for step: {step_id}")
+            return outputs[step_id]
+
+        return _STEP_OUTPUT_RE.sub(replace, value)
+    if isinstance(value, dict):
+        return {key: _resolve_argument(item, outputs) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_resolve_argument(item, outputs) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_resolve_argument(item, outputs) for item in value)
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +78,13 @@ class WorkflowSpec:
                 raise ValueError(f"Unknown dependencies for {step.id}: {sorted(unknown)}")
             if step.id in step.depends_on:
                 raise ValueError("A workflow step cannot depend on itself.")
+            referenced = _argument_references(step.arguments)
+            undeclared = referenced - set(step.depends_on)
+            if undeclared:
+                raise ValueError(
+                    f"Step {step.id} references outputs without declaring dependencies: "
+                    f"{sorted(undeclared)}"
+                )
         self.topological_order()
 
     def topological_order(self) -> tuple[WorkflowStep, ...]:
@@ -217,9 +265,12 @@ class WorkflowEngine:
                 self.store.save(spec, checkpoint)
                 return checkpoint
 
+            resolved_arguments = _resolve_argument(step.arguments, checkpoint.outputs)
+            if not isinstance(resolved_arguments, dict):
+                raise ValueError("Resolved workflow arguments must remain an object.")
             result = await self.registry.execute(
                 step.tool_name,
-                step.arguments,
+                resolved_arguments,
                 session_id=checkpoint.session_id,
                 policy=self.policy,
                 approvals=approvals,

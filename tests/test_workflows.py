@@ -55,3 +55,52 @@ def test_workflow_rejects_dependency_cycles():
     )
     with pytest.raises(ValueError, match="cycle"):
         spec.validate()
+
+
+
+@pytest.mark.asyncio
+async def test_workflow_resolves_declared_step_output_dependencies(tmp_path):
+    async def produce(args, session_id):
+        del args, session_id
+        return "customer-42"
+
+    async def consume(args, session_id):
+        del session_id
+        return f"received:{args['customer_id']}"
+
+    registry = ToolRegistry()
+    registry.register(ToolDefinition(name="produce", description="produce", handler=produce))
+    registry.register(ToolDefinition(name="consume", description="consume", handler=consume))
+    policy = PermissionPolicy(allowed_tools=frozenset({"produce", "consume"}))
+    store = SQLiteWorkflowStore(str(tmp_path / "dataflow.sqlite"))
+    engine = WorkflowEngine(registry, policy=policy, store=store)
+    spec = WorkflowSpec(
+        "dataflow",
+        (
+            WorkflowStep("a", "produce"),
+            WorkflowStep(
+                "b",
+                "consume",
+                {"customer_id": "${steps.a.output}"},
+                depends_on=("a",),
+            ),
+        ),
+    )
+
+    result = await engine.start(spec, session_id="s1")
+
+    assert result.status == "succeeded"
+    assert result.outputs["b"] == "received:customer-42"
+
+
+def test_workflow_rejects_output_reference_without_declared_dependency():
+    spec = WorkflowSpec(
+        "invalid-dataflow",
+        (
+            WorkflowStep("a", "one"),
+            WorkflowStep("b", "two", {"value": "${steps.a.output}"}),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="without declaring dependencies"):
+        spec.validate()
