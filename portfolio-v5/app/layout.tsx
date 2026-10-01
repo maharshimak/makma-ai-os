@@ -1,15 +1,16 @@
 import type {Metadata, Viewport} from "next";
 import "./globals.css";
+import "./director.css";
 
 export const metadata:Metadata={
   metadataBase:new URL("https://maharshimak.github.io/makma-ai-os/portfolio-v5/"),
-  title:"Maharshi Patel — The Synthesis Engine",
+  title:"Maharshi Patel — AI Systems Engineer",
   description:"An interactive portfolio about intelligent systems: agents, RAG, knowledge, evaluation, MLOps and production AI by Maharshi Patel.",
   keywords:["Maharshi Patel","AI Engineer","Agentic AI","RAG","LLM","Knowledge Systems","MLOps","Paris"],
   authors:[{name:"Maharshi Patel"}],
   creator:"Maharshi Patel",
   openGraph:{
-    title:"Maharshi Patel — The Synthesis Engine",
+    title:"Maharshi Patel — AI Systems Engineer",
     description:"Inspect the systems behind Maharshi Patel's work in agentic AI, retrieval, knowledge, evaluation and production ML.",
     type:"website"
   },
