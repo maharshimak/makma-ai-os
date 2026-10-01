@@ -212,6 +212,296 @@ function JovianRing({radius,quality}:{radius:number;quality:"high"|"medium"|"low
   </mesh>;
 }
 
+
+type RenderQuality="high"|"medium"|"low";
+
+function seededRandom(seed:number){
+  let value=seed>>>0;
+  return ()=>{
+    value=(value+0x6D2B79F5)>>>0;
+    let t=value;
+    t=Math.imul(t^(t>>>15),t|1);
+    t^=t+Math.imul(t^(t>>>7),t|61);
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+
+function smoothWindow(edge0:number,edge1:number,value:number){
+  const t=THREE.MathUtils.clamp((value-edge0)/(edge1-edge0),0,1);
+  return t*t*(3-2*t);
+}
+
+function knowledgeProjectMode(slug:string|null){
+  if(slug==="agentic-rag-engine")return 1;
+  if(slug==="knowledge-twin")return 2;
+  if(slug==="clinical-document-intelligence")return 3;
+  return 0;
+}
+
+function makeKnowledgeField(count:number){
+  const random=seededRandom(84621+count);
+  const positions=new Float32Array(count*3);
+  const seeds=new Float32Array(count);
+  const tones=new Float32Array(count);
+  for(let i=0;i<count;i++){
+    const angle=random()*Math.PI*2;
+    const radial=Math.pow(random(),1.42);
+    const radius=3.05+radial*2.55;
+    const thickness=.34-radial*.17;
+    const y=(random()+random()+random()-1.5)*thickness;
+    positions[i*3]=Math.cos(angle)*radius;
+    positions[i*3+1]=y;
+    positions[i*3+2]=Math.sin(angle)*radius;
+    seeds[i]=random();
+    tones[i]=random();
+  }
+  return {positions,seeds,tones};
+}
+
+function KnowledgeParticleField({
+  progress,quality,reducedMotion,focusProject
+}:{
+  progress:number;
+  quality:RenderQuality;
+  reducedMotion:boolean;
+  focusProject:string|null;
+}){
+  const count=quality==="high"?70000:quality==="medium"?32000:10000;
+  const data=useMemo(()=>makeKnowledgeField(count),[count]);
+  const points=useRef<THREE.Points>(null);
+  const material=useMemo(()=>new THREE.ShaderMaterial({
+    uniforms:{
+      uReveal:{value:0},
+      uVisibility:{value:0},
+      uTime:{value:0},
+      uProject:{value:0},
+      uAgency:{value:0},
+      uPointSize:{value:quality==="high"?2.2:quality==="medium"?2.0:1.7}
+    },
+    vertexShader:`
+      attribute float aSeed;
+      attribute float aTone;
+      uniform float uReveal;
+      uniform float uVisibility;
+      uniform float uTime;
+      uniform float uProject;
+      uniform float uAgency;
+      uniform float uPointSize;
+      varying float vAlpha;
+      varying float vTone;
+      varying float vProject;
+
+      float ease(float x){
+        x=clamp(x,0.0,1.0);
+        return x*x*(3.0-2.0*x);
+      }
+
+      void main(){
+        vec3 ring=position;
+        float angle=atan(ring.z,ring.x);
+        float angular=(angle+3.14159265)/6.2831853;
+        float localReveal=ease((uReveal-angular*.24-aSeed*.08)/.68);
+
+        vec3 moonSurface=normalize(vec3(ring.x,ring.y*.72,ring.z))*2.80;
+        float swirl=(1.0-localReveal)*(4.2+aSeed*2.4);
+        float cs=cos(swirl);
+        float sn=sin(swirl);
+        vec3 swirled=ring;
+        swirled.xz=mat2(cs,-sn,sn,cs)*swirled.xz;
+        swirled.y+=(1.0-localReveal)*(aSeed-.5)*1.9;
+        vec3 transformed=mix(moonSurface,swirled,localReveal);
+
+        transformed.y+=sin(angle*9.0+uTime*.58+aSeed*8.0)*.035*(.35+.65*aSeed)*localReveal;
+
+        if(uProject>.5){
+          vec3 attractor;
+          if(uProject<1.5){
+            attractor=vec3(4.25,.18,.45);
+          }else if(uProject<2.5){
+            attractor=vec3(-3.55,.08,2.65);
+          }else{
+            attractor=vec3(.55,-.18,-4.25);
+          }
+          vec3 delta=attractor-transformed;
+          float dist=max(.08,length(delta));
+          float pull=exp(-dist*.72)*(.26+.20*sin(uTime*1.25+aSeed*6.0));
+          transformed+=normalize(delta)*pull;
+        }
+
+        if(uAgency>.001){
+          float wakeAngle=mix(-2.4,2.2,uAgency);
+          vec3 wake=vec3(cos(wakeAngle)*4.15,.12+sin(uAgency*6.2831)*.22,sin(wakeAngle)*4.15);
+          vec3 wakeDelta=transformed-wake;
+          float wakeDist=max(.06,length(wakeDelta));
+          float wakeForce=exp(-wakeDist*wakeDist*.82)*.72*sin(uAgency*3.14159);
+          transformed+=normalize(wakeDelta)*wakeForce;
+          transformed.y+=wakeForce*(aSeed-.5)*.46;
+        }
+
+        vec4 mvPosition=modelViewMatrix*vec4(transformed,1.0);
+        gl_Position=projectionMatrix*mvPosition;
+        gl_PointSize=clamp(uPointSize*(165.0/max(1.0,-mvPosition.z)),1.15,4.6);
+        vAlpha=localReveal*uVisibility*(.38+.62*aSeed);
+        vTone=aTone;
+        vProject=uProject;
+      }
+    `,
+    fragmentShader:`
+      varying float vAlpha;
+      varying float vTone;
+      varying float vProject;
+      void main(){
+        vec2 p=gl_PointCoord-.5;
+        float d=length(p);
+        if(d>.5)discard;
+        float soft=1.0-smoothstep(.16,.5,d);
+        vec3 ice=mix(vec3(.28,.38,.44),vec3(.47,.83,.98),smoothstep(.72,.98,vTone));
+        vec3 violet=vec3(.52,.39,.88);
+        vec3 warm=vec3(.96,.51,.28);
+        if(vProject>1.5&&vProject<2.5) ice=mix(ice,violet,.28);
+        if(vProject>2.5) ice=mix(ice,warm,.20);
+        gl_FragColor=vec4(ice,vAlpha*soft*.88);
+      }
+    `,
+    transparent:true,
+    blending:THREE.AdditiveBlending,
+    depthWrite:false,
+    toneMapped:false
+  }),[quality]);
+  useEffect(()=>()=>material.dispose(),[material]);
+
+  useFrame(({clock},delta)=>{
+    if(!points.current)return;
+    const reveal=smoothWindow(.275,.365,progress);
+    const fadeOut=1-smoothWindow(.625,.70,progress);
+    const visibility=reveal*fadeOut;
+    const agency=smoothWindow(.43,.50,progress)*(1-smoothWindow(.58,.64,progress));
+    material.uniforms.uReveal.value=THREE.MathUtils.damp(material.uniforms.uReveal.value,reducedMotion?1:reveal,4.2,delta);
+    material.uniforms.uVisibility.value=THREE.MathUtils.damp(material.uniforms.uVisibility.value,visibility,3.8,delta);
+    material.uniforms.uProject.value=THREE.MathUtils.damp(material.uniforms.uProject.value,knowledgeProjectMode(focusProject),5.1,delta);
+    material.uniforms.uAgency.value=THREE.MathUtils.damp(material.uniforms.uAgency.value,agency,4.1,delta);
+    material.uniforms.uTime.value=clock.elapsedTime;
+    if(!reducedMotion)points.current.rotation.y-=delta*.025;
+  });
+
+  return <points ref={points} position={[-4.6,.55,-8]} rotation={[0,0,-.18]} frustumCulled={false}>
+    <bufferGeometry>
+      <bufferAttribute attach="attributes-position" args={[data.positions,3]}/>
+      <bufferAttribute attach="attributes-aSeed" args={[data.seeds,1]}/>
+      <bufferAttribute attach="attributes-aTone" args={[data.tones,1]}/>
+    </bufferGeometry>
+    <primitive object={material} attach="material"/>
+  </points>;
+}
+
+type KnowledgeFragment={
+  angle:number;
+  radius:number;
+  radialAmplitude:number;
+  radialSpeed:number;
+  phase:number;
+  y:number;
+  speed:number;
+  scale:number;
+  rx:number;
+  ry:number;
+  rz:number;
+  rsx:number;
+  rsy:number;
+  rsz:number;
+};
+
+function makeKnowledgeFragments(count:number){
+  const random=seededRandom(31177+count);
+  const fragments:KnowledgeFragment[]=[];
+  for(let i=0;i<count;i++){
+    fragments.push({
+      angle:random()*Math.PI*2,
+      radius:3.15+random()*2.2,
+      radialAmplitude:.18+random()*.62,
+      radialSpeed:.11+random()*.22,
+      phase:random()*Math.PI*2,
+      y:(random()-.5)*.58,
+      speed:(.035+random()*.065)*(random()>.5?1:-1),
+      scale:.035+Math.pow(random(),3.4)*.17,
+      rx:random()*Math.PI,ry:random()*Math.PI,rz:random()*Math.PI,
+      rsx:(random()-.5)*.7,rsy:(random()-.5)*.7,rsz:(random()-.5)*.7
+    });
+  }
+  return fragments.sort((a,b)=>b.scale-a.scale);
+}
+
+function KnowledgeFragments({
+  progress,quality,reducedMotion,focusProject
+}:{
+  progress:number;
+  quality:RenderQuality;
+  reducedMotion:boolean;
+  focusProject:string|null;
+}){
+  const count=quality==="high"?58:quality==="medium"?34:16;
+  const mesh=useRef<THREE.InstancedMesh>(null);
+  const fragments=useMemo(()=>makeKnowledgeFragments(count),[count]);
+  const dummy=useMemo(()=>new THREE.Object3D(),[]);
+  const iceMap=useTexture(EUROPA);
+  const scaleRef=useRef(0);
+
+  useMemo(()=>{
+    iceMap.colorSpace=THREE.SRGBColorSpace;
+    iceMap.anisotropy=quality==="high"?16:quality==="medium"?10:5;
+  },[iceMap,quality]);
+
+  useFrame(({clock},delta)=>{
+    if(!mesh.current)return;
+    const reveal=smoothWindow(.31,.39,progress)*(1-smoothWindow(.625,.70,progress));
+    scaleRef.current=THREE.MathUtils.damp(scaleRef.current,reveal,3.4,delta);
+    const project=knowledgeProjectMode(focusProject);
+    mesh.current.visible=scaleRef.current>.008;
+    if(!mesh.current.visible)return;
+
+    fragments.forEach((fragment,index)=>{
+      if(!reducedMotion){
+        fragment.angle+=fragment.speed*delta;
+        fragment.phase+=fragment.radialSpeed*delta;
+        fragment.rx+=fragment.rsx*delta;
+        fragment.ry+=fragment.rsy*delta;
+        fragment.rz+=fragment.rsz*delta;
+      }
+      let radius=fragment.radius+Math.sin(fragment.phase)*fragment.radialAmplitude;
+      if(project===1)radius+=Math.sin(clock.elapsedTime*1.7+index)*.12;
+      if(project===2)radius+=Math.sin(fragment.angle*3.0)*.16;
+      if(project===3)radius+=index%3===0?.20:-.05;
+      dummy.position.set(
+        -4.6+Math.cos(fragment.angle)*radius,
+        .55+fragment.y+Math.sin(fragment.phase*.7)*.08,
+        -8+Math.sin(fragment.angle)*radius
+      );
+      dummy.rotation.set(fragment.rx,fragment.ry,fragment.rz);
+      dummy.scale.setScalar(fragment.scale*scaleRef.current*(project?1.12:1));
+      dummy.updateMatrix();
+      mesh.current!.setMatrixAt(index,dummy.matrix);
+    });
+    mesh.current.instanceMatrix.needsUpdate=true;
+  });
+
+  return <instancedMesh ref={mesh} args={[undefined,undefined,count]} frustumCulled={false}>
+    <icosahedronGeometry args={[1,1]}/>
+    <meshStandardMaterial map={iceMap} bumpMap={iceMap} bumpScale={.09} color="#d7e5e9" roughness={.78} metalness={.04}/>
+  </instancedMesh>;
+}
+
+function KnowledgeGravitySystem(props:{
+  progress:number;
+  quality:RenderQuality;
+  reducedMotion:boolean;
+  focusProject:string|null;
+}){
+  return <>
+    <KnowledgeParticleField {...props}/>
+    <KnowledgeFragments {...props}/>
+  </>;
+}
+
 function World({textureUrl,position,radius,tilt=0,speed=.035,atmosphere,bumpScale=.025,roughness=.76,quality,ring="none"}:{textureUrl:string;position:[number,number,number];radius:number;tilt?:number;speed?:number;atmosphere:string;bumpScale?:number;roughness?:number;quality:"high"|"medium"|"low";ring?:"none"|"jupiter"}){
   const map=useTexture(textureUrl);
   const planet=useRef<THREE.Mesh>(null);
@@ -332,7 +622,7 @@ function ReactiveLighting({progress}:{progress:number}){
   </>;
 }
 
-function CosmicScene({progress,reducedMotion,quality}:{progress:number;reducedMotion:boolean;quality:"high"|"medium"|"low"}){
+function CosmicScene({progress,reducedMotion,quality,focusProject}:{progress:number;reducedMotion:boolean;quality:RenderQuality;focusProject:string|null}){
   const starCount=quality==="low"?700:quality==="medium"?1350:2200;
   const dustCount=quality==="low"?26:quality==="medium"?58:96;
   return <>
@@ -342,6 +632,7 @@ function CosmicScene({progress,reducedMotion,quality}:{progress:number;reducedMo
     <ReactiveLighting progress={progress}/>
     <DistantStar quality={quality}/>
     <World textureUrl={EUROPA} position={[-4.6,.55,-8]} radius={2.65} tilt={-.18} speed={.022} atmosphere="#b7d7e1" bumpScale={.065} roughness={.7} quality={quality}/>
+    <KnowledgeGravitySystem progress={progress} quality={quality} reducedMotion={reducedMotion} focusProject={focusProject}/>
     <World textureUrl={JUPITER} position={[4.9,-.45,-23]} radius={4.3} tilt={.05} speed={.014} atmosphere="#e0ad79" bumpScale={.009} roughness={.82} quality={quality} ring="jupiter"/>
     <World textureUrl={MARS} position={[-4.2,.55,-39]} radius={3.05} tilt={-.1} speed={.019} atmosphere="#d0724a" bumpScale={.045} roughness={.88} quality={quality}/>
     {quality!=="low"&&<><MoonSystem kind="jupiter"/><MoonSystem kind="mars"/></>}
@@ -349,7 +640,7 @@ function CosmicScene({progress,reducedMotion,quality}:{progress:number;reducedMo
   </>;
 }
 
-export function WorldCanvas({progress,reducedMotion,focusSystem=null}:{progress:number;reducedMotion:boolean;focusSystem?:"knowledge"|"agency"|"reliability"|null}){
+export function WorldCanvas({progress,reducedMotion,focusSystem=null,focusProject=null}:{progress:number;reducedMotion:boolean;focusSystem?:"knowledge"|"agency"|"reliability"|null;focusProject?:string|null}){
   const [quality,setQuality]=useState<"high"|"medium"|"low">("high");
   return <div className="world-canvas" aria-hidden="true">
     <Canvas dpr={quality==="high"?2:quality==="medium"?1.5:1} camera={{position:[0,1.2,13],fov:39,near:.08,far:140}} gl={{antialias:true,alpha:false,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.06,preserveDrawingBuffer:false}}>
@@ -358,7 +649,7 @@ export function WorldCanvas({progress,reducedMotion,focusSystem=null}:{progress:
       <PerformanceMonitor flipflops={3} onDecline={()=>setQuality(value=>value==="high"?"medium":"low")} onIncline={()=>setQuality(value=>value==="low"?"medium":"high")}/>
       <Suspense fallback={null}>
         <CameraRig progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
-        <CosmicScene progress={progress} reducedMotion={reducedMotion} quality={quality}/>
+        <CosmicScene progress={progress} reducedMotion={reducedMotion} quality={quality} focusProject={focusProject}/>
         {!reducedMotion&&quality!=="low"&&<EffectComposer multisampling={quality==="high"?4:0}>
           <Bloom intensity={quality==="high"?.31:.20} luminanceThreshold={1.06} luminanceSmoothing={.22} mipmapBlur/>
           <SMAA/>
