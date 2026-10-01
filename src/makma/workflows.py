@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from uuid import uuid4
-
-import re
 
 from makma.tools import PermissionPolicy, ToolRegistry
 
