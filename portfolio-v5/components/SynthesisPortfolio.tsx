@@ -126,7 +126,7 @@ function DirectorCursor({reducedMotion}:{reducedMotion:boolean}){
   return <div ref={cursor} className="director-cursor" aria-hidden="true"><i/><span/></div>;
 }
 
-function ProjectCard({project,index,onOpen}:{project:Project;index:number;onOpen:()=>void}){
+function ProjectCard({project,index,onOpen,onHover}:{project:Project;index:number;onOpen:()=>void;onHover:(project:Project|null)=>void}){
   const onPointerMove=(event:ReactPointerEvent<HTMLButtonElement>)=>{
     const rect=event.currentTarget.getBoundingClientRect();
     const x=((event.clientX-rect.left)/rect.width)*100;
@@ -144,8 +144,11 @@ function ProjectCard({project,index,onOpen}:{project:Project;index:number;onOpen
   return <button
     className="director-project"
     onClick={onOpen}
+    onPointerEnter={()=>onHover(project)}
+    onFocus={()=>onHover(project)}
     onPointerMove={onPointerMove}
-    onPointerLeave={reset}
+    onPointerLeave={event=>{reset(event);onHover(null);}}
+    onBlur={()=>onHover(null)}
     style={{"--card-accent":accentFor(project),"--card-index":index} as CSSProperties}
   >
     <span className="director-project-glow" aria-hidden="true"/>
@@ -216,8 +219,10 @@ export function SynthesisPortfolio(){
   const {progress,active,reducedMotion}=useJourney();
   const [recruiter,setRecruiter]=useState(false);
   const [selected,setSelected]=useState<Project|null>(null);
+  const [hoveredProject,setHoveredProject]=useState<Project|null>(null);
   const [sound,setSound]=useState(false);
   const focusSystem=selected?.family.startsWith("Knowledge")?"knowledge":selected?.family.startsWith("Agency")?"agency":selected?.family.startsWith("Reliability")?"reliability":null;
+  const focusProject=(selected??hoveredProject)?.slug??null;
 
   const families=useMemo(()=>[
     {
@@ -268,7 +273,7 @@ export function SynthesisPortfolio(){
     <SystemLoader/>
     <DirectorCursor reducedMotion={reducedMotion}/>
     <AmbientSound enabled={sound} progress={progress}/>
-    <WorldCanvas progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
+    <WorldCanvas progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem} focusProject={focusProject}/>
     <div className="film-grain" aria-hidden="true"/>
     <div className="lens-letterbox" aria-hidden="true"><i/><i/></div>
 
@@ -363,7 +368,7 @@ export function SynthesisPortfolio(){
             <div className="director-system-count"><b>{String(family.projects.length).padStart(2,"0")}</b><span>LIVE SYSTEMS / SELECT TO INSPECT</span></div>
           </div>
           <div className="director-project-grid">
-            {family.projects.map((project,index)=><ProjectCard key={project.slug} project={project} index={familyIndex*3+index} onOpen={()=>setSelected(project)}/>)}
+            {family.projects.map((project,index)=><ProjectCard key={project.slug} project={project} index={familyIndex*3+index} onOpen={()=>setSelected(project)} onHover={setHoveredProject}/>)}
           </div>
         </div>
       </StorySection>;
