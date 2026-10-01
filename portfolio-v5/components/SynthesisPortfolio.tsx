@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
 import type {CSSProperties,PointerEvent as ReactPointerEvent} from "react";
 import {WorldCanvas} from "./WorldCanvas";
 import {RecruiterMode} from "./RecruiterMode";
@@ -26,42 +26,56 @@ function useJourney(){
   const [progress,setProgress]=useState(0);
   const [active,setActive]=useState(0);
   const [reducedMotion,setReducedMotion]=useState(false);
+  const targetProgress=useRef(0);
+  const easedProgress=useRef(0);
 
   useEffect(()=>{
     const media=window.matchMedia("(prefers-reduced-motion: reduce)");
     const readMotion=()=>setReducedMotion(media.matches);
-    let frame=0;
+    let animationFrame=0;
 
-    const update=()=>{
-      cancelAnimationFrame(frame);
-      frame=requestAnimationFrame(()=>{
-        const max=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);
-        setProgress(Math.min(1,Math.max(0,window.scrollY/max)));
-        const center=window.innerHeight*.5;
-        let bestIndex=0;
-        let bestDistance=Infinity;
-        chapters.forEach((chapter,index)=>{
-          const node=document.getElementById(chapter.id);
-          if(!node)return;
-          const rect=node.getBoundingClientRect();
-          const sectionCenter=rect.top+Math.min(rect.height,window.innerHeight)*.5;
-          const distance=Math.abs(sectionCenter-center);
-          if(distance<bestDistance){bestDistance=distance;bestIndex=index;}
-        });
-        setActive(bestIndex);
+    const measure=()=>{
+      const max=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);
+      targetProgress.current=Math.min(1,Math.max(0,window.scrollY/max));
+
+      const center=window.innerHeight*.5;
+      let bestIndex=0;
+      let bestDistance=Infinity;
+      chapters.forEach((chapter,index)=>{
+        const node=document.getElementById(chapter.id);
+        if(!node)return;
+        const rect=node.getBoundingClientRect();
+        const sectionCenter=rect.top+Math.min(rect.height,window.innerHeight)*.5;
+        const distance=Math.abs(sectionCenter-center);
+        if(distance<bestDistance){bestDistance=distance;bestIndex=index;}
       });
+      setActive(bestIndex);
+    };
+
+    const animate=()=>{
+      const target=targetProgress.current;
+      if(media.matches){
+        easedProgress.current=target;
+      }else{
+        easedProgress.current+=(target-easedProgress.current)*.075;
+        if(Math.abs(target-easedProgress.current)<.00005)easedProgress.current=target;
+      }
+      const value=easedProgress.current;
+      setProgress(previous=>Math.abs(previous-value)>.00008?value:previous);
+      animationFrame=requestAnimationFrame(animate);
     };
 
     readMotion();
-    update();
+    measure();
+    animate();
     media.addEventListener("change",readMotion);
-    window.addEventListener("scroll",update,{passive:true});
-    window.addEventListener("resize",update);
+    window.addEventListener("scroll",measure,{passive:true});
+    window.addEventListener("resize",measure);
     return ()=>{
-      cancelAnimationFrame(frame);
+      cancelAnimationFrame(animationFrame);
       media.removeEventListener("change",readMotion);
-      window.removeEventListener("scroll",update);
-      window.removeEventListener("resize",update);
+      window.removeEventListener("scroll",measure);
+      window.removeEventListener("resize",measure);
     };
   },[]);
 
@@ -72,6 +86,44 @@ function accentFor(project:Project){
   if(project.family.startsWith("Knowledge"))return "#9fdcff";
   if(project.family.startsWith("Agency"))return "#ffad73";
   return "#b8d5bd";
+}
+
+function DirectorCursor({reducedMotion}:{reducedMotion:boolean}){
+  const cursor=useRef<HTMLDivElement>(null);
+  useEffect(()=>{
+    if(reducedMotion||window.matchMedia("(pointer: coarse)").matches)return;
+    const node=cursor.current;
+    if(!node)return;
+    let frame=0;
+    let x=-100,y=-100;
+    const render=()=>{
+      node.style.transform=`translate3d(${x}px,${y}px,0)`;
+      frame=0;
+    };
+    const onMove=(event:PointerEvent)=>{
+      x=event.clientX;y=event.clientY;
+      if(!frame)frame=requestAnimationFrame(render);
+    };
+    const onOver=(event:PointerEvent)=>{
+      const target=event.target instanceof Element?event.target.closest("a,button"):null;
+      node.classList.toggle("is-interactive",Boolean(target));
+    };
+    const onLeave=()=>node.classList.remove("is-visible");
+    const onEnter=()=>node.classList.add("is-visible");
+    window.addEventListener("pointermove",onMove,{passive:true});
+    window.addEventListener("pointerover",onOver,{passive:true});
+    document.documentElement.addEventListener("mouseleave",onLeave);
+    document.documentElement.addEventListener("mouseenter",onEnter);
+    node.classList.add("is-visible");
+    return ()=>{
+      if(frame)cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove",onMove);
+      window.removeEventListener("pointerover",onOver);
+      document.documentElement.removeEventListener("mouseleave",onLeave);
+      document.documentElement.removeEventListener("mouseenter",onEnter);
+    };
+  },[reducedMotion]);
+  return <div ref={cursor} className="director-cursor" aria-hidden="true"><i/><span/></div>;
 }
 
 function ProjectCard({project,index,onOpen}:{project:Project;index:number;onOpen:()=>void}){
@@ -214,6 +266,7 @@ export function SynthesisPortfolio(){
 
   return <main className="cosmic-portfolio director-cut" data-chapter={current.id} style={{"--journey":progress} as CSSProperties}>
     <SystemLoader/>
+    <DirectorCursor reducedMotion={reducedMotion}/>
     <AmbientSound enabled={sound} progress={progress}/>
     <WorldCanvas progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
     <div className="film-grain" aria-hidden="true"/>
