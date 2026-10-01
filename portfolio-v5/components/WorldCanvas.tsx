@@ -44,10 +44,10 @@ function CameraRig({progress,reducedMotion,focusSystem}:{progress:number;reduced
       look.set(-4.2,.55,-39);
     }
     if(!reducedMotion&&!focusSystem){wanted.x+=state.pointer.x*.18;wanted.y+=state.pointer.y*.1;}
-    state.camera.position.lerp(wanted,1-Math.exp(-delta*(reducedMotion?10:3.8)));
-    target.lerp(look,1-Math.exp(-delta*4.2));
+    state.camera.position.lerp(wanted,1-Math.exp(-delta*(reducedMotion?10:2.85)));
+    target.lerp(look,1-Math.exp(-delta*3.15));
     state.camera.lookAt(target);
-    if(!reducedMotion)state.camera.rotation.z=THREE.MathUtils.lerp(state.camera.rotation.z,(state.pointer.x*.006)+(Math.sin(t*Math.PI*2)*.0045),.042);
+    if(!reducedMotion)state.camera.rotation.z=THREE.MathUtils.lerp(state.camera.rotation.z,(state.pointer.x*.005)+(Math.sin(t*Math.PI*2)*.004),.032);
     if(state.camera instanceof THREE.PerspectiveCamera){
       const fovStops=[37,34,39,31,43,33,38,46,36];
       const scaled=t*(fovStops.length-1);
@@ -55,7 +55,7 @@ function CameraRig({progress,reducedMotion,focusSystem}:{progress:number;reduced
       const local=scaled-index;
       const fov=THREE.MathUtils.lerp(fovStops[index],fovStops[index+1],local);
       if(Math.abs(state.camera.fov-fov)>.02){
-        state.camera.fov=THREE.MathUtils.damp(state.camera.fov,fov,3.6,delta);
+        state.camera.fov=THREE.MathUtils.damp(state.camera.fov,fov,2.45,delta);
         state.camera.updateProjectionMatrix();
       }
     }
@@ -288,7 +288,7 @@ function Surveyor({progress,reducedMotion,quality}:{progress:number;reducedMotio
       THREE.MathUtils.lerp(2.45,1.15,travel)+Math.sin(travel*Math.PI*1.7)*.42,
       THREE.MathUtils.lerp(-8.2,-43.5,travel)
     );
-    group.current.position.lerp(wanted,1-Math.exp(-delta*4.4));
+    group.current.position.lerp(wanted,1-Math.exp(-delta*3.25));
     if(!reducedMotion){
       const targetYaw=-.32+travel*1.18;
       const targetRoll=-.11+Math.sin(travel*Math.PI*2.1)*.075;
