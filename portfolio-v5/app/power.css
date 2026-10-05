@@ -1716,3 +1716,205 @@ html,body,.director-cut{max-width:100%;overflow-x:clip}
   .atlas-projects>a>i{grid-column:3;grid-row:1}
   .atlas-footer{display:grid}
 }
+
+
+/* V5.24 — MOTION / LOADING / CELESTIAL MATERIAL PASS */
+
+/* Scrolling remains native for accessibility, while the journey/camera layer now uses
+   frame-rate independent damping. These browser hints keep chapter jumps and momentum clean. */
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:72px;
+  overscroll-behavior-y:none;
+}
+body{
+  scrollbar-gutter:stable;
+}
+.story-section{
+  scroll-margin-top:72px;
+}
+
+/* Progressive loader: scene assets resolve behind one polished cinematic curtain. */
+.system-loader{
+  overflow:hidden;
+  opacity:1;
+  transform:translateZ(0);
+  transition:opacity .48s cubic-bezier(.22,1,.36,1),visibility .48s step-end;
+  background:
+    radial-gradient(circle at 68% 28%,rgba(120,187,210,.08),transparent 26%),
+    radial-gradient(circle at 24% 76%,rgba(222,154,103,.07),transparent 30%),
+    #020304;
+}
+.system-loader.is-exiting{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+.loader-ambient{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  overflow:hidden;
+}
+.loader-ambient:before{
+  content:"";
+  position:absolute;
+  inset:-18%;
+  background:
+    radial-gradient(circle at 40% 42%,rgba(255,255,255,.032) 0 1px,transparent 1.4px),
+    radial-gradient(circle at 74% 28%,rgba(145,202,224,.05) 0 1px,transparent 1.5px);
+  background-size:163px 149px,227px 211px;
+  animation:loaderFieldDrift 18s linear infinite;
+}
+.loader-ambient i{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(1px);
+  opacity:.28;
+}
+.loader-ambient i:nth-child(1){
+  width:36vw;height:36vw;right:-8vw;top:-12vw;
+  border:1px solid rgba(151,210,230,.09);
+  box-shadow:0 0 120px rgba(111,186,211,.035) inset;
+}
+.loader-ambient i:nth-child(2){
+  width:20vw;height:20vw;left:8vw;bottom:-6vw;
+  border:1px solid rgba(227,160,106,.08);
+}
+.loader-ambient i:nth-child(3){
+  left:0;right:0;top:52%;height:1px;border-radius:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+}
+.loader-shell{
+  position:relative;
+  z-index:2;
+  width:min(690px,88vw);
+}
+.loader-stage{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:36px;
+  color:#717b7c;
+  font:600 7px/1 var(--font-mono);
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+.loader-stage>span{
+  width:28px;height:28px;
+  display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.12);
+  color:#d19d75;
+}
+.loader-stage>b{
+  color:#aeb6b3;
+  font-weight:600;
+}
+.loader-title{
+  margin:24px 0 0;
+  font-size:clamp(3rem,6.2vw,6.8rem);
+  line-height:.84;
+  letter-spacing:-.065em;
+  font-weight:480;
+}
+.loader-title em{
+  font-style:normal;
+  color:transparent;
+  -webkit-text-stroke:1px rgba(240,237,229,.72);
+}
+.loader-detail{
+  margin:20px 0 28px;
+  color:#737d7b;
+  font-size:10px;
+  line-height:1.6;
+}
+.loader-track{
+  height:2px;
+  background:rgba(240,237,229,.075);
+}
+.loader-track i{
+  width:100%;
+  transform-origin:left center;
+  background:linear-gradient(90deg,#7ec6df,#d6a175);
+  box-shadow:0 0 16px rgba(126,198,223,.22);
+  transition:transform .22s cubic-bezier(.2,.7,.2,1);
+}
+.loader-meta{
+  margin-top:11px;
+  color:#6b7575;
+}
+.loader-signals{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  margin-top:28px;
+  border:1px solid rgba(255,255,255,.075);
+  background:rgba(255,255,255,.04);
+}
+.loader-signals span{
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#050708;
+  color:#495254;
+  font:600 6px/1 var(--font-mono);
+  letter-spacing:.09em;
+  transition:color .35s ease,background .35s ease;
+}
+.loader-signals span.ready{
+  color:#b9c1be;
+  background:linear-gradient(180deg,rgba(126,198,223,.04),rgba(255,255,255,.006));
+}
+.loader-signals span.ready:before{
+  content:"";
+  width:4px;height:4px;margin-right:7px;border-radius:50%;
+  background:#8fc8d9;
+  box-shadow:0 0 10px rgba(143,200,217,.52);
+}
+@keyframes loaderFieldDrift{
+  to{transform:translate3d(-2.5%,1.5%,0) scale(1.02)}
+}
+
+/* Better perceived material depth on celestial objects without extra UI clutter. */
+.world-canvas{
+  filter:saturate(1.035) contrast(1.015);
+}
+.world-canvas:after{
+  box-shadow:
+    inset 0 0 190px rgba(0,0,0,.44),
+    inset 0 -120px 150px rgba(0,0,0,.12);
+}
+
+/* Motion transitions stay soft instead of snapping when chapters become active. */
+.director-section .scene-curtain,
+.director-section .scene-word,
+.director-section .scene-index{
+  will-change:transform,opacity;
+}
+.director-project,
+.director-capability-stack article,
+.atlas-projects>a{
+  will-change:transform;
+}
+
+@media(max-width:760px){
+  html{scroll-padding-top:62px;overscroll-behavior-y:auto}
+  .story-section{scroll-margin-top:62px}
+  .loader-shell{width:min(100%,92vw)}
+  .loader-title{font-size:clamp(3rem,14vw,4.7rem)}
+  .loader-signals{grid-template-columns:1fr 1fr}
+  .loader-ambient i:nth-child(1){width:70vw;height:70vw}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .loader-ambient:before{animation:none}
+  .loader-track i,.system-loader{transition:none}
+  .director-section .scene-curtain,
+  .director-section .scene-word,
+  .director-section .scene-index,
+  .director-project,
+  .director-capability-stack article,
+  .atlas-projects>a{will-change:auto}
+}
