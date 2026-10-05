@@ -1,2 +1,17 @@
-V5.18 — Knowledge Gravity System
-Integrated the supplied Lunar Gravity concept into the existing V5 universe instead of embedding the demo card. The KNOW chapter now forms a deterministic GPU particle field around Europa, scaling from 10k / 32k / 70k particles by render quality. Particles emerge from the moon surface into an orbital evidence structure, preserve the gravity/deformation behavior, and receive a spacecraft-like wake during ACT. Added instanced ice/debris fragments, project-hover reactions for Agentic RAG / Knowledge Twin / Clinical Document Intelligence, scroll-driven formation/fade, reduced-motion support, and preserved V5 adaptive rendering.
+V5.21 — Power + Readability
+
+V5.21 strengthens the portfolio without turning it into visual noise. The cinematic space identity remains intact, but the information hierarchy is now much clearer at first glance.
+
+The V5.20 cinematic polish layer is now actually imported by the application, restoring the chapter-aware atmospheric grade and depth layer that previously existed in the codebase without reaching the rendered site.
+
+A new power/readability layer upgrades the hero, navigation, profile, capability stack, system chapters, project cards, flight log, thesis and contact sequence. Text contrast is higher, body copy is larger, reading surfaces are more stable over bright 3D imagery, project cards have stronger visual hierarchy, and system architecture / stack information is easier to scan.
+
+The hero now has a stronger silhouette, more legible outlined type, clearer manifesto rhythm, a more intentional primary CTA, and a better-defined mission panel. Chapter copy receives restrained luminance support instead of oversized glass panels, preserving the editorial/cinematic look.
+
+Recruiter-facing information is substantially easier to read: profile facts, capability rows, project summaries, architecture routes, flight-log entries and project inspector content all have increased contrast, spacing and click-target clarity.
+
+Mobile receives dedicated readability treatment: no inactive-section blur, stronger paragraph contrast, larger project summaries, full-width primary CTA, simplified hero composition on narrow screens, and tighter system-card geometry.
+
+Large 4K screens now receive composition width constraints so typography and system content stay cinematic rather than becoming excessively spread out.
+
+TypeScript and production static-export CI pass on the V5.21 source revision. Visual QA runs on the active cinematic-depth branch for desktop/mobile screenshot and accessibility verification.
