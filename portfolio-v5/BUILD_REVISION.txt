@@ -21,4 +21,6 @@ Project cards surface one proof signal without becoming dense. Opening a project
 
 The public-project descriptions are grounded in the current repository implementations and intentionally distinguish real backend capabilities from deterministic browser demonstrations. Employer code, confidential data and unsupported production claims are not presented.
 
+The Recruiter Cut is also upgraded into a dense fast-path: profile/formation, programme rhythm, languages, focus areas, operating principles, all nine engineering systems with proof signals, the complete experience trajectory and the capability map.
+
 V5.21 readability and V5.20 adaptive cinematic / accessibility work remain intact.
