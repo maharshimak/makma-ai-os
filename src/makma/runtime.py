@@ -12,6 +12,7 @@ from makma.model_planner import StructuredModelPlanner, StructuredPlannerError
 from makma.models import ChatMessage, ChatResponse, ExecutionMetrics, PlanStep, ToolResult
 from makma.planner import Planner
 from makma.providers import ModelProvider, build_provider
+from makma.reliability import BudgetLedger, ExecutionBudget
 from makma.telemetry import TelemetryCollector
 from makma.tools import PermissionPolicy, ToolRegistry, build_default_registry
 
@@ -35,6 +36,7 @@ class MakmaRuntime:
         policy: PermissionPolicy | None = None,
         telemetry: TelemetryCollector | None = None,
         model_planner: StructuredModelPlanner | None = None,
+        execution_budget: ExecutionBudget | None = None,
     ) -> None:
         self.settings = settings
         self.memory = memory
@@ -43,6 +45,7 @@ class MakmaRuntime:
         self.planner = planner or Planner()
         self.policy = policy or PermissionPolicy(allowed_tools=frozenset(registry.names))
         self.telemetry = telemetry or TelemetryCollector()
+        self.execution_budget = execution_budget or ExecutionBudget()
         self.model_planner = model_planner
         if self.model_planner is None and settings.planner_mode != "deterministic":
             self.model_planner = StructuredModelPlanner(settings)
@@ -82,6 +85,7 @@ class MakmaRuntime:
     ) -> ChatResponse:
         started = time.perf_counter()
         run_id = str(uuid4())
+        ledger = BudgetLedger(self.execution_budget)
         await self.memory.start_run(
             run_id=run_id,
             session_id=session_id,
@@ -94,6 +98,7 @@ class MakmaRuntime:
                 limit=self.settings.max_history_messages,
             )
             plan = await self._build_plan(message)
+            ledger.consume(steps=len(plan))
 
             tool_results: list[ToolResult] = []
             if tools_enabled:
@@ -102,11 +107,13 @@ class MakmaRuntime:
                     run_id=run_id,
                     session_id=session_id,
                     approvals=approvals or set(),
+                    ledger=ledger,
                 )
 
             await self.memory.append(session_id, "user", message)
             messages = [*history, ChatMessage(role="user", content=message)]
 
+            ledger.consume(model_calls=1)
             provider_started = time.perf_counter()
             try:
                 response = await self.provider.generate(
@@ -128,6 +135,7 @@ class MakmaRuntime:
                 raise
 
             provider_latency_ms = round((time.perf_counter() - provider_started) * 1000, 3)
+            ledger.consume(elapsed_ms=provider_latency_ms)
             self.telemetry.record(
                 "provider.generate",
                 latency_ms=provider_latency_ms,
@@ -144,6 +152,7 @@ class MakmaRuntime:
                 latency_ms=latency_ms,
                 status="succeeded",
             )
+            budget_snapshot = ledger.snapshot()
             self.telemetry.record(
                 "runtime.run",
                 latency_ms=latency_ms,
@@ -151,6 +160,8 @@ class MakmaRuntime:
                 attributes={
                     "provider": self.provider.name,
                     "tool_calls": len(tool_results),
+                    "budget_steps": budget_snapshot.steps,
+                    "budget_model_calls": budget_snapshot.model_calls,
                 },
             )
 
@@ -195,12 +206,14 @@ class MakmaRuntime:
         run_id: str,
         session_id: str,
         approvals: set[str],
+        ledger: BudgetLedger,
     ) -> list[ToolResult]:
         results: list[ToolResult] = []
         for step in plan:
             if step.kind != "tool" or not step.tool_name:
                 continue
 
+            ledger.consume(tool_calls=1)
             started = time.perf_counter()
             result = await self.registry.execute(
                 step.tool_name,
@@ -227,6 +240,7 @@ class MakmaRuntime:
                 error=result.error,
                 latency_ms=latency_ms,
             )
+            ledger.consume(elapsed_ms=latency_ms)
             results.append(result)
         return results
 
@@ -240,6 +254,7 @@ class MakmaRuntime:
     ) -> AsyncIterator[str]:
         started = time.perf_counter()
         run_id = str(uuid4())
+        ledger = BudgetLedger(self.execution_budget)
         await self.memory.start_run(
             run_id=run_id,
             session_id=session_id,
@@ -251,28 +266,46 @@ class MakmaRuntime:
             limit=self.settings.max_history_messages,
         )
         plan = await self._build_plan(message)
-        tool_results: list[ToolResult] = []
         try:
+            ledger.consume(steps=len(plan))
+            tool_results: list[ToolResult] = []
             if tools_enabled:
                 tool_results = await self._execute_plan(
                     plan,
                     run_id=run_id,
                     session_id=session_id,
                     approvals=approvals or set(),
+                    ledger=ledger,
                 )
             await self.memory.append(session_id, "user", message)
             messages = [*history, ChatMessage(role="user", content=message)]
 
+            ledger.consume(model_calls=1)
             provider_started = time.perf_counter()
             chunks: list[str] = []
-            async for chunk in self.provider.generate_stream(
-                messages,
-                system_prompt=SYSTEM_PROMPT,
-                tool_results=tool_results,
-            ):
-                chunks.append(chunk)
-                yield chunk
+            try:
+                async for chunk in self.provider.generate_stream(
+                    messages,
+                    system_prompt=SYSTEM_PROMPT,
+                    tool_results=tool_results,
+                ):
+                    chunks.append(chunk)
+                    yield chunk
+            except Exception:
+                provider_latency_ms = round(
+                    (time.perf_counter() - provider_started) * 1000,
+                    3,
+                )
+                self.telemetry.record(
+                    "provider.generate",
+                    latency_ms=provider_latency_ms,
+                    success=False,
+                    attributes={"provider": self.provider.name, "streaming": True},
+                )
+                raise
+
             provider_latency_ms = round((time.perf_counter() - provider_started) * 1000, 3)
+            ledger.consume(elapsed_ms=provider_latency_ms)
             self.telemetry.record(
                 "provider.generate",
                 latency_ms=provider_latency_ms,
@@ -289,6 +322,7 @@ class MakmaRuntime:
                 latency_ms=latency_ms,
                 status="succeeded",
             )
+            budget_snapshot = ledger.snapshot()
             self.telemetry.record(
                 "runtime.run",
                 latency_ms=latency_ms,
@@ -297,6 +331,8 @@ class MakmaRuntime:
                     "provider": self.provider.name,
                     "tool_calls": len(tool_results),
                     "streaming": True,
+                    "budget_steps": budget_snapshot.steps,
+                    "budget_model_calls": budget_snapshot.model_calls,
                 },
             )
         except Exception as error:
