@@ -1,15 +1,15 @@
 "use client";
 
 import {PerformanceMonitor,Sparkles,Stars,useGLTF,useTexture} from "@react-three/drei";
-import {Canvas,useFrame} from "@react-three/fiber";
+import {Canvas,useFrame,useThree} from "@react-three/fiber";
 import {Bloom,EffectComposer,SMAA,Vignette} from "@react-three/postprocessing";
 import {Suspense,useEffect,useMemo,useRef,useState} from "react";
 import * as THREE from "three";
 
-const WEBB="https://assets.science.nasa.gov/dynamicimage/assets/science/missions/webb/science/2022/10/STScI-01GFRYYRTCTMX197BY86MBFCR9.png?crop=faces%2Cfocalpoint&fit=clip&h=4320&w=7680";
-const EUROPA="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter---europa/preview.webp?w=8192";
-const JUPITER="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter/preview.webp?w=8192";
-const MARS="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/mars/preview.webp?w=8192";
+const WEBB="https://assets.science.nasa.gov/dynamicimage/assets/science/missions/webb/science/2022/10/STScI-01GFRYYRTCTMX197BY86MBFCR9.png?crop=faces%2Cfocalpoint&fit=clip&h=2304&w=4096";
+const EUROPA="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter---europa/preview.webp?w=4096";
+const JUPITER="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/jupiter/preview.webp?w=4096";
+const MARS="https://assets.science.nasa.gov/dynamicimage/assets/science/cds/3d/resources/image/mars/preview.webp?w=4096";
 const SURVEYOR="https://raw.githubusercontent.com/nasa/NASA-3D-Resources/master/3D%20Models/Mars%20Global%20Surveyor/Mars%20Global%20Surveyor.glb";
 
 const cameraPoints=[
@@ -60,6 +60,50 @@ function CameraRig({progress,reducedMotion,focusSystem}:{progress:number;reduced
       }
     }
   });
+  return null;
+}
+
+function CinematicGrade({
+  progress,reducedMotion,focusSystem
+}:{
+  progress:number;
+  reducedMotion:boolean;
+  focusSystem:"knowledge"|"agency"|"reliability"|null;
+}){
+  const {gl,scene}=useThree();
+  const palette=useMemo(()=>[
+    new THREE.Color("#040608"),
+    new THREE.Color("#05080b"),
+    new THREE.Color("#061016"),
+    new THREE.Color("#07131a"),
+    new THREE.Color("#140d09"),
+    new THREE.Color("#0c1510"),
+    new THREE.Color("#120b0a"),
+    new THREE.Color("#0b0a0d"),
+    new THREE.Color("#120d09")
+  ],[]);
+  const targetColor=useMemo(()=>new THREE.Color(),[]);
+
+  useFrame((_,delta)=>{
+    const scaled=THREE.MathUtils.clamp(progress,0,1)*(palette.length-1);
+    const index=Math.min(palette.length-2,Math.floor(scaled));
+    const local=scaled-index;
+    targetColor.copy(palette[index]).lerp(palette[index+1],local);
+
+    const focusBoost=focusSystem ? .045 : 0;
+    const desiredExposure=1.045+Math.sin(progress*Math.PI)*.035+focusBoost;
+    gl.toneMappingExposure=THREE.MathUtils.damp(gl.toneMappingExposure,desiredExposure,reducedMotion?8:2.4,delta);
+
+    if(scene.fog instanceof THREE.Fog){
+      scene.fog.color.lerp(targetColor,1-Math.exp(-delta*(reducedMotion?8:1.15)));
+      const focusDepth=focusSystem?7:0;
+      const chapterBreath=Math.sin(progress*Math.PI*4)*1.2;
+      scene.fog.near=THREE.MathUtils.damp(scene.fog.near,40+chapterBreath,2.1,delta);
+      scene.fog.far=THREE.MathUtils.damp(scene.fog.far,112-focusDepth,2.1,delta);
+    }
+  });
+
+  useEffect(()=>()=>{gl.toneMappingExposure=1.06;},[gl]);
   return null;
 }
 
@@ -643,14 +687,32 @@ function CosmicScene({progress,reducedMotion,quality,focusProject}:{progress:num
 }
 
 export function WorldCanvas({progress,reducedMotion,focusSystem=null,focusProject=null}:{progress:number;reducedMotion:boolean;focusSystem?:"knowledge"|"agency"|"reliability"|null;focusProject?:string|null}){
-  const [quality,setQuality]=useState<"high"|"medium"|"low">("high");
+  const [quality,setQuality]=useState<RenderQuality>("medium");
+  const [allowHigh,setAllowHigh]=useState(true);
+
+  useEffect(()=>{
+    const coarse=window.matchMedia("(pointer: coarse)");
+    const sync=()=>{
+      const capableForHigh=window.innerWidth>=980&&!coarse.matches;
+      setAllowHigh(capableForHigh);
+      if(!capableForHigh)setQuality(value=>value==="high"?"medium":value);
+    };
+    sync();
+    coarse.addEventListener("change",sync);
+    window.addEventListener("resize",sync);
+    return ()=>{
+      coarse.removeEventListener("change",sync);
+      window.removeEventListener("resize",sync);
+    };
+  },[]);
   return <div className="world-canvas" aria-hidden="true">
-    <Canvas dpr={quality==="high"?2:quality==="medium"?1.5:1} camera={{position:[0,1.2,13],fov:39,near:.08,far:140}} gl={{antialias:true,alpha:false,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.06,preserveDrawingBuffer:false}}>
+    <Canvas dpr={quality==="high"?[1,1.75]:quality==="medium"?[1,1.35]:1} camera={{position:[0,1.2,13],fov:39,near:.08,far:140}} gl={{antialias:true,alpha:false,powerPreference:"high-performance",toneMapping:THREE.ACESFilmicToneMapping,toneMappingExposure:1.06,preserveDrawingBuffer:false}}>
       <color attach="background" args={["#010203"]}/>
       <fog attach="fog" args={["#040608",42,114]}/>
-      <PerformanceMonitor flipflops={3} onDecline={()=>setQuality(value=>value==="high"?"medium":"low")} onIncline={()=>setQuality(value=>value==="low"?"medium":"high")}/>
+      <PerformanceMonitor flipflops={3} onDecline={()=>setQuality(value=>value==="high"?"medium":"low")} onIncline={()=>setQuality(value=>value==="low"?"medium":allowHigh?"high":"medium")} onFallback={()=>setQuality("low")}/>
       <Suspense fallback={null}>
         <CameraRig progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
+        <CinematicGrade progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem}/>
         <CosmicScene progress={progress} reducedMotion={reducedMotion} quality={quality} focusProject={focusProject}/>
         {!reducedMotion&&quality!=="low"&&<EffectComposer multisampling={quality==="high"?4:0}>
           <Bloom intensity={quality==="high"?.31:.20} luminanceThreshold={1.06} luminanceSmoothing={.22} mipmapBlur/>
