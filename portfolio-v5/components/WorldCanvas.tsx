@@ -197,22 +197,39 @@ function DeepField({reducedMotion}:{reducedMotion:boolean}){
   </group>;
 }
 
-function AtmosphereGlow({radius,color,intensity=.55}:{radius:number;color:string;intensity?:number}){
-  const material=useMemo(()=>new THREE.ShaderMaterial({
+function AtmosphereGlow({radius,color,intensity=.55,quality}:{radius:number;color:string;intensity?:number;quality:RenderQuality}){
+  const outerMaterial=useMemo(()=>new THREE.ShaderMaterial({
     uniforms:{uColor:{value:new THREE.Color(color)},uIntensity:{value:intensity}},
     vertexShader:"varying vec3 vNormal; varying vec3 vView; void main(){ vec4 mvPosition=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vView=normalize(-mvPosition.xyz); gl_Position=projectionMatrix*mvPosition; }",
-    fragmentShader:"uniform vec3 uColor; uniform float uIntensity; varying vec3 vNormal; varying vec3 vView; void main(){ float rim=pow(1.0-abs(dot(normalize(vNormal),normalize(vView))),3.1); float outer=smoothstep(.05,.82,rim); gl_FragColor=vec4(uColor,outer*uIntensity); }",
+    fragmentShader:"uniform vec3 uColor; uniform float uIntensity; varying vec3 vNormal; varying vec3 vView; void main(){ float facing=abs(dot(normalize(vNormal),normalize(vView))); float rim=pow(1.0-facing,2.8); float halo=smoothstep(.03,.96,rim); gl_FragColor=vec4(uColor,halo*uIntensity); }",
     transparent:true,
     side:THREE.BackSide,
     blending:THREE.AdditiveBlending,
     depthWrite:false,
     toneMapped:false
   }),[color,intensity]);
-  useEffect(()=>()=>material.dispose(),[material]);
-  return <mesh scale={1.075}>
-    <sphereGeometry args={[radius,192,192]}/>
-    <primitive object={material} attach="material"/>
-  </mesh>;
+  const edgeMaterial=useMemo(()=>new THREE.ShaderMaterial({
+    uniforms:{uColor:{value:new THREE.Color(color)},uIntensity:{value:intensity*.42}},
+    vertexShader:"varying vec3 vNormal; varying vec3 vView; void main(){ vec4 mvPosition=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vView=normalize(-mvPosition.xyz); gl_Position=projectionMatrix*mvPosition; }",
+    fragmentShader:"uniform vec3 uColor; uniform float uIntensity; varying vec3 vNormal; varying vec3 vView; void main(){ float facing=max(0.0,dot(normalize(vNormal),normalize(vView))); float rim=pow(1.0-facing,5.2); gl_FragColor=vec4(uColor,rim*uIntensity); }",
+    transparent:true,
+    side:THREE.FrontSide,
+    blending:THREE.AdditiveBlending,
+    depthWrite:false,
+    toneMapped:false
+  }),[color,intensity]);
+  useEffect(()=>()=>{outerMaterial.dispose();edgeMaterial.dispose();},[outerMaterial,edgeMaterial]);
+  const segments=quality==="high"?144:quality==="medium"?96:64;
+  return <group>
+    <mesh scale={1.09}>
+      <sphereGeometry args={[radius,segments,segments]}/>
+      <primitive object={outerMaterial} attach="material"/>
+    </mesh>
+    {quality!=="low"&&<mesh scale={1.018}>
+      <sphereGeometry args={[radius,segments,segments]}/>
+      <primitive object={edgeMaterial} attach="material"/>
+    </mesh>}
+  </group>;
 }
 
 function JovianRing({radius,quality}:{radius:number;quality:"high"|"medium"|"low"}){
@@ -551,7 +568,8 @@ function KnowledgeGravitySystem(props:{
 function World({textureUrl,position,radius,tilt=0,speed=.035,atmosphere,bumpScale=.025,roughness=.76,quality,ring="none"}:{textureUrl:string;position:[number,number,number];radius:number;tilt?:number;speed?:number;atmosphere:string;bumpScale?:number;roughness?:number;quality:"high"|"medium"|"low";ring?:"none"|"jupiter"}){
   const map=useTexture(textureUrl);
   const planet=useRef<THREE.Mesh>(null);
-  const segments=quality==="high"?256:quality==="medium"?160:96;
+  const halo=useRef<THREE.PointLight>(null);
+  const segments=quality==="high"?224:quality==="medium"?144:88;
   useMemo(()=>{
     map.colorSpace=THREE.SRGBColorSpace;
     map.anisotropy=quality==="high"?16:quality==="medium"?12:6;
@@ -559,14 +577,29 @@ function World({textureUrl,position,radius,tilt=0,speed=.035,atmosphere,bumpScal
     map.magFilter=THREE.LinearFilter;
     map.generateMipmaps=true;
   },[map,quality]);
-  useFrame((_,delta)=>{if(planet.current)planet.current.rotation.y+=delta*speed;});
+  useFrame(({clock},delta)=>{
+    if(planet.current)planet.current.rotation.y+=delta*speed;
+    if(halo.current)halo.current.intensity=.14+Math.sin(clock.elapsedTime*.42+radius)*.025;
+  });
   return <group position={position} rotation={[0,0,tilt]}>
     {ring==="jupiter"&&<JovianRing radius={radius} quality={quality}/>} 
     <mesh ref={planet}>
       <sphereGeometry args={[radius,segments,segments]}/>
-      <meshPhysicalMaterial map={map} bumpMap={map} bumpScale={bumpScale} roughness={roughness} metalness={0} clearcoat={.025} clearcoatRoughness={.92} envMapIntensity={.62}/>
+      <meshPhysicalMaterial
+        map={map}
+        bumpMap={map}
+        bumpScale={bumpScale}
+        roughness={roughness}
+        metalness={0}
+        clearcoat={quality==="high"?.055:.03}
+        clearcoatRoughness={.84}
+        sheen={quality==="low"?0:.06}
+        sheenColor={new THREE.Color(atmosphere)}
+        envMapIntensity={quality==="high"?.82:.68}
+      />
     </mesh>
-    <AtmosphereGlow radius={radius} color={atmosphere} intensity={quality==="low"?.32:.52}/>
+    <AtmosphereGlow radius={radius} color={atmosphere} intensity={quality==="low"?.3:.56} quality={quality}/>
+    {quality!=="low"&&<pointLight ref={halo} position={[radius*.48,radius*.22,radius*.84]} intensity={.15} distance={radius*3.2} color={atmosphere}/>}
   </group>;
 }
 
@@ -584,6 +617,26 @@ function ThrusterPlume(){
     </mesh>
     <pointLight position={[0,-.2,0]} intensity={4} distance={3.2} color="#75bcff"/>
   </group>;
+}
+
+function SpacecraftBeacon({quality}:{quality:RenderQuality}){
+  const warm=useRef<THREE.Sprite>(null);
+  const cool=useRef<THREE.Sprite>(null);
+  const flare=useMemo(()=>makeFlareTexture(quality==="high"?512:256),[quality]);
+  useEffect(()=>()=>flare.dispose(),[flare]);
+  useFrame(({clock})=>{
+    const pulse=.22+Math.pow(Math.max(0,Math.sin(clock.elapsedTime*2.2)),10)*.72;
+    if(warm.current&&warm.current.material instanceof THREE.SpriteMaterial)warm.current.material.opacity=pulse;
+    if(cool.current&&cool.current.material instanceof THREE.SpriteMaterial)cool.current.material.opacity=.16+Math.pow(Math.max(0,Math.sin(clock.elapsedTime*1.7+1.9)),12)*.58;
+  });
+  return <>
+    <sprite ref={warm} position={[.92,.42,.18]} scale={[.34,.34,1]}>
+      <spriteMaterial map={flare} color="#ff8c62" transparent opacity={.25} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/>
+    </sprite>
+    <sprite ref={cool} position={[-.82,.28,-.05]} scale={[.3,.3,1]}>
+      <spriteMaterial map={flare} color="#88cfff" transparent opacity={.2} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/>
+    </sprite>
+  </>;
 }
 
 function Surveyor({progress,reducedMotion,quality}:{progress:number;reducedMotion:boolean;quality:"high"|"medium"|"low"}){
@@ -637,8 +690,9 @@ function Surveyor({progress,reducedMotion,quality}:{progress:number;reducedMotio
   return <group ref={group} position={[3.25,2.15,-9]} scale={.92}>
     <primitive object={craft}/>
     <ThrusterPlume/>
-    {quality!=="low"&&<sprite position={[.75,.6,.25]} scale={[1.05,1.05,1]}>
-      <spriteMaterial map={flareTexture} color="#ffd3a0" transparent opacity={.34} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/>
+    {quality!=="low"&&<SpacecraftBeacon quality={quality}/>}
+    {quality!=="low"&&<sprite position={[.75,.6,.25]} scale={[1.18,1.18,1]}>
+      <spriteMaterial map={flareTexture} color="#ffe0b6" transparent opacity={.42} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/>
     </sprite>}
     <pointLight position={[.5,.6,1]} intensity={2.2} distance={3.2} color="#d9a16c"/>
   </group>;
@@ -772,4 +826,8 @@ export function WorldCanvas({progress,reducedMotion,focusSystem=null,focusProjec
   </div>;
 }
 
+useTexture.preload(WEBB);
+useTexture.preload(EUROPA);
+useTexture.preload(JUPITER);
+useTexture.preload(MARS);
 useGLTF.preload(SURVEYOR);
