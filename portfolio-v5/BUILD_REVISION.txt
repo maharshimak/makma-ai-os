@@ -1,26 +1,15 @@
-V5.22 — Identity Archive + Engineering Evidence
+V5.23 — Systems Atlas + Mission Intelligence
 
-V5.22 turns the portfolio from a cinematic project gallery into a fuller representation of Maharshi Patel as an AI systems engineer.
+V5.23 makes the portfolio feel less like a sequence of sections and more like one connected AI engineering universe.
 
-The Mission Profile chapter now contains an Identity Archive: a concise personal engineering narrative, current aivancity PGE4 alternance programme, 1-week school / 3-weeks company rhythm, prior Information Technology diploma, AWS Machine Learning Engineer certification, language channels, engineering focus areas and an explicit operating code. The information is distributed into modular evidence panels rather than presented as a resume wall.
+A new Systems Atlas provides a high-density interactive map of all nine portfolio systems across Knowledge, Agency and Reliability. It exposes real portfolio totals derived from the project data model: architecture stages, implemented capabilities, proof signals and live experiences. Every system can be opened directly as a technical dossier.
 
-The capability core expands beyond a short AI stack to cover intelligence, retrieval/knowledge, agency, backend systems, production/MLOps and analytics.
+The hero now carries a stronger mission-console layer without covering the cinematic scene: system/missions/language/certification signals, a direct Systems Atlas control, and a restrained fixed telemetry line that shows the current chapter, system mode, project count and scroll progress.
 
-The seven-role Flight Log now includes a short trajectory note for every role, showing how analytics, NLP, responsible AI, RAG/agents, applied AI and clinical document intelligence built on each other.
+Project cards now communicate engineering density before they are opened by showing real counts for architecture stages, implemented capabilities and proof signals. Project inspectors expose the same evidence rail before the detailed purpose, challenge, architecture, implementation, proof, trust boundary and next-step sections.
 
-All nine MAK'MA systems now expose a richer engineering contract. Each project records:
-- the problem / engineering challenge,
-- architecture,
-- concrete implemented capabilities,
-- engineering proof,
-- explicit trust / safety boundary,
-- current next engineering vector,
-- repository and live product links.
+The 3D world receives chapter-linked orbital signal relays around the Knowledge, Agency and Reliability worlds. These are lightweight emissive signal paths that appear only during their relevant journey windows and are disabled on low-quality rendering.
 
-Project cards surface one proof signal without becoming dense. Opening a project now reveals a deeper evidence room, while the standalone technical dossier pages expose the same implementation/proof/boundary/next-step structure.
+Mobile integrity is hardened by constraining oversized decorative chapter words and all evidence/tag/route surfaces to the viewport. The visual QA harness now records exact overflow offenders and verifies the Systems Atlas interaction in addition to recruiter mode, project inspection, accessibility, horizontal overflow and desktop/mobile section captures.
 
-The public-project descriptions are grounded in the current repository implementations and intentionally distinguish real backend capabilities from deterministic browser demonstrations. Employer code, confidential data and unsupported production claims are not presented.
-
-The Recruiter Cut is also upgraded into a dense fast-path: profile/formation, programme rhythm, languages, focus areas, operating principles, all nine engineering systems with proof signals, the complete experience trajectory and the capability map.
-
-V5.21 readability and V5.20 adaptive cinematic / accessibility work remain intact.
+V5.22 identity/archive depth, V5.21 readability and V5.20 adaptive cinematic/accessibility work remain intact.
