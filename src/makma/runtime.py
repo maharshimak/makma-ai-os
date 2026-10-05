@@ -261,12 +261,12 @@ class MakmaRuntime:
             user_message=message,
             provider=self.provider.name,
         )
-        history = await self.memory.load(
-            session_id,
-            limit=self.settings.max_history_messages,
-        )
-        plan = await self._build_plan(message)
         try:
+            history = await self.memory.load(
+                session_id,
+                limit=self.settings.max_history_messages,
+            )
+            plan = await self._build_plan(message)
             ledger.consume(steps=len(plan))
             tool_results: list[ToolResult] = []
             if tools_enabled:
