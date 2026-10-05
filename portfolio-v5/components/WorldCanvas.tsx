@@ -668,6 +668,49 @@ function ReactiveLighting({progress}:{progress:number}){
   </>;
 }
 
+function SignalRelay({
+  center,radius,color,progress,start,end,phase=0,tilt=.08
+}:{
+  center:[number,number,number];
+  radius:number;
+  color:string;
+  progress:number;
+  start:number;
+  end:number;
+  phase?:number;
+  tilt?:number;
+}){
+  const group=useRef<THREE.Group>(null);
+  const bead=useRef<THREE.Mesh>(null);
+  const ringMaterial=useRef<THREE.MeshBasicMaterial>(null);
+  const beadMaterial=useRef<THREE.MeshBasicMaterial>(null);
+
+  useFrame(({clock},delta)=>{
+    const reveal=smoothWindow(start,start+.045,progress)*(1-smoothWindow(end-.045,end,progress));
+    if(group.current)group.current.visible=reveal>.004;
+    if(ringMaterial.current)ringMaterial.current.opacity=THREE.MathUtils.damp(ringMaterial.current.opacity,reveal*.16,4.2,delta);
+    if(beadMaterial.current)beadMaterial.current.opacity=THREE.MathUtils.damp(beadMaterial.current.opacity,reveal*.9,4.6,delta);
+    if(bead.current){
+      const a=clock.elapsedTime*.24+phase+progress*Math.PI*.8;
+      bead.current.position.set(Math.cos(a)*radius,Math.sin(a*1.4)*.10,Math.sin(a)*radius);
+      const pulse=.72+Math.sin(clock.elapsedTime*3.2+phase)*.14;
+      bead.current.scale.setScalar(pulse);
+    }
+  });
+
+  return <group ref={group} position={center} rotation={[tilt,.12,-.05]}>
+    <mesh rotation={[Math.PI/2,0,0]}>
+      <torusGeometry args={[radius,.008,6,192]}/>
+      <meshBasicMaterial ref={ringMaterial} color={color} transparent opacity={0} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/>
+    </mesh>
+    <mesh ref={bead}>
+      <sphereGeometry args={[.055,16,16]}/>
+      <meshBasicMaterial ref={beadMaterial} color={color} transparent opacity={0} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false}/>
+    </mesh>
+    <pointLight intensity={.4} distance={1.8} color={color}/>
+  </group>;
+}
+
 function CosmicScene({progress,reducedMotion,quality,focusProject}:{progress:number;reducedMotion:boolean;quality:RenderQuality;focusProject:string|null}){
   const starCount=quality==="low"?700:quality==="medium"?1350:2200;
   const dustCount=quality==="low"?26:quality==="medium"?58:96;
@@ -677,6 +720,11 @@ function CosmicScene({progress,reducedMotion,quality,focusProject}:{progress:num
     <Sparkles count={dustCount} scale={[30,17,86]} size={quality==="high"?.9:.72} speed={.045} opacity={.095} color="#d8e3e7"/>
     <ReactiveLighting progress={progress}/>
     <DistantStar quality={quality}/>
+    {quality!=="low"&&<>
+      <SignalRelay center={[-4.6,.55,-8]} radius={3.45} color="#8fd8f4" progress={progress} start={.22} end={.48} phase={.4}/>
+      <SignalRelay center={[4.9,-.45,-23]} radius={5.75} color="#f3a06c" progress={progress} start={.38} end={.66} phase={2.1} tilt={-.04}/>
+      <SignalRelay center={[-4.2,.55,-39]} radius={4.15} color="#a9c9b0" progress={progress} start={.56} end={.80} phase={4.4} tilt={.12}/>
+    </>}
     <World textureUrl={EUROPA} position={[-4.6,.55,-8]} radius={2.65} tilt={-.18} speed={.022} atmosphere="#b7d7e1" bumpScale={.065} roughness={.7} quality={quality}/>
     <KnowledgeGravitySystem progress={progress} quality={quality} reducedMotion={reducedMotion} focusProject={focusProject}/>
     <World textureUrl={JUPITER} position={[4.9,-.45,-23]} radius={4.3} tilt={.05} speed={.014} atmosphere="#e0ad79" bumpScale={.009} roughness={.82} quality={quality} ring="jupiter"/>
