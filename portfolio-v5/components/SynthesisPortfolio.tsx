@@ -158,6 +158,7 @@ function ProjectCard({project,index,onOpen,onHover}:{project:Project;index:numbe
     </span>
     <span className="director-project-title">{project.name}</span>
     <span className="director-project-summary">{project.summary}</span>
+    <span className="director-project-proof"><b>PROOF</b>{project.proof[0]}</span>
     <span className="director-project-route">
       <i>{project.architecture[0]}</i><b>→</b><i>{project.architecture[project.architecture.length-1]}</i>
     </span>
@@ -220,12 +221,27 @@ function ProjectInspector({project,onClose,opener}:{project:Project;onClose:()=>
       <span className="eyebrow">{project.family}</span>
       <h2 id={"project-title-"+project.slug}>{project.name}</h2>
       <p className="inspector-lead">{project.summary}</p>
-      <div className="inspector-grid">
-        <section><span>Purpose</span><p>{project.purpose}</p></section>
+      <div className="inspector-grid inspector-grid-primary">
+        <section><span>Mission purpose</span><p>{project.purpose}</p></section>
+        <section><span>Engineering challenge</span><p>{project.challenge}</p></section>
+      </div>
+      <section className="inspector-architecture">
+        <span>Architecture</span>
+        <ol>{project.architecture.map((stage,index)=><li key={stage}><b>{String(index+1).padStart(2,"0")}</b>{stage}</li>)}</ol>
+      </section>
+      <div className="inspector-evidence-grid">
         <section>
-          <span>Architecture</span>
-          <ol>{project.architecture.map((stage,index)=><li key={stage}><b>{String(index+1).padStart(2,"0")}</b>{stage}</li>)}</ol>
+          <span>What is implemented</span>
+          <ul>{project.implemented.map(item=><li key={item}>{item}</li>)}</ul>
         </section>
+        <section>
+          <span>Engineering proof</span>
+          <ul>{project.proof.map(item=><li key={item}>{item}</li>)}</ul>
+        </section>
+      </div>
+      <div className="inspector-boundary">
+        <section><span>Trust boundary</span><p>{project.boundary}</p></section>
+        <section><span>Next engineering vector</span><p>{project.next}</p></section>
       </div>
       <div className="stack-line">{project.stack.map(item=><span key={item}>{item}</span>)}</div>
       <div className="action-row">
@@ -375,12 +391,36 @@ export function SynthesisPortfolio(){
         <div className="director-profile-head">
           <span className="eyebrow">MISSION PROFILE</span>
           <h2>Engineering intelligence into systems that can <em>remember</em>, <em>reason</em> and <em>act</em>.</h2>
+          <div className="profile-about">{profile.about.map((line,index)=><p key={line}><b>0{index+1}</b>{line}</p>)}</div>
         </div>
         <div className="director-profile-facts">
           <article><span>01</span><small>ROLE</small><b>{profile.role}</b></article>
           <article><span>02</span><small>BASE</small><b>{profile.location}</b></article>
-          <article><span>03</span><small>EDUCATION</small><b>{profile.school}</b></article>
+          <article><span>03</span><small>PROGRAM</small><b>{profile.program}</b></article>
           <article><span>04</span><small>CREDENTIAL</small><b>{profile.certification}</b></article>
+        </div>
+        <div className="identity-archive">
+          <section className="identity-stats" aria-label="Profile statistics">
+            {profile.stats.map((stat,index)=><article key={stat.label}><span>{String(index+1).padStart(2,"0")}</span><b>{stat.value}</b><small>{stat.label}</small></article>)}
+          </section>
+          <section className="identity-panel">
+            <span className="identity-label">FORMATION / TRAJECTORY</span>
+            <p><b>NOW</b>{profile.school}</p>
+            <p><b>FORMAT</b>{profile.rhythm}</p>
+            <p><b>FOUNDATION</b>{profile.priorEducation}</p>
+          </section>
+          <section className="identity-panel">
+            <span className="identity-label">LANGUAGE CHANNELS</span>
+            <div className="identity-tags">{profile.languages.map(item=><span key={item}>{item}</span>)}</div>
+          </section>
+          <section className="identity-panel identity-panel-wide">
+            <span className="identity-label">ENGINEERING FOCUS</span>
+            <div className="identity-tags">{profile.focus.map(item=><span key={item}>{item}</span>)}</div>
+          </section>
+          <section className="identity-panel identity-panel-wide identity-code">
+            <span className="identity-label">OPERATING CODE</span>
+            <ol>{profile.principles.map((item,index)=><li key={item}><b>{String(index+1).padStart(2,"0")}</b>{item}</li>)}</ol>
+          </section>
         </div>
       </div>
     </StorySection>
@@ -438,7 +478,7 @@ export function SynthesisPortfolio(){
         <div className="director-flight-list">
           {experience.slice().reverse().map((item,index)=><article key={item.company+item.period}>
             <span>{String(index+1).padStart(2,"0")}</span>
-            <div><b>{item.company}</b><p>{item.role}</p></div>
+            <div><b>{item.company}</b><p>{item.role}</p><p className="flight-detail">{item.detail}</p></div>
             <small>{item.period}</small>
             <em>{item.signal}</em>
           </article>)}
