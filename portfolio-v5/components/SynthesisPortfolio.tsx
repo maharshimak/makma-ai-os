@@ -159,6 +159,11 @@ function ProjectCard({project,index,onOpen,onHover}:{project:Project;index:numbe
     <span className="director-project-title">{project.name}</span>
     <span className="director-project-summary">{project.summary}</span>
     <span className="director-project-proof"><b>PROOF</b>{project.proof[0]}</span>
+    <span className="director-project-metrics" aria-hidden="true">
+      <i><b>{String(project.architecture.length).padStart(2,"0")}</b>STAGES</i>
+      <i><b>{String(project.implemented.length).padStart(2,"0")}</b>CAPABILITIES</i>
+      <i><b>{String(project.proof.length).padStart(2,"0")}</b>PROOF SIGNALS</i>
+    </span>
     <span className="director-project-route">
       <i>{project.architecture[0]}</i><b>→</b><i>{project.architecture[project.architecture.length-1]}</i>
     </span>
@@ -221,6 +226,12 @@ function ProjectInspector({project,onClose,opener}:{project:Project;onClose:()=>
       <span className="eyebrow">{project.family}</span>
       <h2 id={"project-title-"+project.slug}>{project.name}</h2>
       <p className="inspector-lead">{project.summary}</p>
+      <div className="inspector-signal-rail">
+        <span><b>{project.architecture.length}</b>ARCHITECTURE STAGES</span>
+        <span><b>{project.implemented.length}</b>IMPLEMENTED CAPABILITIES</span>
+        <span><b>{project.proof.length}</b>PROOF SIGNALS</span>
+        <span><b>{project.stack.length}</b>STACK LAYERS</span>
+      </div>
       <div className="inspector-grid inspector-grid-primary">
         <section><span>Mission purpose</span><p>{project.purpose}</p></section>
         <section><span>Engineering challenge</span><p>{project.challenge}</p></section>
@@ -253,6 +264,91 @@ function ProjectInspector({project,onClose,opener}:{project:Project;onClose:()=>
   </div>;
 }
 
+function SystemsAtlas({open,onClose}:{open:boolean;onClose:()=>void}){
+  const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
+  const dialogRef=useRef<HTMLElement>(null);
+  const closeRef=useRef(onClose);
+  closeRef.current=onClose;
+
+  const groups=[
+    {name:"KNOWLEDGE",note:"Evidence, retrieval and structured memory.",items:projects.filter(project=>project.family.startsWith("Knowledge"))},
+    {name:"AGENCY",note:"Planning, tools, media and controlled action.",items:projects.filter(project=>project.family.startsWith("Agency"))},
+    {name:"RELIABILITY",note:"Evaluation, governance and lifecycle proof.",items:projects.filter(project=>project.family.startsWith("Reliability"))}
+  ];
+  const totals={
+    stages:projects.reduce((sum,project)=>sum+project.architecture.length,0),
+    capabilities:projects.reduce((sum,project)=>sum+project.implemented.length,0),
+    proofs:projects.reduce((sum,project)=>sum+project.proof.length,0),
+    live:projects.filter(project=>project.liveUrl).length
+  };
+
+  useEffect(()=>{
+    if(!open)return;
+    const dialog=dialogRef.current;
+    if(!dialog)return;
+    const selector='a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const focusables=()=>Array.from(dialog.querySelectorAll<HTMLElement>(selector));
+    const frame=requestAnimationFrame(()=>(focusables()[0]??dialog).focus({preventScroll:true}));
+    const handleKey=(event:KeyboardEvent)=>{
+      if(event.key==="Escape"){
+        event.preventDefault();
+        closeRef.current();
+        return;
+      }
+      if(event.key!=="Tab")return;
+      const nodes=focusables();
+      if(!nodes.length)return;
+      const first=nodes[0],last=nodes[nodes.length-1];
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+    };
+    dialog.addEventListener("keydown",handleKey);
+    return ()=>{cancelAnimationFrame(frame);dialog.removeEventListener("keydown",handleKey);};
+  },[open]);
+
+  if(!open)return null;
+  return <div className="atlas-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)closeRef.current();}}>
+    <article ref={dialogRef} tabIndex={-1} className="systems-atlas" role="dialog" aria-modal="true" aria-label="Systems atlas">
+      <header className="atlas-head">
+        <div>
+          <span className="eyebrow">SYSTEMS ATLAS / ENGINEERING UNIVERSE</span>
+          <h2 id="systems-atlas-title">Nine systems.<br/><em>One engineering philosophy.</em></h2>
+          <p>Inspect the architecture behind the portfolio: what each system does, what is implemented, and where the evidence lives.</p>
+        </div>
+        <button className="atlas-close" onClick={()=>closeRef.current()} aria-label="Close systems atlas">Close</button>
+      </header>
+      <div className="atlas-signal-rail" aria-label="Portfolio engineering totals">
+        <span><b>09</b>SYSTEMS</span>
+        <span><b>{String(totals.stages).padStart(2,"0")}</b>ARCHITECTURE STAGES</span>
+        <span><b>{String(totals.capabilities).padStart(2,"0")}</b>IMPLEMENTED CAPABILITIES</span>
+        <span><b>{String(totals.proofs).padStart(2,"0")}</b>PROOF SIGNALS</span>
+        <span><b>{String(totals.live).padStart(2,"0")}</b>LIVE EXPERIENCES</span>
+      </div>
+      <div className="atlas-groups">
+        {groups.map((group,groupIndex)=><section key={group.name} className={"atlas-group atlas-group-"+group.name.toLowerCase()}>
+          <header><span>0{groupIndex+1}</span><div><b>{group.name}</b><p>{group.note}</p></div></header>
+          <div className="atlas-projects">
+            {group.items.map(project=><a key={project.slug} href={base+"/projects/"+project.slug}>
+              <span className="atlas-project-index">{String(projects.indexOf(project)+1).padStart(2,"0")}</span>
+              <div><b>{project.name}</b><p>{project.summary}</p></div>
+              <div className="atlas-project-evidence">
+                <span>{project.architecture.length} stages</span>
+                <span>{project.implemented.length} built</span>
+                <span>{project.proof.length} proofs</span>
+              </div>
+              <i>↗</i>
+            </a>)}
+          </div>
+        </section>)}
+      </div>
+      <footer className="atlas-footer">
+        <span>KNOW → ACT → PROVE</span>
+        <p>Evidence over plausibility · Permission before action · Evaluation before release.</p>
+      </footer>
+    </article>
+  </div>;
+}
+
 function StorySection({
   id,index,label,word,active,children,className=""
 }:{
@@ -278,6 +374,7 @@ function StorySection({
 export function SynthesisPortfolio(){
   const {progress,active,reducedMotion}=useJourney();
   const [recruiter,setRecruiter]=useState(false);
+  const [atlas,setAtlas]=useState(false);
   const [selected,setSelected]=useState<Project|null>(null);
   const [hoveredProject,setHoveredProject]=useState<Project|null>(null);
   const [sound,setSound]=useState(false);
@@ -314,19 +411,20 @@ export function SynthesisPortfolio(){
 
   useEffect(()=>{
     const handleKey=(event:KeyboardEvent)=>{
-      if(event.key.toLowerCase()==="r"&&!selected)setRecruiter(value=>!value);
-      if(event.key==="Escape"){setRecruiter(false);setSelected(null);}
+      if(event.key.toLowerCase()==="r"&&!selected&&!atlas)setRecruiter(value=>!value);
+      if(event.key.toLowerCase()==="a"&&!selected&&!recruiter)setAtlas(value=>!value);
+      if(event.key==="Escape"){setRecruiter(false);setAtlas(false);setSelected(null);}
     };
     window.addEventListener("keydown",handleKey);
     return ()=>window.removeEventListener("keydown",handleKey);
-  },[selected]);
+  },[selected,recruiter,atlas]);
 
   useEffect(()=>{
-    if(!recruiter&&!selected)return;
+    if(!recruiter&&!atlas&&!selected)return;
     const before=document.body.style.overflow;
     document.body.style.overflow="hidden";
     return ()=>{document.body.style.overflow=before;};
-  },[recruiter,selected]);
+  },[recruiter,atlas,selected]);
 
   const current=chapters[active]??chapters[0];
   const chapterAccent=
@@ -352,6 +450,7 @@ export function SynthesisPortfolio(){
       <div className="topbar-center"><span>{String(active+1).padStart(2,"0")} / {String(chapters.length).padStart(2,"0")}</span><b>{current.label}</b></div>
       <div className="topbar-actions">
         <button onClick={()=>setSound(value=>!value)} aria-pressed={sound}>{sound?"Sound on":"Sound"}</button>
+        <button onClick={()=>setAtlas(true)}>Systems atlas <kbd>A</kbd></button>
         <button onClick={()=>setRecruiter(true)}>Recruiter cut <kbd>R</kbd></button>
       </div>
     </header>
@@ -363,6 +462,12 @@ export function SynthesisPortfolio(){
     </nav>
 
     <div className="progress-line" aria-hidden="true"><span style={{transform:`scaleX(${progress})`}}/></div>
+    <div className="mission-telemetry" aria-hidden="true">
+      <span><i/>CHAPTER <b>{String(active+1).padStart(2,"0")}</b></span>
+      <span>MODE <b>{current.word}</b></span>
+      <span>SYSTEMS <b>09</b></span>
+      <span>PROGRESS <b>{Math.round(progress*100).toString().padStart(2,"0")}%</b></span>
+    </div>
 
     <StorySection id="departure" index="00" label="Departure" word="ORIGIN" active={active===0} className="hero-scene director-hero-scene">
       <div className="director-hero">
@@ -374,6 +479,7 @@ export function SynthesisPortfolio(){
         <p>I build intelligent systems that retrieve evidence, reason over it, take controlled action and prove what happened.</p>
         <div className="director-actions">
           <a className="director-primary-link" href="#knowledge">Enter the systems <span>↗</span></a>
+          <button className="director-atlas-link" onClick={()=>setAtlas(true)}>Systems atlas <span>09 ↗</span></button>
           <a href={profile.github} target="_blank" rel="noreferrer">GitHub ↗</a>
           <a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
         </div>
@@ -382,6 +488,12 @@ export function SynthesisPortfolio(){
         <span>MISSION / 2026</span>
         <b>9</b><small>ENGINEERING SYSTEMS</small>
         <p>Agents · Retrieval · Document AI · MLOps · Evaluation</p>
+        <div className="hero-signal-grid">
+          <span><b>07</b>MISSIONS</span>
+          <span><b>04</b>LANGUAGES</span>
+          <span><b>03</b>SYSTEM PILLARS</span>
+          <span><b>01</b>AWS ML CERT</span>
+        </div>
       </aside>
       <div className="director-scroll"><i/><span>SCROLL / CAMERA LIVE</span></div>
     </StorySection>
@@ -513,6 +625,7 @@ export function SynthesisPortfolio(){
     </StorySection>
 
     <RecruiterMode open={recruiter} onClose={()=>setRecruiter(false)}/>
+    <SystemsAtlas open={atlas} onClose={()=>setAtlas(false)}/>
     {selected&&<ProjectInspector project={selected} opener={lastProjectOpener.current} onClose={()=>setSelected(null)}/>}
   </main>;
 }
