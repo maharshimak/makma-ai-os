@@ -28,8 +28,18 @@ export default async function ProjectPage({params}:{params:Promise<{slug:string}
       <p className="project-summary">{project.summary}</p>
       <div className="project-grid">
         <section><span className="micro">MISSION PURPOSE</span><p>{project.purpose}</p></section>
-        <section><span className="micro">STACK</span><p>{project.stack.join(" · ")}</p></section>
+        <section><span className="micro">ENGINEERING CHALLENGE</span><p>{project.challenge}</p></section>
       </div>
+      <section className="project-deep-dive">
+        <div>
+          <span className="micro">IMPLEMENTED / REAL SURFACE</span>
+          <ul>{project.implemented.map(item=><li key={item}>{item}</li>)}</ul>
+        </div>
+        <div>
+          <span className="micro">ENGINEERING PROOF</span>
+          <ul>{project.proof.map(item=><li key={item}>{item}</li>)}</ul>
+        </div>
+      </section>
       <section className="architecture">
         <div className="architecture-head"><span className="micro">SYSTEM FLIGHT PATH</span><b>{project.architecture.length} STAGES / TRACEABLE SYSTEM FLOW</b></div>
         <div className="architecture-map">
@@ -40,7 +50,12 @@ export default async function ProjectPage({params}:{params:Promise<{slug:string}
           </div>)}
         </div>
       </section>
-      <div className="project-proof"><span>INSPECTABLE</span><span>ARCHITECTURE EXPOSED</span><span>SOURCE LINKED</span></div>
+      <div className="project-boundaries">
+        <section><span className="micro">TRUST BOUNDARY</span><p>{project.boundary}</p></section>
+        <section><span className="micro">NEXT ENGINEERING VECTOR</span><p>{project.next}</p></section>
+      </div>
+      <div className="stack-line project-stack">{project.stack.map(item=><span key={item}>{item}</span>)}</div>
+      <div className="project-proof"><span>INSPECTABLE</span><span>ARCHITECTURE EXPOSED</span><span>LIMITS DISCLOSED</span><span>SOURCE LINKED</span></div>
       <div className="action-row">
         <a href={project.repoUrl} target="_blank" rel="noreferrer">OPEN GITHUB ↗</a>
         {project.liveUrl&&<a href={project.liveUrl} target="_blank" rel="noreferrer">OPEN LIVE SYSTEM ↗</a>}
