@@ -33,6 +33,7 @@ function useJourney(){
     const media=window.matchMedia("(prefers-reduced-motion: reduce)");
     const readMotion=()=>setReducedMotion(media.matches);
     let animationFrame=0;
+    let lastFrame=performance.now();
 
     const measure=()=>{
       const max=Math.max(1,document.documentElement.scrollHeight-window.innerHeight);
@@ -52,22 +53,27 @@ function useJourney(){
       setActive(bestIndex);
     };
 
-    const animate=()=>{
+    const animate=(now:number)=>{
       const target=targetProgress.current;
+      const delta=Math.min(.05,Math.max(.001,(now-lastFrame)/1000));
+      lastFrame=now;
       if(media.matches){
         easedProgress.current=target;
       }else{
-        easedProgress.current+=(target-easedProgress.current)*.075;
-        if(Math.abs(target-easedProgress.current)<.00005)easedProgress.current=target;
+        const distance=Math.abs(target-easedProgress.current);
+        const responsiveness=distance>.055?9.6:distance>.012?7.2:5.6;
+        const alpha=1-Math.exp(-delta*responsiveness);
+        easedProgress.current+=(target-easedProgress.current)*alpha;
+        if(distance<.000025)easedProgress.current=target;
       }
       const value=easedProgress.current;
-      setProgress(previous=>Math.abs(previous-value)>.00008?value:previous);
+      setProgress(previous=>Math.abs(previous-value)>.000035?value:previous);
       animationFrame=requestAnimationFrame(animate);
     };
 
     readMotion();
     measure();
-    animate();
+    animationFrame=requestAnimationFrame(animate);
     media.addEventListener("change",readMotion);
     window.addEventListener("scroll",measure,{passive:true});
     window.addEventListener("resize",measure);
