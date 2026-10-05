@@ -1263,3 +1263,456 @@
   .quick-experience>div p{font-size:9px}
   .recruiter-skills-section .quick-skills{grid-template-columns:1fr}
 }
+
+
+/* V5.23 — SYSTEMS ATLAS / MISSION TELEMETRY / MOBILE INTEGRITY */
+
+/* Prevent decorative oversized typography from becoming document-width overflow. */
+html,body,.director-cut{max-width:100%;overflow-x:clip}
+@media(max-width:760px){
+  .director-cut .scene-word{
+    left:0;
+    right:0;
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+    transform:translateY(-50%);
+    text-indent:-.02em;
+  }
+  .director-section.is-active .scene-word{transform:translateY(-50%)}
+  .director-cut .scene-index{
+    right:0;
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+    text-align:right;
+  }
+  .director-cut .stack-line,
+  .director-cut .identity-tags,
+  .director-cut .action-row,
+  .director-cut .director-project-route,
+  .recruiter-panel,
+  .systems-atlas,
+  .inspector{min-width:0;max-width:100%}
+  .director-project-route i,
+  .identity-tags span,
+  .stack-line span{min-width:0;overflow-wrap:anywhere}
+}
+
+/* Hero becomes a mission console without sacrificing the cinematic silhouette. */
+.hero-signal-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  margin-top:18px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(0,0,0,.12);
+}
+.hero-signal-grid>span{
+  min-height:52px;
+  padding:10px;
+  border-right:1px solid rgba(255,255,255,.065);
+  border-bottom:1px solid rgba(255,255,255,.065);
+  color:#7f8988;
+  font:600 6.5px/1.35 var(--font-mono);
+  letter-spacing:.08em;
+}
+.hero-signal-grid>span:nth-child(2n){border-right:0}
+.hero-signal-grid>span:nth-last-child(-n+2){border-bottom:0}
+.hero-signal-grid b{
+  display:block;
+  margin-bottom:7px;
+  color:#e8e9e4;
+  font-family:var(--font-display);
+  font-size:17px;
+  line-height:1;
+  letter-spacing:-.04em;
+}
+
+.director-atlas-link{
+  min-height:48px;
+  min-width:190px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:0 15px;
+  border:1px solid rgba(255,255,255,.14);
+  background:linear-gradient(90deg,rgba(143,216,244,.055),rgba(255,255,255,.015));
+  color:#d4d9d6;
+  font:600 8px/1 var(--font-mono);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:border-color .25s ease,transform .25s ease,background .25s ease;
+}
+.director-atlas-link span{color:var(--power-accent)}
+.director-atlas-link:hover,
+.director-atlas-link:focus-visible{
+  border-color:color-mix(in srgb,var(--power-accent) 55%,rgba(255,255,255,.22));
+  background:linear-gradient(90deg,color-mix(in srgb,var(--power-accent) 8%,transparent),rgba(255,255,255,.02));
+  transform:translateY(-2px);
+}
+
+/* Persistent telemetry behaves like film metadata, not a HUD. */
+.mission-telemetry{
+  position:fixed;
+  z-index:21;
+  left:clamp(18px,3.4vw,58px);
+  right:clamp(18px,3.4vw,58px);
+  bottom:16px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  pointer-events:none;
+  color:#5f6969;
+  font:600 6.5px/1 var(--font-mono);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.mission-telemetry:before{
+  content:"";
+  width:42px;
+  height:1px;
+  background:linear-gradient(90deg,var(--power-accent),transparent);
+}
+.mission-telemetry span{display:flex;align-items:center;gap:6px}
+.mission-telemetry span:not(:last-child):after{
+  content:"";
+  width:1px;
+  height:8px;
+  margin-left:14px;
+  background:rgba(255,255,255,.08);
+}
+.mission-telemetry i{
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:var(--power-accent);
+  box-shadow:0 0 14px color-mix(in srgb,var(--power-accent) 45%,transparent);
+}
+.mission-telemetry b{color:#bec5c2;font-weight:600}
+
+/* Cards communicate engineering density before opening the dossier. */
+.director-project-metrics{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:12px;
+}
+.director-project-metrics i{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  padding:5px 7px;
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.018);
+  color:#707a79;
+  font:600 6px/1 var(--font-mono);
+  letter-spacing:.07em;
+  font-style:normal;
+}
+.director-project-metrics b{
+  color:var(--card-accent);
+  font-family:var(--font-display);
+  font-size:11px;
+  letter-spacing:-.02em;
+}
+.inspector-signal-rail{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:1px;
+  margin:24px 0 4px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);
+}
+.inspector-signal-rail span{
+  min-height:74px;
+  padding:12px;
+  background:rgba(5,8,10,.96);
+  color:#7f8987;
+  font:600 6.5px/1.35 var(--font-mono);
+  letter-spacing:.08em;
+}
+.inspector-signal-rail b{
+  display:block;
+  margin-bottom:10px;
+  color:#f0f1ec;
+  font-family:var(--font-display);
+  font-size:22px;
+  line-height:.8;
+  letter-spacing:-.05em;
+}
+
+/* Systems Atlas: an interactive map of the nine engineering systems. */
+.atlas-backdrop{
+  position:fixed;
+  z-index:80;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  overflow:auto;
+  background:
+    radial-gradient(circle at 50% 18%,color-mix(in srgb,var(--power-accent) 8%,transparent),transparent 32%),
+    rgba(1,2,3,.86);
+  backdrop-filter:blur(18px) saturate(.9);
+}
+.systems-atlas{
+  width:min(1380px,96vw);
+  max-height:92vh;
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:clamp(22px,3vw,42px);
+  border:1px solid rgba(255,255,255,.15);
+  background:
+    radial-gradient(circle at 84% 8%,rgba(143,216,244,.055),transparent 28%),
+    radial-gradient(circle at 18% 88%,rgba(243,160,108,.05),transparent 30%),
+    linear-gradient(145deg,rgba(7,10,13,.99),rgba(2,4,6,.985));
+  box-shadow:0 60px 190px rgba(0,0,0,.72);
+}
+.atlas-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:30px;
+  align-items:start;
+}
+.atlas-head h2{
+  max-width:900px;
+  margin:18px 0 0;
+  color:#f5f3ed;
+  font-size:clamp(3.5rem,6vw,7.2rem);
+  line-height:.86;
+  letter-spacing:-.065em;
+  font-weight:520;
+}
+.atlas-head h2 em{
+  font-style:normal;
+  color:transparent;
+  -webkit-text-stroke:1px rgba(245,243,237,.75);
+}
+.atlas-head>div>p{
+  max-width:720px;
+  margin:24px 0 0;
+  color:#aab2af;
+  font-size:12px;
+  line-height:1.7;
+}
+.atlas-close{
+  min-width:72px;
+  height:38px;
+  border:1px solid rgba(255,255,255,.13);
+  background:rgba(255,255,255,.02);
+  color:#aeb6b3;
+  font:600 7px/1 var(--font-mono);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.atlas-close:hover,.atlas-close:focus-visible{
+  border-color:var(--power-accent);
+  color:#fff;
+}
+.atlas-signal-rail{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:1px;
+  margin:34px 0 28px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.045);
+}
+.atlas-signal-rail span{
+  min-height:92px;
+  padding:15px;
+  background:rgba(4,7,9,.96);
+  color:#778180;
+  font:600 6.5px/1.45 var(--font-mono);
+  letter-spacing:.09em;
+}
+.atlas-signal-rail b{
+  display:block;
+  margin-bottom:12px;
+  color:#f2f1eb;
+  font-family:var(--font-display);
+  font-size:28px;
+  line-height:.8;
+  letter-spacing:-.055em;
+}
+.atlas-groups{display:grid;gap:18px}
+.atlas-group{
+  position:relative;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.095);
+  background:linear-gradient(120deg,rgba(255,255,255,.018),rgba(255,255,255,.005));
+}
+.atlas-group:before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:var(--atlas-accent,#a9c9b0);
+}
+.atlas-group-knowledge{--atlas-accent:#8fd8f4}
+.atlas-group-agency{--atlas-accent:#f3a06c}
+.atlas-group-reliability{--atlas-accent:#a9c9b0}
+.atlas-group>header{
+  display:grid;
+  grid-template-columns:42px 1fr;
+  gap:14px;
+  margin-bottom:14px;
+}
+.atlas-group>header>span{
+  color:var(--atlas-accent);
+  font:600 8px/1 var(--font-mono);
+}
+.atlas-group>header b{
+  color:#e8ebe6;
+  font-size:14px;
+  letter-spacing:.08em;
+}
+.atlas-group>header p{
+  margin:5px 0 0;
+  color:#788180;
+  font-size:10px;
+}
+.atlas-projects{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.atlas-projects>a{
+  position:relative;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr) auto 16px;
+  gap:10px;
+  min-width:0;
+  min-height:142px;
+  padding:14px;
+  border:1px solid rgba(255,255,255,.08);
+  background:
+    radial-gradient(circle at 92% 10%,color-mix(in srgb,var(--atlas-accent) 6%,transparent),transparent 38%),
+    rgba(0,0,0,.12);
+  transition:border-color .25s ease,transform .25s ease,background .25s ease;
+}
+.atlas-projects>a:hover,.atlas-projects>a:focus-visible{
+  border-color:color-mix(in srgb,var(--atlas-accent) 55%,rgba(255,255,255,.18));
+  transform:translateY(-3px);
+  background:
+    radial-gradient(circle at 92% 10%,color-mix(in srgb,var(--atlas-accent) 10%,transparent),transparent 42%),
+    rgba(255,255,255,.012);
+}
+.atlas-project-index{
+  color:var(--atlas-accent);
+  font:600 7px/1 var(--font-mono);
+}
+.atlas-projects>a>div:nth-child(2){min-width:0}
+.atlas-projects>a>div>b{
+  display:block;
+  color:#eff0eb;
+  font-size:17px;
+  line-height:1.05;
+  letter-spacing:-.035em;
+}
+.atlas-projects>a>div>p{
+  margin:9px 0 0;
+  color:#899290;
+  font-size:9.5px;
+  line-height:1.52;
+}
+.atlas-project-evidence{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:5px;
+}
+.atlas-project-evidence span{
+  white-space:nowrap;
+  color:#727c7b;
+  font:600 6px/1 var(--font-mono);
+  letter-spacing:.07em;
+}
+.atlas-projects>a>i{
+  color:var(--atlas-accent);
+  font-style:normal;
+}
+.atlas-footer{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  margin-top:22px;
+  padding-top:18px;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.atlas-footer>span{
+  color:#dce0db;
+  font:600 8px/1 var(--font-mono);
+  letter-spacing:.12em;
+}
+.atlas-footer>p{
+  margin:0;
+  color:#747e7c;
+  font-size:9px;
+}
+
+@media(max-width:1100px){
+  .atlas-projects{grid-template-columns:1fr}
+  .atlas-projects>a{min-height:116px}
+  .atlas-signal-rail{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+@media(max-width:760px){
+  .mission-telemetry{display:none}
+  .director-topbar .topbar-center{display:none}
+  .director-topbar .topbar-actions{gap:8px}
+  .director-topbar .topbar-actions button{
+    padding-inline:5px;
+    font-size:6px;
+  }
+  .director-topbar .topbar-actions kbd{display:none}
+  .director-actions{gap:10px}
+  .director-atlas-link{
+    width:100%;
+    min-width:0;
+  }
+  .hero-signal-grid{display:none}
+  .director-project-metrics{gap:5px}
+  .director-project-metrics i{padding:4px 6px;font-size:5.7px}
+  .inspector-signal-rail{grid-template-columns:1fr 1fr}
+  .inspector-signal-rail span{min-height:64px}
+  .atlas-backdrop{padding:0}
+  .systems-atlas{
+    width:100%;
+    max-width:100%;
+    max-height:100svh;
+    min-height:100svh;
+    padding:76px 16px 36px;
+    border:0;
+  }
+  .atlas-head{grid-template-columns:1fr}
+  .atlas-head h2{
+    font-size:clamp(3rem,13vw,4.4rem);
+    line-height:.9;
+  }
+  .atlas-close{
+    position:absolute;
+    top:18px;
+    right:16px;
+  }
+  .atlas-signal-rail{grid-template-columns:1fr 1fr}
+  .atlas-signal-rail span{min-height:78px}
+  .atlas-group{padding:13px}
+  .atlas-projects>a{
+    grid-template-columns:24px minmax(0,1fr) 14px;
+    min-height:0;
+  }
+  .atlas-project-evidence{
+    grid-column:2/3;
+    flex-direction:row;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .atlas-projects>a>i{grid-column:3;grid-row:1}
+  .atlas-footer{display:grid}
+}
