@@ -1,6 +1,8 @@
 import type {Metadata, Viewport} from "next";
 import "./globals.css";
 import "./director.css";
+import "./polish.css";
+import "./power.css";
 
 export const metadata:Metadata={
   metadataBase:new URL("https://maharshimak.github.io/makma-ai-os/portfolio-v5/"),
