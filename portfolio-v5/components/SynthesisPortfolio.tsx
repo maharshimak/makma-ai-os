@@ -126,7 +126,7 @@ function DirectorCursor({reducedMotion}:{reducedMotion:boolean}){
   return <div ref={cursor} className="director-cursor" aria-hidden="true"><i/><span/></div>;
 }
 
-function ProjectCard({project,index,onOpen,onHover}:{project:Project;index:number;onOpen:()=>void;onHover:(project:Project|null)=>void}){
+function ProjectCard({project,index,onOpen,onHover}:{project:Project;index:number;onOpen:(opener:HTMLButtonElement)=>void;onHover:(project:Project|null)=>void}){
   const onPointerMove=(event:ReactPointerEvent<HTMLButtonElement>)=>{
     const rect=event.currentTarget.getBoundingClientRect();
     const x=((event.clientX-rect.left)/rect.width)*100;
@@ -143,7 +143,7 @@ function ProjectCard({project,index,onOpen,onHover}:{project:Project;index:numbe
 
   return <button
     className="director-project"
-    onClick={onOpen}
+    onClick={event=>onOpen(event.currentTarget)}
     onPointerEnter={()=>onHover(project)}
     onFocus={()=>onHover(project)}
     onPointerMove={onPointerMove}
@@ -168,13 +168,57 @@ function ProjectCard({project,index,onOpen,onHover}:{project:Project;index:numbe
   </button>;
 }
 
-function ProjectInspector({project,onClose}:{project:Project;onClose:()=>void}){
+function ProjectInspector({project,onClose,opener}:{project:Project;onClose:()=>void;opener:HTMLButtonElement|null}){
   const base=process.env.NEXT_PUBLIC_BASE_PATH??"";
-  return <div className="inspector-backdrop" onMouseDown={onClose}>
-    <article className="inspector" onMouseDown={event=>event.stopPropagation()} role="dialog" aria-modal="true" aria-label={project.name}>
-      <button className="close-button" onClick={onClose} aria-label="Close project">Close</button>
+  const dialogRef=useRef<HTMLElement>(null);
+  const closeRef=useRef(onClose);
+  closeRef.current=onClose;
+
+  useEffect(()=>{
+    const dialog=dialogRef.current;
+    if(!dialog)return;
+    const selector='a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const focusables=()=>Array.from(dialog.querySelectorAll<HTMLElement>(selector)).filter(node=>!node.hasAttribute("disabled"));
+    const first=focusables()[0]??dialog;
+    const frame=requestAnimationFrame(()=>first.focus({preventScroll:true}));
+
+    const handleKey=(event:KeyboardEvent)=>{
+      if(event.key==="Escape"){
+        event.preventDefault();
+        closeRef.current();
+        return;
+      }
+      if(event.key!=="Tab")return;
+      const nodes=focusables();
+      if(!nodes.length){
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const firstNode=nodes[0];
+      const lastNode=nodes[nodes.length-1];
+      if(event.shiftKey&&document.activeElement===firstNode){
+        event.preventDefault();
+        lastNode.focus();
+      }else if(!event.shiftKey&&document.activeElement===lastNode){
+        event.preventDefault();
+        firstNode.focus();
+      }
+    };
+
+    dialog.addEventListener("keydown",handleKey);
+    return ()=>{
+      cancelAnimationFrame(frame);
+      dialog.removeEventListener("keydown",handleKey);
+      requestAnimationFrame(()=>opener?.focus({preventScroll:true}));
+    };
+  },[project.slug,opener]);
+
+  return <div className="inspector-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)closeRef.current();}}>
+    <article ref={dialogRef} tabIndex={-1} className="inspector" role="dialog" aria-modal="true" aria-labelledby={"project-title-"+project.slug}>
+      <button className="close-button" onClick={()=>closeRef.current()} aria-label="Close project">Close</button>
       <span className="eyebrow">{project.family}</span>
-      <h2>{project.name}</h2>
+      <h2 id={"project-title-"+project.slug}>{project.name}</h2>
       <p className="inspector-lead">{project.summary}</p>
       <div className="inspector-grid">
         <section><span>Purpose</span><p>{project.purpose}</p></section>
@@ -221,6 +265,7 @@ export function SynthesisPortfolio(){
   const [selected,setSelected]=useState<Project|null>(null);
   const [hoveredProject,setHoveredProject]=useState<Project|null>(null);
   const [sound,setSound]=useState(false);
+  const lastProjectOpener=useRef<HTMLButtonElement|null>(null);
   const focusSystem=selected?.family.startsWith("Knowledge")?"knowledge":selected?.family.startsWith("Agency")?"agency":selected?.family.startsWith("Reliability")?"reliability":null;
   const focusProject=(selected??hoveredProject)?.slug??null;
 
@@ -268,12 +313,21 @@ export function SynthesisPortfolio(){
   },[recruiter,selected]);
 
   const current=chapters[active]??chapters[0];
+  const chapterAccent=
+    current.id==="knowledge"?"#8fd8f4":
+    current.id==="agency"?"#f3a06c":
+    current.id==="reliability"?"#a9c9b0":
+    current.id==="flight-log"?"#c88d78":
+    current.id==="principle"?"#d6c9b6":
+    current.id==="comms"?"#f0b27f":
+    "#b5cbd4";
 
-  return <main className="cosmic-portfolio director-cut" data-chapter={current.id} style={{"--journey":progress} as CSSProperties}>
+  return <main className="cosmic-portfolio director-cut" data-chapter={current.id} style={{"--journey":progress,"--chapter-accent":chapterAccent} as CSSProperties}>
     <SystemLoader/>
     <DirectorCursor reducedMotion={reducedMotion}/>
     <AmbientSound enabled={sound} progress={progress}/>
     <WorldCanvas progress={progress} reducedMotion={reducedMotion} focusSystem={focusSystem} focusProject={focusProject}/>
+    <div className="cinematic-grade" aria-hidden="true"><i/><i/><i/></div>
     <div className="film-grain" aria-hidden="true"/>
     <div className="lens-letterbox" aria-hidden="true"><i/><i/></div>
 
@@ -368,7 +422,7 @@ export function SynthesisPortfolio(){
             <div className="director-system-count"><b>{String(family.projects.length).padStart(2,"0")}</b><span>LIVE SYSTEMS / SELECT TO INSPECT</span></div>
           </div>
           <div className="director-project-grid">
-            {family.projects.map((project,index)=><ProjectCard key={project.slug} project={project} index={familyIndex*3+index} onOpen={()=>setSelected(project)} onHover={setHoveredProject}/>)}
+            {family.projects.map((project,index)=><ProjectCard key={project.slug} project={project} index={familyIndex*3+index} onOpen={opener=>{lastProjectOpener.current=opener;setSelected(project);}} onHover={setHoveredProject}/>)}
           </div>
         </div>
       </StorySection>;
@@ -419,6 +473,6 @@ export function SynthesisPortfolio(){
     </StorySection>
 
     <RecruiterMode open={recruiter} onClose={()=>setRecruiter(false)}/>
-    {selected&&<ProjectInspector project={selected} onClose={()=>setSelected(null)}/>}
+    {selected&&<ProjectInspector project={selected} opener={lastProjectOpener.current} onClose={()=>setSelected(null)}/>}
   </main>;
 }
