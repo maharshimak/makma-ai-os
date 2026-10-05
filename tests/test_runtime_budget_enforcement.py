@@ -51,3 +51,24 @@ async def test_runtime_succeeds_when_plan_fits_budget() -> None:
 
     assert result.tool_results[0].ok
     assert "81" in result.response
+
+
+
+class ExplodingPlanner:
+    def plan(self, message: str):
+        raise RuntimeError("planner exploded")
+
+
+@pytest.mark.asyncio
+async def test_stream_planner_failure_is_persisted_as_failed_run() -> None:
+    runtime = make_budgeted_runtime(max_tool_calls=2)
+    runtime.planner = ExplodingPlanner()
+
+    with pytest.raises(RuntimeError, match="planner exploded"):
+        async for _ in runtime.stream("hello", "stream-plan-failure"):
+            pass
+
+    runs = await runtime.memory.run_history("stream-plan-failure")
+    assert len(runs) == 1
+    assert runs[0].status == "failed"
+    assert "planner exploded" in (runs[0].error or "")
