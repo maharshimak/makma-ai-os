@@ -279,23 +279,25 @@ class MakmaRuntime:
             user_message=message,
             provider=self.provider.name,
         )
-        history = await self.memory.load(
-            session_id,
-            limit=self.settings.max_history_messages,
-        )
-        if self.settings.planner_mode != "deterministic":
-            budget.consume(model_calls=1)
-        async with asyncio.timeout_at(deadline):
-            plan = await self._build_plan(message)
-        budget.consume(steps=len(plan))
-        tool_results: list[ToolResult] = []
         try:
+            history = await self.memory.load(
+                session_id,
+                limit=self.settings.max_history_messages,
+            )
+            if self.settings.planner_mode != "deterministic":
+                budget.consume(model_calls=1)
+            async with asyncio.timeout_at(deadline):
+                plan = await self._build_plan(message)
+            budget.consume(steps=len(plan))
+            tool_results: list[ToolResult] = []
             if tools_enabled:
                 tool_results = await self._execute_plan(
                     plan,
                     run_id=run_id,
                     session_id=session_id,
                     approvals=approvals or set(),
+                    budget=budget,
+                    deadline=deadline,
                 )
             await self.memory.append(session_id, "user", message)
             messages = [*history, ChatMessage(role="user", content=message)]
