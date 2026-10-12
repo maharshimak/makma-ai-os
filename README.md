@@ -45,6 +45,7 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 - approval-gated `mlops_promote_candidate` and `mlops_promote_production` lifecycle mutation tools
 - durable DAG workflows with SQLite checkpoints, dependency validation, pause/resume and explicit approval gates
 - bounded runtime/provider/tool telemetry with latency and failure summaries
+- per-run step/tool/model-call budgets and monotonic deadlines on chat run and streaming execution (not yet an enforceable dollar-cost or global quota)
 - optional fail-open OpenTelemetry OTLP metrics export via the `observability` extra
 - FastAPI chat, tools, history, search, recall, runs, telemetry, and native provider-backed SSE streaming endpoints
 - Docker support with a persistent `/app/data` volume
