@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" fill="none">
+<defs><linearGradient id="a" x1="0" x2="1"><stop stop-color="#93afbd"/><stop offset=".45" stop-color="#ffb457"/><stop offset=".55" stop-color="#ffb457"/><stop offset="1" stop-color="#93afbd"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g opacity=".68" stroke="url(#a)" filter="url(#glow)">
+ <path d="M110 86H440l34 28h652l34-28h330l44 44v180M110 814H440l34-28h652l34 28h330l44-44V590M110 86l-44 44v180M110 814l-44-44V590" stroke-width="3"/>
+ <path d="M138 112H390M1210 112H1462M138 788H390M1210 788H1462" stroke-width="1"/>
+ <path d="M91 340v220M1509 340v220" stroke-width="1"/>
+ <path d="M120 154h72M1408 154h72M120 746h72M1408 746h72" stroke-width="6" opacity=".35"/>
+</g>
+<g stroke="#e9e7df" opacity=".17"><path d="M420 150H1180M420 750H1180"/><path d="M210 270v360M1390 270v360"/></g>
+<g fill="#ffb457" opacity=".8"><circle cx="110" cy="86" r="4"/><circle cx="1490" cy="86" r="4"/><circle cx="110" cy="814" r="4"/><circle cx="1490" cy="814" r="4"/></g>
+</svg>

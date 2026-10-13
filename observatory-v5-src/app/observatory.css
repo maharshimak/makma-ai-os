@@ -1,0 +1,203 @@
+/* The Impossible Observatory × Proof Foundry — original V5 direction.
+   Imported after refinement.css; HTML remains readable without the canvas. */
+.observatory-theme{
+  --director-paper:#f1e9dd;
+  --director-muted:#bbc8c7;
+  --v5-paper:#f1eae0;
+  --v5-copy:#ccd4d2;
+  --v5-muted:#aab7b6;
+  --v5-line:rgba(232,226,210,.20);
+}
+.observatory-theme .world-canvas{
+  background:linear-gradient(155deg,#1b303c 0%,#3c5865 42%,#24353e 80%,#121c25 100%);
+}
+.observatory-theme .world-canvas:after{
+  background:
+    linear-gradient(90deg,rgba(5,12,17,.78),rgba(5,12,17,.48) 38%,rgba(6,13,19,.09) 68%,rgba(5,12,17,.26) 100%),
+    linear-gradient(0deg,rgba(6,11,16,.70),transparent 26%,transparent 78%,rgba(6,11,16,.52));
+}
+.observatory-theme .film-grain{opacity:.014!important}
+.observatory-theme .cinematic-grade{opacity:.22!important}
+.observatory-theme .director-hero-scene .story-sticky{
+  background:linear-gradient(102deg,rgba(7,18,25,.18),rgba(8,19,28,.025) 65%);
+}
+.observatory-theme .topbar{
+  background:linear-gradient(180deg,rgba(11,23,31,.94),rgba(13,25,31,.76))!important;
+  border-bottom:1px solid rgba(234,223,199,.17)!important;
+}
+.observatory-theme .topbar :where(a,button):focus-visible,
+.observatory-theme .director-actions :where(a,button):focus-visible{
+  outline:3px solid #f0c38f!important;
+  outline-offset:3px;
+}
+.observatory-theme .brand span{
+  color:#f4e9d8!important;
+  border-color:rgba(232,195,151,.64)!important;
+  background:linear-gradient(145deg,rgba(225,190,151,.2),rgba(8,23,30,.45))!important;
+}
+.observatory-theme .brand b{letter-spacing:.07em!important;color:#e6e2d9!important}
+.observatory-theme .topbar-center b{color:#d9d0c1!important}
+.observatory-theme .topbar-actions :where(a,button){
+  color:#e2dfd6!important;
+  background:rgba(17,31,38,.6)!important;
+  border-color:rgba(234,213,184,.22)!important;
+}
+.observatory-theme .director-rail a{max-width:min(180px,25vw)}
+.observatory-theme .director-rail a span{
+  max-width:min(116px,18vw);
+  text-overflow:ellipsis;
+  color:#b1c4c5!important;
+}
+.observatory-theme .director-rail a.active span{color:#f1e6d7!important}
+.observatory-theme .scene-word{
+  color:rgba(225,223,206,.045)!important;
+  letter-spacing:-.072em!important;
+}
+.observatory-theme .scene-index{color:rgba(225,223,206,.03)!important}
+.observatory-theme .scene-label{color:#bbc7c6!important}
+.observatory-theme .scene-label b{color:#e4d9c9!important}
+.observatory-theme .director-hero-kicker{color:#d6d7cd!important}
+.observatory-theme .director-hero-kicker i{background:linear-gradient(90deg,#dfb98a,transparent)!important}
+.observatory-theme .director-name{
+  color:#f5eddf!important;
+  font-weight:585!important;
+  text-shadow:0 7px 28px rgba(3,11,17,.56),0 25px 100px rgba(6,13,19,.34)!important;
+}
+.observatory-theme .director-name span:last-child{
+  color:#f3e6d2!important;
+  -webkit-text-stroke:0!important;
+  opacity:.94;
+}
+.observatory-theme .director-manifesto span:nth-child(1){color:#bee1ea!important}
+.observatory-theme .director-manifesto span:nth-child(2){color:#e9ba88!important}
+.observatory-theme .director-manifesto span:nth-child(3){color:#bedac3!important}
+.observatory-theme .director-hero>p{
+  color:#e0e4dd!important;
+  text-shadow:0 3px 14px rgba(2,9,15,.85)!important;
+}
+.observatory-theme .director-statusline{
+  color:#e0ded0!important;
+  text-shadow:0 3px 10px rgba(4,11,16,.85);
+}
+.observatory-theme .director-actions :where(a,button){
+  color:#f2ede4!important;
+  background:rgba(17,28,33,.78)!important;
+  border-color:rgba(233,214,185,.31)!important;
+  backdrop-filter:blur(8px);
+}
+.observatory-theme .director-actions .director-primary-link{
+  color:#15232a!important;
+  background:#efe2cb!important;
+  border-color:#efe2cb!important;
+  box-shadow:0 12px 30px rgba(6,12,14,.18);
+}
+.observatory-theme .director-actions .director-primary-link span{color:#473828!important}
+.observatory-theme .director-hero-aside{
+  background:linear-gradient(155deg,rgba(22,37,44,.9),rgba(14,26,31,.85))!important;
+  border-color:rgba(235,216,183,.28)!important;
+  box-shadow:0 18px 62px rgba(4,13,19,.36)!important;
+}
+.observatory-theme .director-hero-aside>span{color:#d6d1c6!important}
+.observatory-theme .director-hero-aside>p{color:#c7d3d2!important}
+.observatory-theme .director-hero-aside>small{color:#c6cdca!important}
+.observatory-theme .hero-signal-grid{background:rgba(232,218,197,.18)!important}
+.observatory-theme .hero-signal-grid>span{color:#ced9d8!important;background:rgba(20,35,43,.92)!important}
+.observatory-theme .hero-proofline span{color:#d7d2c6!important;border-color:rgba(226,207,180,.22)}
+.observatory-theme .director-scroll{color:#d5cfc2!important}
+.observatory-theme .director-profile-facts article,
+.observatory-theme .identity-panel,
+.observatory-theme .director-project,
+.observatory-theme .director-flight article{
+  background:linear-gradient(155deg,rgba(19,35,42,.88),rgba(8,21,29,.79))!important;
+  border-color:rgba(235,222,198,.17)!important;
+}
+.observatory-theme .director-project:hover,
+.observatory-theme .director-project:focus-visible{
+  border-color:rgba(235,190,143,.73)!important;
+  box-shadow:0 24px 72px rgba(3,11,16,.25);
+}
+.observatory-theme .director-section-intro h2,
+.observatory-theme .director-system-copy h2,
+.observatory-theme .director-profile-head h2{color:#f3ecdf!important}
+.observatory-theme .progress-line span{
+  background:linear-gradient(90deg,#accad3,#d6a678,#dce5d7)!important;
+}
+.observatory-theme .director-rail{
+  right:clamp(10px,1.3vw,20px)!important;
+}
+@media (min-width:1000px) and (max-width:1450px){
+  .observatory-theme .director-topbar{
+    grid-template-columns:minmax(170px,1fr) auto minmax(345px,1fr)!important;
+    gap:10px!important;
+    padding-inline:clamp(16px,2.3vw,32px)!important;
+  }
+  .observatory-theme .director-hero-scene .story-sticky{
+    grid-template-columns:minmax(0,1fr) 220px!important;
+    gap:18px!important;
+  }
+  .observatory-theme .director-hero-aside{min-width:0!important}
+  .observatory-theme .director-hero-aside :where(span,small,b){
+    max-width:100%;
+  }
+}
+@media (max-width:900px){
+  .observatory-theme .world-canvas:after{
+    background:linear-gradient(180deg,rgba(9,19,25,.43),rgba(9,19,25,.55) 37%,rgba(4,12,18,.80) 100%);
+  }
+  .observatory-theme .director-rail{display:none!important}
+  .observatory-theme .director-name{
+    font-size:clamp(4.15rem,12.2vw,7.4rem)!important;
+  }
+}
+@media (max-width:680px){
+  .observatory-theme .director-name{
+    font-size:clamp(3.35rem,15vw,6rem)!important;
+    line-height:.83!important;
+  }
+  .observatory-theme .director-hero>p{font-size:15px!important;line-height:1.55!important}
+  .observatory-theme .director-statusline{font-size:10px!important;line-height:1.55!important}
+  .observatory-theme .director-actions :where(a,button){
+    min-height:44px!important;
+    font-size:10px!important;
+  }
+  .observatory-theme .director-hero-aside{
+    box-shadow:none!important;
+    background:rgba(13,25,33,.81)!important;
+  }
+  .observatory-theme .director-manifesto{
+    font-size:clamp(1.15rem,5vw,1.55rem)!important;
+    gap:6px 11px!important;
+  }
+  .observatory-theme .topbar-actions :where(a,button){min-height:40px!important}
+}
+@media (prefers-reduced-motion:reduce){
+  .observatory-theme :where(.director-name span,.scene-word,.scene-index,.director-project){
+    transition:none!important;
+    animation:none!important;
+  }
+}
+
+
+/* An authored, fully local atmospheric treatment for individual case studies. */
+.project-art-observatory{
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse at 66% 20%,rgba(220,187,140,.36),transparent 27%),
+    radial-gradient(ellipse at 23% 76%,rgba(129,175,184,.23),transparent 46%),
+    linear-gradient(153deg,#121e29,#304953 47%,#101a23 100%)!important;
+}
+.project-nebula-authored{
+  position:absolute;inset:-15%;
+  width:auto!important;height:auto!important;
+  opacity:.88;
+  background:
+    radial-gradient(ellipse at 62% 49%,rgba(245,238,217,.28),transparent 30%),
+    radial-gradient(ellipse at 32% 58%,rgba(209,224,224,.24),transparent 42%),
+    radial-gradient(ellipse at 75% 86%,rgba(204,164,135,.20),transparent 25%);
+  filter:blur(26px) saturate(.8);
+  transform:rotate(-8deg);
+  pointer-events:none;
+}
+@media(prefers-reduced-motion:reduce){
+  .project-nebula-authored{transform:none;filter:blur(15px)}
+}

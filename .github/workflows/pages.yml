@@ -61,6 +61,15 @@ jobs:
           NEXT_PUBLIC_BASE_PATH=/makma-ai-os/portfolio-v5 npm run build
           mkdir -p ../dist-site/portfolio-v5
           cp -R out/. ../dist-site/portfolio-v5/
+      - name: Build Impossible Observatory (isolated GitHub Pages version)
+        run: |
+          cd observatory-v5-src
+          npm install --no-audit --no-fund
+          npm run typecheck
+          node scripts/threshold-validation.mjs
+          NEXT_PUBLIC_BASE_PATH=/makma-ai-os/observatory-v5 npm run build
+          mkdir -p ../dist-site/observatory-v5
+          cp -R out/. ../dist-site/observatory-v5/
       - name: Install test browser
         run: npx playwright install --with-deps chromium
       - name: Product interaction and rejection tests

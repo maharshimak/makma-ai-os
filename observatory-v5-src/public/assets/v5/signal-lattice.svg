@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" fill="none">
+<defs>
+  <linearGradient id="a" x1="80" y1="110" x2="1510" y2="790" gradientUnits="userSpaceOnUse"><stop stop-color="#77c6df" stop-opacity=".08"/><stop offset=".48" stop-color="#ff9d38" stop-opacity=".42"/><stop offset="1" stop-color="#e8e5db" stop-opacity=".06"/></linearGradient>
+  <filter id="g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g stroke="url(#a)">
+  <path d="M46 683C246 472 328 493 478 361S754 160 909 274s211 226 353 132 174-186 292-247" stroke-width="1.2"/>
+  <path d="M-12 314c191 77 274 38 405 92s219 177 358 119 207-171 348-113 235 154 513 73" stroke-width=".8" stroke-dasharray="7 13"/>
+  <path d="M133 848c202-189 342-170 501-269s214-244 394-216 245 148 445 28" stroke-width=".7" stroke-dasharray="2 12"/>
+</g>
+<g filter="url(#g)">
+  <circle cx="478" cy="361" r="4" fill="#ff9d38" fill-opacity=".72"/><circle cx="909" cy="274" r="3.5" fill="#77c6df" fill-opacity=".68"/>
+  <circle cx="751" cy="525" r="3.5" fill="#e8e5db" fill-opacity=".46"/><circle cx="1262" cy="406" r="4" fill="#ff9d38" fill-opacity=".5"/>
+  <circle cx="393" cy="406" r="2.5" fill="#77c6df" fill-opacity=".48"/><circle cx="1099" cy="412" r="2.5" fill="#77c6df" fill-opacity=".42"/>
+</g>
+<g stroke="#e8e5db" stroke-opacity=".06" stroke-width=".6">
+  <path d="M80 124h172v-38M80 124v146M1520 776h-172v38M1520 776V630"/>
+  <circle cx="800" cy="450" r="188"/><circle cx="800" cy="450" r="282" stroke-dasharray="3 15"/>
+</g>
+</svg>

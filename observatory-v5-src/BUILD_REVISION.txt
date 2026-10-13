@@ -1,0 +1,23 @@
+V5 RELEASE CANDIDATE — 2026-10-06
+
+Canonical branch: v5-release
+Package: 5.0.0-rc.1
+
+This release consolidates the strongest V5 work into one release line instead of continuing the numbered design-patch branches.
+
+Core release changes:
+- Scroll progress is now kept in a mutable animation signal instead of rerendering the full React portfolio tree every frame.
+- The Three.js universe is dynamically split from the first HTML paint and consumes the same mutable journey signal directly.
+- The former full-screen asset loader has been removed so identity and recruiter information appear immediately.
+- High/medium/low GPU profiles now use lower particle, geometry, procedural flare and DPR budgets while preserving the same cinematic composition.
+- Reduced-motion mode suppresses spacecraft flyby and continuous planetary/orbital motion.
+- Hero information now surfaces alternance availability, PGE4 status and school/company rhythm without requiring Recruiter Cut discovery.
+- Recruiter Cut is keyboard-trapped, focus-restoring, outcome-focused and prioritizes flagship systems plus recent experience.
+- Project cards expose one concrete proof signal instead of repeating several internal counters and architecture surfaces.
+- Mobile navigation and typography are larger, simpler and more readable.
+- The custom cursor runtime was removed; native pointer behavior is retained.
+- Google fonts use next/font and metadata includes canonical/Open Graph/Googlebot directives.
+- Legacy polish.css and the unused SystemLoader component were removed; active cinematic polish now lives in the canonical release stylesheet.
+- CI gates v5-release with typecheck, static export and visual/accessibility QA.
+
+The design principle for this release is restraint: the universe supports the engineering evidence instead of competing with it.
