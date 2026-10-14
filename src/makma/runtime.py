@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import AsyncIterator
 from uuid import uuid4
@@ -12,6 +13,7 @@ from makma.model_planner import StructuredModelPlanner, StructuredPlannerError
 from makma.models import ChatMessage, ChatResponse, ExecutionMetrics, PlanStep, ToolResult
 from makma.planner import Planner
 from makma.providers import ModelProvider, build_provider
+from makma.reliability import BudgetLedger, ExecutionBudget
 from makma.telemetry import TelemetryCollector
 from makma.tools import PermissionPolicy, ToolRegistry, build_default_registry
 
@@ -35,6 +37,7 @@ class MakmaRuntime:
         policy: PermissionPolicy | None = None,
         telemetry: TelemetryCollector | None = None,
         model_planner: StructuredModelPlanner | None = None,
+        execution_budget: ExecutionBudget | None = None,
     ) -> None:
         self.settings = settings
         self.memory = memory
@@ -44,6 +47,9 @@ class MakmaRuntime:
         self.policy = policy or PermissionPolicy(allowed_tools=frozenset(registry.names))
         self.telemetry = telemetry or TelemetryCollector()
         self.model_planner = model_planner
+        self.execution_budget = execution_budget or ExecutionBudget(
+            max_elapsed_ms=max(30_000.0, settings.request_timeout_seconds * 2_000),
+        )
         if self.model_planner is None and settings.planner_mode != "deterministic":
             self.model_planner = StructuredModelPlanner(settings)
 
@@ -81,6 +87,8 @@ class MakmaRuntime:
         tools_enabled: bool = True,
     ) -> ChatResponse:
         started = time.perf_counter()
+        deadline = time.monotonic() + self.execution_budget.max_elapsed_ms / 1000.0
+        budget = BudgetLedger(self.execution_budget)
         run_id = str(uuid4())
         await self.memory.start_run(
             run_id=run_id,
@@ -93,7 +101,12 @@ class MakmaRuntime:
                 session_id,
                 limit=self.settings.max_history_messages,
             )
-            plan = await self._build_plan(message)
+            # Hybrid/model modes may invoke a model during planning.
+            if self.settings.planner_mode != "deterministic":
+                budget.consume(model_calls=1)
+            async with asyncio.timeout_at(deadline):
+                plan = await self._build_plan(message)
+            budget.consume(steps=len(plan))
 
             tool_results: list[ToolResult] = []
             if tools_enabled:
@@ -102,18 +115,22 @@ class MakmaRuntime:
                     run_id=run_id,
                     session_id=session_id,
                     approvals=approvals or set(),
+                    budget=budget,
+                    deadline=deadline,
                 )
 
             await self.memory.append(session_id, "user", message)
             messages = [*history, ChatMessage(role="user", content=message)]
 
+            budget.consume(model_calls=1)
             provider_started = time.perf_counter()
             try:
-                response = await self.provider.generate(
-                    messages,
-                    system_prompt=SYSTEM_PROMPT,
-                    tool_results=tool_results,
-                )
+                async with asyncio.timeout_at(deadline):
+                    response = await self.provider.generate(
+                        messages,
+                        system_prompt=SYSTEM_PROMPT,
+                        tool_results=tool_results,
+                    )
             except Exception:
                 provider_latency_ms = round(
                     (time.perf_counter() - provider_started) * 1000,
@@ -195,20 +212,34 @@ class MakmaRuntime:
         run_id: str,
         session_id: str,
         approvals: set[str],
+        budget: BudgetLedger | None = None,
+        deadline: float | None = None,
     ) -> list[ToolResult]:
         results: list[ToolResult] = []
         for step in plan:
             if step.kind != "tool" or not step.tool_name:
                 continue
 
+            if budget is not None:
+                budget.consume(tool_calls=1)
             started = time.perf_counter()
-            result = await self.registry.execute(
-                step.tool_name,
-                step.arguments,
-                session_id=session_id,
-                policy=self.policy,
-                approvals=approvals,
-            )
+            if deadline is not None:
+                async with asyncio.timeout_at(deadline):
+                    result = await self.registry.execute(
+                        step.tool_name,
+                        step.arguments,
+                        session_id=session_id,
+                        policy=self.policy,
+                        approvals=approvals,
+                    )
+            else:
+                result = await self.registry.execute(
+                    step.tool_name,
+                    step.arguments,
+                    session_id=session_id,
+                    policy=self.policy,
+                    approvals=approvals,
+                )
             latency_ms = round((time.perf_counter() - started) * 1000, 3)
             result = result.model_copy(update={"latency_ms": latency_ms})
             self.telemetry.record(
@@ -239,6 +270,8 @@ class MakmaRuntime:
         tools_enabled: bool = True,
     ) -> AsyncIterator[str]:
         started = time.perf_counter()
+        deadline = time.monotonic() + self.execution_budget.max_elapsed_ms / 1000.0
+        budget = BudgetLedger(self.execution_budget)
         run_id = str(uuid4())
         await self.memory.start_run(
             run_id=run_id,
@@ -246,32 +279,40 @@ class MakmaRuntime:
             user_message=message,
             provider=self.provider.name,
         )
-        history = await self.memory.load(
-            session_id,
-            limit=self.settings.max_history_messages,
-        )
-        plan = await self._build_plan(message)
-        tool_results: list[ToolResult] = []
         try:
+            history = await self.memory.load(
+                session_id,
+                limit=self.settings.max_history_messages,
+            )
+            if self.settings.planner_mode != "deterministic":
+                budget.consume(model_calls=1)
+            async with asyncio.timeout_at(deadline):
+                plan = await self._build_plan(message)
+            budget.consume(steps=len(plan))
+            tool_results: list[ToolResult] = []
             if tools_enabled:
                 tool_results = await self._execute_plan(
                     plan,
                     run_id=run_id,
                     session_id=session_id,
                     approvals=approvals or set(),
+                    budget=budget,
+                    deadline=deadline,
                 )
             await self.memory.append(session_id, "user", message)
             messages = [*history, ChatMessage(role="user", content=message)]
 
+            budget.consume(model_calls=1)
             provider_started = time.perf_counter()
             chunks: list[str] = []
-            async for chunk in self.provider.generate_stream(
-                messages,
-                system_prompt=SYSTEM_PROMPT,
-                tool_results=tool_results,
-            ):
-                chunks.append(chunk)
-                yield chunk
+            async with asyncio.timeout_at(deadline):
+                async for chunk in self.provider.generate_stream(
+                    messages,
+                    system_prompt=SYSTEM_PROMPT,
+                    tool_results=tool_results,
+                ):
+                    chunks.append(chunk)
+                    yield chunk
             provider_latency_ms = round((time.perf_counter() - provider_started) * 1000, 3)
             self.telemetry.record(
                 "provider.generate",
