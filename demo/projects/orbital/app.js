@@ -148,7 +148,10 @@
     if (event.target === dialog) closeDirectory();
   });
   document.addEventListener("keydown", (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+    if (event.key === "Escape" && dialog.open) {
+      event.preventDefault();
+      closeDirectory();
+    } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
       if (dialog.open) closeDirectory(); else openDirectory();
     }
