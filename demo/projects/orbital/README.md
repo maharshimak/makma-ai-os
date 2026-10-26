@@ -1,35 +1,43 @@
 # MAK'MA Orbital Experience — unpublished design branch
 
-A self-contained, original cinematic storytelling experiment for the existing MAK'MA Labs Projects hub.
+An original cinematic, scroll-driven presentation for Maharshi Patel's nine AI engineering projects.
 
-## Scope
+## Scope and boundaries
 
-- Route after an approved merge: /makma-ai-os/projects/orbital/
-- Preserves the current /projects/ hub and all nine existing live tool routes.
-- Uses an original scroll-chapter implementation, original MAK'MA copy, and original generated cinematic background assets.
-- Inspired by the general cinematic journey and orbital-to-compute storytelling category exemplified by Edolus, but not a copy of its code, trademarks, 3D models, audio or artwork.
-- Uses plain HTML, CSS, and JavaScript; no new runtime dependency or server is required.
-- No production deployment is included in this branch until explicitly approved.
+- Proposed route after an approved merge: /makma-ai-os/projects/orbital/
+- Preserves the current /projects/ hub, MAK'MA AI OS console, and all eight satellite tool routes.
+- Original cinematic environments, shader code, 3D geometry, scroll camera movement, copy, interactions and optional synthesized audio.
+- Inspired by the art-direction and continuous-journey category of Edolus; no proprietary scripts, models, photography, soundtracks, or logos copied.
+- Fully static GitHub Pages implementation: HTML, CSS, JavaScript and self-contained WebGL shaders. No backend or CDN dependency is needed for the 3D renderer.
 
-## Features
+## Experiences
 
-1. Asset-aware intro and initiate experience
-2. Six scroll chapters, progress markers and background transitions
-3. All nine system links in chapter narratives and searchable directory
-4. User-initiated optional synthesized ambient audio
-5. Responsive mobile, reduced-motion mode and semantic dialog
-6. Lightweight background canvas particles
+1. Intro and truthful asset-loading state
+2. Orbital intelligence: original satellite rig, planetary sphere and camera motion
+3. Knowledge networks: spherical evidence graph and illuminated connections
+4. Secure infrastructure: fly-through of a procedural server hall
+5. Model governance: camera movement toward a custom chip and circuit traces
+6. Multimodal frontier: rotating particles and intelligence-field rings
+7. Maharshi Patel profile and working links to all nine systems
+8. Searchable system directory, keyboard navigation and opt-in ambient audio
 
-## Honest limitations
+## Fallbacks and performance
 
-This is an original cinematic first implementation, not a pixel-identical recreation of Edolus's proprietary real-time 3D film. The scenes use 2D cinematic images and coded parallax transitions rather than an interactive 3D camera. Individual linked tools remain the existing GitHub Pages browser demos, not hosted AI backends. Visual quality and actual mobile/battery performance require browser review before any release.
+- When WebGL cannot initialize or its context is lost, cinematic PNG backgrounds remain visible and project navigation continues.
+- Mobile devices use reduced mesh/detail counts and a lower frame rate.
+- Reduced-motion mode renders static frames on demand, not a continuous animation loop.
+- WebGL is intentionally an atmospheric visualization, not a claim of connected AI infrastructure or live telemetry.
+- The linked tools remain existing browser demos unless connected to their separately configured backends.
 
-## Development / validation
+## Verify
 
-Run from repository root:
-
+From repository root:
 - npm ci
 - npm run build
 - npm run test:e2e
 
-Entry files: demo/projects/orbital/index.html, style.css, app.js, and assets/*.png.
+Run local browser tests on desktop, mobile and reduced-motion configurations. Visual fidelity, PNG payload optimization, GPU battery cost and accessibility need review before public release.
+
+## Release protection
+
+Feature development only. No merge, Pages deployment, deletion, or settings change without Maharshi's explicit approval.
