@@ -44,6 +44,8 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 - optional `rag_answer`, `data_ask`, `eval_judge` and `mlops_models` read-only satellite tools when configured
 - approval-gated `mlops_promote_candidate` and `mlops_promote_production` lifecycle mutation tools
 - durable DAG workflows with SQLite checkpoints, dependency validation, pause/resume and explicit approval gates
+- workflow engine with explicit run/step state machines, JSON-Schema-validated inputs, idempotency keys, crash recovery, per-step timeouts, bounded retries for declared-retryable steps, cancellation and a persisted trace (run/correlation/trace/span ids) — see [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)
+- `makma.v1` contract: envelope model, JSON Schema validator for any specialist envelope, and typed in-process/HTTP specialist adapters with an explicit `unavailable` state
 - bounded runtime/provider/tool telemetry with latency and failure summaries
 - optional fail-open OpenTelemetry OTLP metrics export via the `observability` extra
 - FastAPI chat, tools, history, search, recall, runs, telemetry, and native provider-backed SSE streaming endpoints
@@ -144,6 +146,11 @@ export MAKMA_API_KEY=optional-if-your-server-requires-it
 - `GET /v1/workflows/{run_id}`
 - `POST /v1/workflows/{run_id}/resume`
 - `POST /v1/workflows/{run_id}/approve` — requires the separate `X-Makma-Approval-Token` credential
+- `POST /v1/workflows/{run_id}/recover` — continue a run interrupted by a crash (never grants approvals)
+- `POST /v1/workflows/{run_id}/cancel`
+- `GET /v1/workflows/{run_id}/trace`
+- `GET /v1/specialists` — live availability of each configured specialist
+- `GET /v1/capabilities`, `POST /v1/ops/{operation}` — `makma.v1` operations of the orchestrator itself
 
 Example:
 

@@ -6,6 +6,14 @@ The format follows the intent of [Keep a Changelog](https://keepachangelog.com/)
 
 ## [Unreleased]
 
+### Orchestration core
+- Workflow engine: explicit run/step state machines, JSON-Schema-validated inputs, DAG pre-flight (tools, permissions, references), idempotency keys, crash recovery, per-step timeouts, bounded retries for declared-retryable steps, cancellation and a persisted trace with run/correlation/trace/span ids.
+- Approvals are bound to the awaiting step and its resolved-argument digest; they can no longer be pre-granted at workflow start.
+- Fixed: workflow API failed with `sqlite3.ProgrammingError` when requests were served on a different thread than the one that created the store.
+- Fixed: an unexpected tool exception left the workflow persisted as `running`; it now fails the run with `STEP_EXCEPTION`.
+- Tool arguments are additionally validated with full JSON Schema 2020-12; invalid tool schemas are rejected at registration.
+- Added `makma.v1` contract support: envelope model, schema validator for any specialist envelope, orchestrator operations (`/v1/capabilities`, `/v1/ops/{operation}`), and typed in-process/HTTP specialist adapters with an explicit `unavailable` state.
+
 ### Runtime intelligence
 - Added relevance-ranked session memory recall while preserving strict session isolation.
 - Added ordered multi-intent deterministic planning for explicit memory and calculator requests.
