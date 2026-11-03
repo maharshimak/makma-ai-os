@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     otel_export_interval_ms: int = Field(default=5000, ge=1000, le=300000)
     api_token: str | None = None
     approval_token: str | None = None
+    # Comma-separated "<system>.<operation>" specialist actions workflows may call.
+    workflow_specialist_allowlist: str = ""
     request_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
     max_history_messages: int = Field(default=20, ge=1, le=200)
     cors_origins: str = (
@@ -36,6 +38,12 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5500,"
         "https://maharshimak.github.io"
     )
+
+    @property
+    def workflow_specialist_actions(self) -> frozenset[str]:
+        return frozenset(
+            item.strip() for item in self.workflow_specialist_allowlist.split(",") if item.strip()
+        )
 
     @property
     def allowed_cors_origins(self) -> list[str]:
