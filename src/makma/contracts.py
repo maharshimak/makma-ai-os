@@ -287,6 +287,8 @@ _WORKFLOW_STEP_SCHEMA: dict[str, Any] = {
         "max_attempts": {"type": "integer", "minimum": 1, "maximum": 10},
         "timeout_s": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 3600},
         "requires_approval": {"type": "boolean"},
+        "approval_argument": {"type": ["string", "null"], "maxLength": 64},
+        "accept_pending_approval": {"type": "boolean"},
     },
 }
 
@@ -418,6 +420,8 @@ def _op_validate_workflow(payload: dict[str, Any]) -> tuple[dict[str, Any], list
                     max_attempts=item.get("max_attempts", 1),
                     timeout_s=item.get("timeout_s"),
                     requires_approval=item.get("requires_approval", False),
+                    approval_argument=item.get("approval_argument"),
+                    accept_pending_approval=item.get("accept_pending_approval", False),
                 )
                 for item in payload["steps"]
             ),

@@ -47,6 +47,8 @@ class WorkflowStepRequest(BaseModel):
     max_attempts: int = Field(default=1, ge=1, le=10)
     timeout_s: float | None = Field(default=None, gt=0, le=3600)
     requires_approval: bool = False
+    approval_argument: str | None = Field(default=None, max_length=64)
+    accept_pending_approval: bool = False
 
 
 class WorkflowRunRequest(BaseModel):
@@ -267,6 +269,8 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
                     max_attempts=step.max_attempts,
                     timeout_s=step.timeout_s,
                     requires_approval=step.requires_approval,
+                    approval_argument=step.approval_argument,
+                    accept_pending_approval=step.accept_pending_approval,
                 )
                 for step in request.steps
             ),

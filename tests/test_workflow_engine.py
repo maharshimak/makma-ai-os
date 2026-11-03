@@ -405,7 +405,11 @@ def test_state_machines_reject_illegal_transitions():
     with pytest.raises(IllegalTransition):
         check_run_transition(RunState.PAUSED, RunState.SUCCEEDED)
     check_run_transition(RunState.PAUSED, RunState.RUNNING)
-    for terminal in (StepState.SUCCEEDED, StepState.FAILED, StepState.CANCELLED):
+    assert RUN_TRANSITIONS[RunState.BLOCKED] == frozenset()
+    with pytest.raises(IllegalTransition):
+        check_run_transition(RunState.BLOCKED, RunState.RUNNING)
+    for terminal in (StepState.SUCCEEDED, StepState.FAILED, StepState.BLOCKED,
+                     StepState.CANCELLED):
         assert STEP_TRANSITIONS[terminal] == frozenset()
         with pytest.raises(IllegalTransition):
             check_step_transition(terminal, StepState.RUNNING)

@@ -406,3 +406,124 @@ def test_step_declaration_validation():
     started = time.perf_counter()
     WorkflowStep("x", specialist="agentic-rag-engine", operation="retrieve").validate()
     assert time.perf_counter() - started < 1
+
+
+# --------------------------------------------------------------------------- translations
+
+
+class FakeStudio:
+    """Specialist that, like multimodal-ai-studio, wants its own ``approved`` flag and
+    answers pending_approval / blocked with real policy envelopes."""
+
+    system = "multimodal-ai-studio"
+
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def capabilities(self) -> dict:
+        schema = {"type": "object", "properties": {"approved": {"type": "boolean"},
+                                                   "x": {"type": "integer"}}}
+        return {"contract_version": "makma.v1", "system": self.system, "version": "t",
+                "operations": [
+                    {"name": "execute", "side_effects": True, "requires_approval": True,
+                     "input_schema": schema, "timeout_s": 5},
+                    {"name": "decide", "side_effects": False, "requires_approval": False,
+                     "input_schema": schema, "timeout_s": 5}]}
+
+    def run_operation(self, operation, payload, *, run_id=None, correlation_id=None):
+        self.calls.append({"operation": operation, **payload})
+        common = dict(system=self.system, operation=operation, run_id=run_id,
+                      correlation_id=correlation_id, trace_id=new_trace_id(),
+                      span_id=new_span_id(), execution_mode="deterministic_offline",
+                      started_at=utc_now_rfc3339(), duration_ms=0.1)
+        if operation == "decide":
+            if payload.get("x", 0) < 0:
+                return Envelope(status="blocked", error={
+                    "code": "POLICY_DENIED", "message": "negative", "retryable": False,
+                    "details": {"x": payload["x"]}},
+                    policy={"decision": "deny", "reasons": ["x < 0"]}, **common).to_dict()
+            return Envelope(status="pending_approval", data={"decision": "requires_approval"},
+                            policy={"decision": "requires_approval", "reasons": ["human"]},
+                            **common).to_dict()
+        if not payload.get("approved"):
+            return Envelope(status="pending_approval", data=None,
+                            policy={"decision": "requires_approval", "reasons": ["approve"]},
+                            **common).to_dict()
+        return Envelope(status="ok", data={"rendered": True}, **common).to_dict()
+
+
+def studio_engine(tmp_path, fake: FakeStudio) -> WorkflowEngine:
+    return WorkflowEngine(
+        ToolRegistry(),
+        policy=PermissionPolicy(allowed_tools=frozenset(
+            {"multimodal-ai-studio.execute", "multimodal-ai-studio.decide"})),
+        store=SQLiteWorkflowStore(str(tmp_path / "studio.sqlite")),
+        specialists=SpecialistRegistry([InProcessSpecialistAdapter(
+            fake.system, fake.run_operation, fake.capabilities)]),
+    )
+
+
+@pytest.mark.asyncio
+async def test_approval_argument_is_set_only_after_engine_approval(tmp_path):
+    fake = FakeStudio()
+    engine = studio_engine(tmp_path, fake)
+    spec = WorkflowSpec("render", (WorkflowStep(
+        "e", specialist="multimodal-ai-studio", operation="execute", arguments={"x": 1},
+        approval_argument="approved"),))
+    paused = await engine.start(spec, session_id="s")
+    assert paused.status == "paused" and fake.calls == []
+    done = await engine.resume(paused.run_id, approved_steps={"e"})
+    assert done.status == "succeeded"
+    assert fake.calls == [{"operation": "execute", "x": 1, "approved": True}]
+    started = [e for e in engine.trace(done.run_id) if e["event"] == "step_succeeded"][0]
+    assert started["detail"]["approval_argument_set"] is True
+
+    # Without the translation the specialist keeps asking: the step fails honestly.
+    fake.calls.clear()
+    plain = WorkflowSpec("plain", (WorkflowStep(
+        "e", specialist="multimodal-ai-studio", operation="execute", arguments={"x": 1}),))
+    paused = await engine.start(plain, session_id="s")
+    failed = await engine.resume(paused.run_id, approved_steps={"e"})
+    assert failed.status == "failed" and failed.error_code == "SPECIALIST_REQUIRES_APPROVAL"
+    assert fake.calls == [{"operation": "execute", "x": 1}]
+
+
+def test_approval_argument_cannot_be_supplied_in_arguments():
+    with pytest.raises(ValueError, match="set by the engine"):
+        WorkflowStep("e", specialist="multimodal-ai-studio", operation="execute",
+                     arguments={"approved": True}, approval_argument="approved").validate()
+    with pytest.raises(ValueError, match="specialist steps only"):
+        WorkflowStep("e", "tool", approval_argument="approved").validate()
+
+
+@pytest.mark.asyncio
+async def test_pending_approval_accepted_only_when_declared_and_blocked_ends_run_blocked(
+    tmp_path,
+):
+    fake = FakeStudio()
+    engine = studio_engine(tmp_path, fake)
+    accept = WorkflowSpec("accept", (WorkflowStep(
+        "d", specialist="multimodal-ai-studio", operation="decide", arguments={"x": 1},
+        accept_pending_approval=True),))
+    done = await engine.start(accept, session_id="s")
+    assert done.status == "succeeded"
+    assert done.results["d"]["envelope"]["status"] == "pending_approval"
+    event = [e for e in engine.trace(done.run_id) if e["event"] == "step_succeeded"][0]
+    assert event["detail"]["specialist_requires_approval"] is True
+    assert event["detail"]["specialist_policy_reasons"] == ["human"]
+
+    refuse = WorkflowSpec("refuse", (WorkflowStep(
+        "d", specialist="multimodal-ai-studio", operation="decide", arguments={"x": 1}),))
+    failed = await engine.start(refuse, session_id="s")
+    assert failed.status == "failed" and failed.error_code == "SPECIALIST_REQUIRES_APPROVAL"
+
+    blocked_spec = WorkflowSpec("blocked", (WorkflowStep(
+        "d", specialist="multimodal-ai-studio", operation="decide", arguments={"x": -1},
+        accept_pending_approval=True),))
+    blocked = await engine.start(blocked_spec, session_id="s")
+    assert blocked.status == "blocked" and blocked.steps["d"]["state"] == "blocked"
+    assert blocked.error_code == "POLICY_DENIED"
+    event = [e for e in engine.trace(blocked.run_id) if e["event"] == "step_blocked"][0]
+    assert event["detail"]["specialist_policy_reasons"] == ["x < 0"]
+    with pytest.raises(Exception, match="already"):
+        await engine.cancel(blocked.run_id)

@@ -92,6 +92,7 @@ class RunState(StrEnum):
     PAUSED = "paused"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+    BLOCKED = "blocked"  # a policy (e.g. a specialist's) refused the work
     CANCELLED = "cancelled"
 
 
@@ -102,17 +103,25 @@ class StepState(StrEnum):
     UNCERTAIN = "uncertain"  # interrupted mid-execution; outcome unknown
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+    BLOCKED = "blocked"
     CANCELLED = "cancelled"
 
 
 RUN_TRANSITIONS: dict[RunState, frozenset[RunState]] = {
     RunState.PENDING: frozenset({RunState.RUNNING, RunState.CANCELLED}),
     RunState.RUNNING: frozenset(
-        {RunState.PAUSED, RunState.SUCCEEDED, RunState.FAILED, RunState.CANCELLED}
+        {
+            RunState.PAUSED,
+            RunState.SUCCEEDED,
+            RunState.FAILED,
+            RunState.BLOCKED,
+            RunState.CANCELLED,
+        }
     ),
     RunState.PAUSED: frozenset({RunState.RUNNING, RunState.CANCELLED}),
     RunState.SUCCEEDED: frozenset(),
     RunState.FAILED: frozenset(),
+    RunState.BLOCKED: frozenset(),
     RunState.CANCELLED: frozenset(),
 }
 
@@ -127,6 +136,7 @@ STEP_TRANSITIONS: dict[StepState, frozenset[StepState]] = {
         {
             StepState.SUCCEEDED,
             StepState.FAILED,
+            StepState.BLOCKED,
             StepState.PENDING,  # retry scheduled, or recovered read-only/idempotent step
             StepState.UNCERTAIN,
             StepState.CANCELLED,
@@ -135,10 +145,13 @@ STEP_TRANSITIONS: dict[StepState, frozenset[StepState]] = {
     StepState.UNCERTAIN: frozenset({StepState.AWAITING_APPROVAL, StepState.CANCELLED}),
     StepState.SUCCEEDED: frozenset(),
     StepState.FAILED: frozenset(),
+    StepState.BLOCKED: frozenset(),
     StepState.CANCELLED: frozenset(),
 }
 
-TERMINAL_RUN_STATES = frozenset({RunState.SUCCEEDED, RunState.FAILED, RunState.CANCELLED})
+TERMINAL_RUN_STATES = frozenset(
+    {RunState.SUCCEEDED, RunState.FAILED, RunState.BLOCKED, RunState.CANCELLED}
+)
 
 
 def check_run_transition(current: str, new: str) -> None:
@@ -186,6 +199,17 @@ class WorkflowStep:
 
     ``requires_approval`` can only tighten the gate; tool/specialist metadata and
     the permission policy decide the minimum.
+
+    Specialist approval translation (explicit, opt-in per step):
+
+    * ``approval_argument``: name of the specialist's own approval flag (for example
+      ``"approved"`` for multimodal-ai-studio ``execute``). The engine sets it to
+      ``true`` only after *this engine* recorded an approval for the step; workflow
+      arguments may never contain it, so it cannot be supplied by a client or model.
+    * ``accept_pending_approval``: a specialist ``pending_approval`` envelope (a
+      decision that still needs a human, e.g. mlops-control-plane
+      ``evaluate_promotion``) completes the step with its data instead of failing it.
+      The human decision must then be taken by an approval-gated downstream step.
     """
 
     id: str
@@ -198,6 +222,8 @@ class WorkflowStep:
     max_attempts: int = 1
     timeout_s: float | None = None
     requires_approval: bool = False
+    approval_argument: str | None = None
+    accept_pending_approval: bool = False
 
     @property
     def kind(self) -> str:
@@ -226,6 +252,22 @@ class WorkflowStep:
                 raise WorkflowValidationError(f"Step {self.id}: invalid operation name.")
         elif not isinstance(self.tool_name, str) or not self.tool_name.strip():
             raise WorkflowValidationError("Workflow tools must be non-empty.")
+        if (self.approval_argument is not None or self.accept_pending_approval) and (
+            self.kind != "specialist"
+        ):
+            raise WorkflowValidationError(
+                f"Step {self.id}: approval translation applies to specialist steps only."
+            )
+        if self.approval_argument is not None:
+            if not isinstance(self.approval_argument, str) or not re.fullmatch(
+                r"[A-Za-z_][A-Za-z0-9_]{0,63}", self.approval_argument
+            ):
+                raise WorkflowValidationError(f"Step {self.id}: invalid approval_argument.")
+            if isinstance(self.arguments, dict) and self.approval_argument in self.arguments:
+                raise WorkflowValidationError(
+                    f"Step {self.id}: {self.approval_argument!r} is set by the engine after "
+                    "approval and must not appear in the workflow arguments."
+                )
         if not isinstance(self.arguments, dict):
             raise WorkflowValidationError(f"Step {self.id}: arguments must be an object.")
         try:
@@ -595,6 +637,7 @@ class _Outcome:
     message: str | None = None
     retryable: bool = False
     detail: dict[str, Any] = field(default_factory=dict)
+    blocked: bool = False
 
 
 class _ResolutionError(Exception):
@@ -1027,7 +1070,8 @@ class WorkflowEngine:
                         return self._cancel_run(spec, checkpoint, events)
                     continue
                 return self._fail(spec, checkpoint, step, events, outcome.code or "ERROR",
-                                  outcome.message or "", detail=outcome.detail)
+                                  outcome.message or "", detail=outcome.detail,
+                                  blocked=outcome.blocked)
             approved = None if approved == step.id else approved
 
         events = []
@@ -1048,7 +1092,7 @@ class WorkflowEngine:
         try:
             if step.kind == "tool":
                 return await self._execute_tool(step, resolved, checkpoint, policy, key, approved)
-            return await self._execute_specialist(step, resolved, checkpoint, key)
+            return await self._execute_specialist(step, resolved, checkpoint, key, approved)
         except TimeoutError:
             return _Outcome(ok=False, code="TIMEOUT",
                             message=f"Step exceeded its {step.timeout_s}s timeout.",
@@ -1100,8 +1144,13 @@ class WorkflowEngine:
         resolved: dict[str, Any],
         checkpoint: WorkflowCheckpoint,
         key: str,
+        approved: bool,
     ) -> _Outcome:
         adapter = self.specialists.get(step.specialist or "")
+        if step.approval_argument is not None and approved:
+            # Translation of an approval this engine recorded into the specialist's own
+            # flag. Never taken from workflow arguments (rejected at validation).
+            resolved = {**resolved, step.approval_argument: True}
         found = await adapter.operation_spec(step.operation or "")
         if not isinstance(found, OperationSpec):  # pragma: no cover - checked at gate
             return _Outcome(ok=False, code="SPECIALIST_UNAVAILABLE",
@@ -1139,7 +1188,18 @@ class WorkflowEngine:
             detail["specialist_trace_id"] = outcome.envelope["trace_id"]
             detail["specialist_span_id"] = outcome.envelope["span_id"]
             detail["execution_mode"] = outcome.envelope["execution_mode"]
-        if outcome.ok and outcome.envelope is not None:
+        if step.approval_argument is not None:
+            detail["approval_argument_set"] = bool(approved)
+        accepted_pending = (
+            outcome.status == "pending_approval"
+            and step.accept_pending_approval
+            and outcome.envelope is not None
+        )
+        if accepted_pending:
+            policy = outcome.envelope.get("policy") or {}
+            detail["specialist_requires_approval"] = True
+            detail["specialist_policy_reasons"] = list(policy.get("reasons", []))
+        if (outcome.ok or accepted_pending) and outcome.envelope is not None:
             return _Outcome(
                 ok=True,
                 output=canonical_json(outcome.envelope),
@@ -1150,8 +1210,22 @@ class WorkflowEngine:
         code = str(error.get("code") or outcome.status.upper())
         if outcome.status == "pending_approval":
             code = "SPECIALIST_REQUIRES_APPROVAL"
+            policy = (outcome.envelope or {}).get("policy") or {}
+            detail["specialist_policy_reasons"] = list(policy.get("reasons", []))
         elif outcome.status == "blocked":
-            code = "SPECIALIST_BLOCKED"
+            # Keep the specialist's own code (e.g. POLICY_DENIED); the run ends BLOCKED.
+            policy = (outcome.envelope or {}).get("policy") or {}
+            detail["specialist_policy_reasons"] = list(policy.get("reasons", []))
+            detail["specialist_error_details"] = error.get("details", {})
+            return _Outcome(
+                ok=False,
+                code=code,
+                message=str(error.get("message") or "Specialist blocked the operation.")[
+                    :_MAX_ERROR_CHARS
+                ],
+                detail=detail,
+                blocked=True,
+            )
         elif outcome.status == "unavailable":
             detail["unavailable"] = True
         return _Outcome(
@@ -1284,17 +1358,22 @@ class WorkflowEngine:
         message: str,
         *,
         detail: dict[str, Any] | None = None,
+        blocked: bool = False,
     ) -> WorkflowCheckpoint:
         record = checkpoint.steps[step.id]
         record["error"] = message[:_MAX_ERROR_CHARS]
-        self._set_step(checkpoint, step, StepState.FAILED, events, "step_failed",
+        self._set_step(checkpoint, step, StepState.BLOCKED if blocked else StepState.FAILED,
+                       events, "step_blocked" if blocked else "step_failed",
                        detail={"code": code, "message": message[:_MAX_ERROR_CHARS],
                                **(detail or {})})
         checkpoint.pending_step = step.id
         checkpoint.pending_reason = None
         checkpoint.error = message[:_MAX_ERROR_CHARS] or code
         checkpoint.error_code = code
-        self._set_run(checkpoint, RunState.FAILED, events, "run_failed")
+        if blocked:
+            self._set_run(checkpoint, RunState.BLOCKED, events, "run_blocked")
+        else:
+            self._set_run(checkpoint, RunState.FAILED, events, "run_failed")
         self.store.save(spec, checkpoint, events)
         return checkpoint
 
@@ -1303,7 +1382,9 @@ class WorkflowEngine:
     ) -> None:
         for step in spec.topological_order():
             state = checkpoint.steps[step.id]["state"]
-            if state in {StepState.SUCCEEDED, StepState.FAILED, StepState.CANCELLED}:
+            if state in {
+                StepState.SUCCEEDED, StepState.FAILED, StepState.BLOCKED, StepState.CANCELLED
+            }:
                 continue
             detail = {"outcome_uncertain": state in {StepState.RUNNING, StepState.UNCERTAIN}}
             self._set_step(checkpoint, step, StepState.CANCELLED, events, "step_cancelled",
