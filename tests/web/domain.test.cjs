@@ -233,5 +233,20 @@ test("RAG ranking ties break by ascending id, matching rag_engine.retrieval.rank
         Array.from(lex, (r) => r.doc.id),
         ["a", "b"],
     );
-    assert.deepEqual(Array.from(rag.tokens("Rev v1.2 -- évidence.")), ["rev", "v1.2", "évidence."]);
+    assert.deepEqual(
+        Array.from(rag.tokens("Rev v1.2 gpt-4o -- evidence. .env now- __init__")),
+        ["rev", "v1.2", "gpt-4o", "evidence", "env", "now", "init"],
+    );
+});
+test("RAG sentence-final terms match their bare query form", () => {
+    const docs = [
+        { id: "a", text: "Hybrid retrieval ranks evidence." },
+        { id: "b", text: "Memory stores facts." },
+    ];
+    const lex = rag.bm25(docs, "evidence");
+    assert.deepEqual(
+        Array.from(lex, (r) => r.doc.id),
+        ["a"],
+    );
+    assert.ok(lex[0].score > 0);
 });

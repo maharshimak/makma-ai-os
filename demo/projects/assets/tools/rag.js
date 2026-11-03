@@ -18,12 +18,14 @@
             copyText,
         } = M;
     // Mirrors rag_engine.retrieval.tokenize at the pinned backend revision:
-    // runs of word characters, "." and "-" (identifiers such as v1.2 survive),
-    // dropping tokens made only of "._-". Python uses casefold(); toLowerCase()
-    // differs only for a few characters (e.g. "\u00df"), none of which are in the fixtures.
+    // runs of word characters, "." and "-", with leading/trailing ".", "-", "_"
+    // trimmed (sentence-final "evidence." matches "evidence"; internal ones are
+    // kept: v1.2, gpt-4o). Python uses casefold(); toLowerCase() differs only for a
+    // few characters (e.g. the German sharp s), none of which are in the fixtures.
     const tokens = (text) =>
         (String(text).match(/[\p{L}\p{N}_.-]+/gu) || [])
-            .filter((t) => t.replace(/^[._-]+|[._-]+$/g, "") !== "")
+            .map((t) => t.replace(/^[._-]+|[._-]+$/g, ""))
+            .filter(Boolean)
             .map((t) => t.toLowerCase());
     // Mirrors rag_engine.retrieval.ranking_key: descending score, then chunk ID.
     const byRank = (a, b) =>
