@@ -13,6 +13,7 @@ requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.141.1,<1",
   "httpx>=0.28.1,<1",
+  "jsonschema>=4.23.0,<5",
   "pydantic>=2.13.5,<3",
   "pydantic-settings>=2.15.0,<3",
   "uvicorn>=0.52.4,<1",
@@ -33,9 +34,16 @@ observability = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+makma = ["schemas/*.json"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+  "integration: cross-system workflows against the pinned specialist packages (MAKMA_INTEGRATION=1)",
+  "media: real FFmpeg render path (MAKMA_MEDIA_E2E=1)",
+]
 
 [tool.ruff]
 line-length = 100

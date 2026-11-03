@@ -84,7 +84,7 @@ fixture = dict(
 target = Path("tests/fixtures/python-parity.json")
 content = json.dumps(fixture, indent=2, ensure_ascii=False) + "\n"
 if args.check:
-    if target.read_text() != content:
+    if target.read_text(encoding="utf-8") != content:
         raise SystemExit("Python parity fixtures changed: investigate browser/backend drift.")
 else:
-    target.write_text(content)
+    target.write_text(content, encoding="utf-8")

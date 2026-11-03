@@ -6,11 +6,24 @@ from dataclasses import asdict
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from makma import contracts
 from makma.runtime import MakmaRuntime, build_runtime
-from makma.workflows import SQLiteWorkflowStore, WorkflowEngine, WorkflowSpec, WorkflowStep
+from makma.specialists import SpecialistRegistry
+from makma.tools import PermissionPolicy
+from makma.workflows import (
+    ApprovalError,
+    IllegalTransition,
+    SQLiteWorkflowStore,
+    WorkflowBusy,
+    WorkflowCheckpoint,
+    WorkflowEngine,
+    WorkflowSpec,
+    WorkflowStep,
+    WorkflowValidationError,
+)
 
 
 class ChatRequest(BaseModel):
@@ -25,9 +38,17 @@ class WorkflowStepRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(min_length=1, max_length=100)
-    tool_name: str = Field(min_length=1, max_length=200)
+    tool_name: str = Field(default="", max_length=200)
+    specialist: str | None = Field(default=None, max_length=64)
+    operation: str | None = Field(default=None, max_length=64)
     arguments: dict[str, object] = Field(default_factory=dict)
     depends_on: list[str] = Field(default_factory=list, max_length=100)
+    retryable: bool = False
+    max_attempts: int = Field(default=1, ge=1, le=10)
+    timeout_s: float | None = Field(default=None, gt=0, le=3600)
+    requires_approval: bool = False
+    approval_argument: str | None = Field(default=None, max_length=64)
+    accept_pending_approval: bool = False
 
 
 class WorkflowRunRequest(BaseModel):
@@ -36,6 +57,25 @@ class WorkflowRunRequest(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     session_id: str = Field(default="default", min_length=1, max_length=200)
     steps: list[WorkflowStepRequest] = Field(min_length=1, max_length=100)
+    input_schema: dict[str, object] | None = None
+    inputs: dict[str, object] = Field(default_factory=dict)
+    correlation_id: str | None = Field(default=None, min_length=1, max_length=128)
+    # Can only narrow the server policy; never widen it.
+    permissions: list[str] | None = Field(default=None, max_length=200)
+
+
+async def _checkpoint_response(operation) -> dict[str, object]:
+    try:
+        checkpoint: WorkflowCheckpoint = await operation
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except WorkflowValidationError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except ApprovalError as error:
+        raise HTTPException(status_code=403, detail=str(error)) from error
+    except (IllegalTransition, WorkflowBusy) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return asdict(checkpoint)
 
 
 def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
@@ -50,11 +90,20 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
     )
     app.state.runtime = runtime
     workflow_store = SQLiteWorkflowStore(runtime.settings.database_path)
+    specialists = SpecialistRegistry.from_env()
+    # Specialist operations are denied unless explicitly allow-listed (least privilege).
+    workflow_policy = PermissionPolicy(
+        allowed_tools=runtime.policy.allowed_tools
+        | runtime.settings.workflow_specialist_actions,
+        approval_required_tools=runtime.policy.approval_required_tools,
+    )
     workflow_engine = WorkflowEngine(
         runtime.registry,
-        policy=runtime.policy,
+        policy=workflow_policy,
         store=workflow_store,
+        specialists=specialists,
     )
+    app.state.specialists = specialists
     app.state.workflow_engine = workflow_engine
     app.state.workflow_store = workflow_store
     app.add_middleware(
@@ -214,24 +263,81 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
                     tool_name=step.tool_name,
                     arguments=step.arguments,
                     depends_on=tuple(step.depends_on),
+                    specialist=step.specialist,
+                    operation=step.operation,
+                    retryable=step.retryable,
+                    max_attempts=step.max_attempts,
+                    timeout_s=step.timeout_s,
+                    requires_approval=step.requires_approval,
+                    approval_argument=step.approval_argument,
+                    accept_pending_approval=step.accept_pending_approval,
                 )
                 for step in request.steps
             ),
+            input_schema=request.input_schema,
+            permissions=(
+                frozenset(request.permissions) if request.permissions is not None else None
+            ),
         )
-        checkpoint = await workflow_engine.start(
-            spec,
-            session_id=request.session_id,
+        return await _checkpoint_response(
+            workflow_engine.start(
+                spec,
+                session_id=request.session_id,
+                inputs=request.inputs,
+                correlation_id=request.correlation_id,
+            )
         )
-        return asdict(checkpoint)
 
     @app.post("/v1/workflows/{run_id}/resume", dependencies=protected)
     async def resume_workflow(run_id: str) -> dict[str, object]:
         """Resume only non-privileged work. Client requests cannot grant approvals."""
+        return await _checkpoint_response(workflow_engine.resume(run_id))
+
+    @app.post("/v1/workflows/{run_id}/recover", dependencies=protected)
+    async def recover_workflow(run_id: str) -> dict[str, object]:
+        """Continue a run interrupted by a crash. Never grants approvals."""
+        return await _checkpoint_response(workflow_engine.recover(run_id))
+
+    @app.post("/v1/workflows/{run_id}/cancel", dependencies=protected)
+    async def cancel_workflow(run_id: str) -> dict[str, object]:
+        return await _checkpoint_response(workflow_engine.cancel(run_id))
+
+    @app.get("/v1/workflows/{run_id}/trace", dependencies=protected)
+    async def workflow_trace(run_id: str) -> list[dict[str, object]]:
         try:
-            checkpoint = await workflow_engine.resume(run_id)
+            workflow_store.load(run_id)
         except KeyError as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
-        return asdict(checkpoint)
+        return workflow_engine.trace(run_id)
+
+    @app.get("/v1/specialists", dependencies=protected)
+    async def specialist_status() -> list[dict[str, object]]:
+        """Live availability of every specialist; unconfigured ones report 'unavailable'."""
+        return await specialists.status()
+
+    @app.get("/v1/capabilities", dependencies=protected)
+    async def makma_capabilities() -> dict[str, object]:
+        return contracts.capabilities()
+
+    @app.post("/v1/ops/{operation}", dependencies=protected)
+    async def makma_operation(
+        operation: str,
+        request: Request,
+        run_id: str | None = Header(default=None, alias="X-Makma-Run-Id"),
+        correlation_id: str | None = Header(default=None, alias="X-Makma-Correlation-Id"),
+    ) -> JSONResponse:
+        try:
+            payload = await request.json()
+        except ValueError:
+            payload = None  # run_operation answers with an INVALID_INPUT envelope
+        envelope = contracts.run_operation(
+            operation, payload, run_id=run_id, correlation_id=correlation_id
+        )
+        code = (envelope.get("error") or {}).get("code")
+        status_code = {"UNKNOWN_OPERATION": 404, "INVALID_INPUT": 422}.get(
+            code, 200 if envelope["status"] == "ok" else 500
+        )
+        return JSONResponse(envelope, status_code=status_code)
 
     @app.post("/v1/workflows/{run_id}/approve", dependencies=protected)
     async def approve_workflow_step(
@@ -271,11 +377,13 @@ def create_app(runtime: MakmaRuntime | None = None) -> FastAPI:
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Pending workflow step is missing from the persisted specification.",
             )
-        checkpoint = await workflow_engine.resume(
-            run_id,
-            approved_steps={pending.id},
+        return await _checkpoint_response(
+            workflow_engine.resume(
+                run_id,
+                approved_steps={pending.id},
+                approver="approval-token-holder",
+            )
         )
-        return asdict(checkpoint)
 
     @app.get("/v1/workflows/{run_id}", dependencies=protected)
     async def workflow_status(run_id: str) -> dict[str, object]:
