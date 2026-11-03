@@ -12,6 +12,8 @@ The format follows the intent of [Keep a Changelog](https://keepachangelog.com/)
 - Fixed: workflow API failed with `sqlite3.ProgrammingError` when requests were served on a different thread than the one that created the store.
 - Fixed: an unexpected tool exception left the workflow persisted as `running`; it now fails the run with `STEP_EXCEPTION`.
 - Tool arguments are additionally validated with full JSON Schema 2020-12; invalid tool schemas are rejected at registration.
+- Cross-system workflows A (research evidence), B (governed ML) and C (media) over the real specialist packages, with explicit translation tools, a `blocked` run state, `approval_argument` and `accept_pending_approval` step translations, and a CI integration workflow (pinned packages + real FFmpeg job).
+- `backend-lock.json` re-pinned to the specialist `feat/makma-labs-vnext-20261103` heads; browser RAG tokenizer and tie-breaking updated to keep Python parity.
 - Added `makma.v1` contract support: envelope model, schema validator for any specialist envelope, orchestrator operations (`/v1/capabilities`, `/v1/ops/{operation}`), and typed in-process/HTTP specialist adapters with an explicit `unavailable` state.
 
 ### Runtime intelligence

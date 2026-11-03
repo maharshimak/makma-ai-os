@@ -40,14 +40,25 @@ Step fields: `retryable` (default False) is required for `max_attempts > 1` (1�
 `timeout_s` in (0, 3600]; `requires_approval` can only add a gate. A non-idempotent
 side-effecting tool cannot be declared retryable.
 
+Specialist approval translation (opt-in, specialist steps only):
+
+* `approval_argument="approved"` — after *this engine* recorded an approval for the step, it
+  sets the specialist's own approval flag to `true`. The key may not appear in the workflow
+  arguments (validation error), so a client or model cannot supply it.
+* `accept_pending_approval=True` — a specialist `pending_approval` envelope completes the step
+  with its data (trace detail `specialist_requires_approval`, policy reasons). The human
+  decision must be taken by an approval-gated downstream step. Without the flag such an
+  envelope fails the step with `SPECIALIST_REQUIRES_APPROVAL`.
+
 ## Execution guarantees
 
 * **Pre-flight:** inputs are validated against `input_schema` (JSON Schema 2020-12); every tool
   must exist and every action (`tool_name` or `"<system>.<operation>"`) must be in
   `engine.policy.allowed_tools ∩ spec.permitted_actions()`.
-* **State machines:** runs `pending → running → {paused, succeeded, failed, cancelled}`,
-  `paused → {running, cancelled}`; steps `pending → {awaiting_approval, running, failed,
-  cancelled}`, `running → {succeeded, failed, pending (retry/recovery), uncertain, cancelled}`,
+* **State machines:** runs `pending → running → {paused, succeeded, failed, blocked,
+  cancelled}`, `paused → {running, cancelled}`; steps `pending → {awaiting_approval, running,
+  failed, cancelled}`, `running → {succeeded, failed, blocked, pending (retry/recovery),
+  uncertain, cancelled}`,
   `uncertain → {awaiting_approval, cancelled}`. Anything else raises `IllegalTransition`.
 * **Durability:** a step's `running` state and idempotency key are committed before it runs;
   its exact result is committed atomically with `succeeded`, together with the trace events.
@@ -75,9 +86,61 @@ side-effecting tool cannot be declared retryable.
 
 Limitations: steps run sequentially in topological order; one orchestrator process per
 SQLite store (the in-process lock rejects concurrent advances with `WorkflowBusy`, but there is
-no cross-process lease); execution budgets from PR #17 are not yet applied to workflows; a
-specialist answering `pending_approval` fails the step (`SPECIALIST_REQUIRES_APPROVAL`) because
-the contract defines no approval hand-back.
+no cross-process lease); execution budgets from PR #17 are not yet applied to workflows.
+A specialist answering `blocked` ends the run `blocked` with the specialist's own error code
+and policy reasons in the trace.
+
+## Cross-system workflows
+
+`makma.crosssystem` defines three workflows over the real specialist packages, plus the
+translation tools that close the gaps between specialist contracts (each is deterministic and
+refuses to invent data). `tests/integration/test_cross_system.py` runs them in-process against
+the revisions pinned in `backend-lock.json` (CI workflow `Cross-system integration`; locally:
+`python scripts/install_specialists.py` then `MAKMA_INTEGRATION=1 pytest -m integration`).
+
+| Workflow | Execution path | Approval gates |
+| --- | --- | --- |
+| A `research-evidence` | clinical-document-intelligence `extract` → `evidence_entities` → knowledge-twin `extract` → `candidate_graph` → knowledge-twin `import_graph` → `query_path` → agentic-rag-engine `ingest` → `answer` + `retrieve` → llm-eval-observability `validate_citations`; `relevance_judgment` → `score_retrieval` | `rag_ingest` |
+| B `governed-ml` | secure-data-copilot `query` (server access policy) → mlops-production-pipeline `validate_dataset` → `train` → `evaluate_candidate`; `artifact_reference` → mlops-control-plane `register_candidate` (pipeline export) → `verify_artifact` → `evaluate_promotion` (`accept_pending_approval`) → `record_lifecycle_transition` (simulated) | `train`, `register`, `verify_artifact` (declared side effects), `transition` |
+| C `media-edit` | multimodal-ai-studio `plan` → `execute` (`approval_argument="approved"`) → `verify_artifact` | `execute` |
+
+What the integration tests assert (recomputed, not hard-coded): A — clinical document SHA-256
+and knowledge-twin `source_sha256` equal the SHA-256 of the input text, every evidence span and
+edge quote is the exact substring, the 2-hop path relations, ingested document hashes, answer
+citations ⊆ retrieved ids, `validate_citations` over exactly those ids, and recall recomputed
+from the knowledge-twin evidence document. B — query rows equal a direct SQLite read (denied
+column absent), one dataset SHA-256 across validation/training/evaluation, the artifact file's
+SHA-256 equals the pipeline claim, the registered claim and the verified artifact, evidence
+SHA-256 carried into the transition record; a noisy dataset fails the pipeline gate and the run
+ends `blocked` at `evaluate_promotion` (`PROMOTION_DENIED`) with no transition; querying the
+denied column ends `blocked` (`POLICY_DENIED`). C — without FFmpeg the run fails with
+`FFMPEG_UNAVAILABLE` after approval and writes nothing; with FFmpeg (CI `media` job) the output
+file's SHA-256 equals the render and verification results and ffprobe reports `verified`.
+
+Contract gaps found and how they are handled (orchestrator side only):
+
+* multimodal-ai-studio `execute` takes its own `approved` flag → `approval_argument`.
+* mlops-control-plane `evaluate_promotion` returns `pending_approval` with data, and its
+  makma.v1 contract has no approve/promote operation → `accept_pending_approval` plus an
+  AI OS-gated **simulated** `record_lifecycle_transition`; the control plane stays unchanged
+  (a later `evaluate_promotion` still answers `pending_approval`).
+* mlops-control-plane `verify_artifact` needs a path relative to its artifact root, the
+  pipeline returns an absolute path → `artifact_reference`; both must share one root.
+* knowledge-twin needs explicit entities and a serialized graph → `evidence_entities`,
+  `candidate_graph`.
+* agentic-rag-engine `answer` returns chunk ids without document ids → a read-only `retrieve`
+  step feeds `relevance_judgment`.
+* secure-data-copilot reads its database and access policy only from process environment
+  variables, so one orchestrator process can host one copilot configuration in-process.
+* All eight packages echo `run_id`/`correlation_id`; no translation was needed there.
+
+### Proposed merge order
+
+1. Specialist PRs (independent of each other; mlops-production-pipeline before
+   mlops-control-plane because the control plane consumes the pipeline export format).
+2. Re-pin `backend-lock.json` to the merged `main` SHAs (the current pins are feature-branch
+   heads) and regenerate `tests/fixtures/python-parity.json`.
+3. makma-ai-os: #19, #17, then this PR (expect a one-line README conflict with #17).
 
 ## makma.v1 (orchestrator side)
 

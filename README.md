@@ -45,6 +45,7 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 - approval-gated `mlops_promote_candidate` and `mlops_promote_production` lifecycle mutation tools
 - durable DAG workflows with SQLite checkpoints, dependency validation, pause/resume and explicit approval gates
 - workflow engine with explicit run/step state machines, JSON-Schema-validated inputs, idempotency keys, crash recovery, per-step timeouts, bounded retries for declared-retryable steps, cancellation and a persisted trace (run/correlation/trace/span ids) — see [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)
+- cross-system workflows (research evidence, governed ML, media) over the pinned specialist packages, tested end to end in CI
 - `makma.v1` contract: envelope model, JSON Schema validator for any specialist envelope, and typed in-process/HTTP specialist adapters with an explicit `unavailable` state
 - bounded runtime/provider/tool telemetry with latency and failure summaries
 - optional fail-open OpenTelemetry OTLP metrics export via the `observability` extra
