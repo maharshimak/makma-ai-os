@@ -17,15 +17,17 @@
             finish,
             copyText,
         } = M;
+    // Mirrors rag_engine.retrieval.tokenize at the pinned backend revision:
+    // runs of word characters, "." and "-" (identifiers such as v1.2 survive),
+    // dropping tokens made only of "._-". Python uses casefold(); toLowerCase()
+    // differs only for a few characters (e.g. "\u00df"), none of which are in the fixtures.
     const tokens = (text) =>
-        String(text)
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((t) =>
-                t
-                    .replace(/^[.,!?;:()\[\]{}"']+|[.,!?;:()\[\]{}"']+$/g, "")
-                    .toLowerCase(),
-            );
+        (String(text).match(/[\p{L}\p{N}_.-]+/gu) || [])
+            .filter((t) => t.replace(/^[._-]+|[._-]+$/g, "") !== "")
+            .map((t) => t.toLowerCase());
+    // Mirrors rag_engine.retrieval.ranking_key: descending score, then chunk ID.
+    const byRank = (a, b) =>
+        b.score - a.score || (a.doc.id < b.doc.id ? -1 : a.doc.id > b.doc.id ? 1 : 0);
     let baseline = null,
         lastRun = null;
     function parseCorpus(text) {
@@ -87,7 +89,7 @@
                 return { doc: d, score, lexical: score, semantic: 0 };
             })
             .filter((x) => x.score > 0)
-            .sort((a, b) => b.score - a.score)
+            .sort(byRank)
             .slice(0, topK);
     }
     const digestCache = new Map();
@@ -140,7 +142,7 @@
             const sc = cosine(qv, await vector(d.text));
             rows.push({ doc: d, score: sc, lexical: 0, semantic: sc });
         }
-        return rows.sort((a, b) => b.score - a.score).slice(0, topK);
+        return rows.sort(byRank).slice(0, topK);
     }
     function rrf(rankings, k = 60) {
         const map = new Map();
@@ -158,7 +160,7 @@
                 map.set(x.doc.id, cur);
             }),
         );
-        return [...map.values()].sort((a, b) => b.score - a.score);
+        return [...map.values()].sort(byRank);
     }
     function rerank(query, candidates, topK) {
         const q = new Set(tokens(query));
@@ -178,7 +180,7 @@
                     score = 0.65 * x.score + 0.35 * overlap + phrase;
                 return { ...x, score, overlap };
             })
-            .sort((a, b) => b.score - a.score)
+            .sort(byRank)
             .slice(0, topK);
     }
     function plan(q) {

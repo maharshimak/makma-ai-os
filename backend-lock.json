@@ -1,10 +1,10 @@
 {
-  "agentic-rag-engine": "cf7e68663d3869a39d0b9c5525dc8e02b4324ec7",
-  "multimodal-ai-studio": "4011164bc7aa2b585fa3647dadf7dc4bb8a5d990",
-  "knowledge-twin": "52b1b9e37479ae69c984be8772b42a9a5459fe1e",
-  "clinical-document-intelligence": "2fbf8601ca6689e557e21ea871968e593d62e3c7",
-  "secure-data-copilot": "169fd5564095154bcd0b27d1098f9d86eda27dce",
-  "llm-eval-observability": "0ba71c71341f09ec6c0da5ae0b2a8994297eee0b",
-  "mlops-control-plane": "b57ab7214783f029809aa1d070308bf5bc85d39b",
-  "mlops-production-pipeline": "87cc19109d4fb12b39099000d9521e76b682dbed"
+  "agentic-rag-engine": "68794cc5489f408f1fdc2e86a6a27e9a8fb07077",
+  "multimodal-ai-studio": "3f2f0a4af320004e702ca7e4f0b31e1846076c25",
+  "knowledge-twin": "7dc5df0fb1b18d72a93bdd8e477c9344a42a3046",
+  "clinical-document-intelligence": "8e33731dfadf402a779f2b3b9e4875c1a65889e6",
+  "secure-data-copilot": "3cab2b9c4a5f711f2d64867ba9cf08a77b000eae",
+  "llm-eval-observability": "8bd5700dea7158d78f1f93462fd54b04950c9f24",
+  "mlops-control-plane": "283036cb72fc7b9e233bbc18d8406d35bc7f940d",
+  "mlops-production-pipeline": "e804fc7ab5a51096c8b9afd718dc69ee77381570"
 }
