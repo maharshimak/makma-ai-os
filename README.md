@@ -48,6 +48,7 @@ Mak'ma AI OS is a **MAK'MA Studio product** under **MAK'MA Labs**. It is a **too
 - cross-system workflows (research evidence, governed ML, media) over the pinned specialist packages, tested end to end in CI
 - `makma.v1` contract: envelope model, JSON Schema validator for any specialist envelope, and typed in-process/HTTP specialist adapters with an explicit `unavailable` state
 - bounded runtime/provider/tool telemetry with latency and failure summaries
+- per-run step/tool/model-call budgets and monotonic deadlines on chat run and streaming execution (not yet an enforceable dollar-cost or global quota)
 - optional fail-open OpenTelemetry OTLP metrics export via the `observability` extra
 - FastAPI chat, tools, history, search, recall, runs, telemetry, and native provider-backed SSE streaming endpoints
 - Docker support with a persistent `/app/data` volume
