@@ -3,9 +3,14 @@ from __future__ import annotations
 import ast
 import math
 import operator
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any, Literal
+
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import SchemaError
 
 from makma.memory import SQLiteMemory
 from makma.models import ToolResult
@@ -18,6 +23,27 @@ class ToolPermissionError(PermissionError):
     pass
 
 
+_IDEMPOTENCY_KEY: ContextVar[str | None] = ContextVar("makma_idempotency_key", default=None)
+
+
+def current_idempotency_key() -> str | None:
+    """Idempotency key of the workflow step currently executing, if any.
+
+    Side-effecting handlers should forward it to downstream systems so that a
+    recovered or re-approved step can be de-duplicated by the receiver.
+    """
+    return _IDEMPOTENCY_KEY.get()
+
+
+@contextmanager
+def idempotency_scope(key: str | None) -> Iterator[None]:
+    token = _IDEMPOTENCY_KEY.set(key)
+    try:
+        yield
+    finally:
+        _IDEMPOTENCY_KEY.reset(token)
+
+
 @dataclass(frozen=True)
 class ToolDefinition:
     name: str
@@ -28,6 +54,13 @@ class ToolDefinition:
     side_effects: bool = False
     input_schema: dict[str, Any] = field(default_factory=dict)
     output_schema: dict[str, Any] = field(default_factory=dict)
+    # True only when the handler forwards current_idempotency_key() so that the
+    # receiver de-duplicates repeats. Lets crash recovery re-run the step safely.
+    idempotent: bool = False
+
+    @property
+    def approval_required(self) -> bool:
+        return self.requires_approval or self.risk_level == "high" or self.side_effects
 
 
 @dataclass(frozen=True)
@@ -42,7 +75,15 @@ class PermissionPolicy:
             raise ToolPermissionError(f"Tool '{tool_name}' requires explicit approval.")
 
 
+def _schema_violation(error: Any) -> str:
+    # Never echo the offending value: tool arguments may contain user data.
+    location = "/".join(str(part) for part in error.absolute_path) or "<root>"
+    return f"Tool argument '{location}' violates schema keyword '{error.validator}'."
+
+
 def _validate_arguments(schema: dict[str, Any], arguments: dict[str, Any]) -> None:
+    if not isinstance(arguments, dict):
+        raise ValueError("Tool arguments must be a JSON object.")
     if not schema:
         return
     if schema.get("type") not in (None, "object"):
@@ -89,6 +130,15 @@ def _validate_arguments(schema: dict[str, Any], arguments: dict[str, Any]) -> No
         elif expected == "array" and not isinstance(value, list):
             raise ValueError(f"Tool argument '{name}' must be an array.")
 
+    # Full JSON Schema (2020-12) pass for keywords the fast checks above do not
+    # cover (enum, minimum/maximum, nested objects, patterns, ...).
+    errors = sorted(
+        Draft202012Validator(schema).iter_errors(arguments),
+        key=lambda item: list(item.absolute_path),
+    )
+    if errors:
+        raise ValueError(_schema_violation(errors[0]))
+
 
 class ToolRegistry:
     def __init__(self) -> None:
@@ -97,7 +147,20 @@ class ToolRegistry:
     def register(self, definition: ToolDefinition) -> None:
         if definition.name in self._tools:
             raise ValueError(f"Tool '{definition.name}' is already registered.")
+        if not definition.name.strip() or "." in definition.name:
+            # "." is reserved for specialist workflow actions ("system.operation").
+            raise ValueError("Tool names must be non-empty and must not contain '.'.")
+        if definition.input_schema:
+            try:
+                Draft202012Validator.check_schema(definition.input_schema)
+            except SchemaError as error:
+                raise ValueError(
+                    f"Tool '{definition.name}' has an invalid input schema."
+                ) from error
         self._tools[definition.name] = definition
+
+    def get(self, name: str) -> ToolDefinition | None:
+        return self._tools.get(name)
 
     @property
     def names(self) -> list[str]:
@@ -111,6 +174,7 @@ class ToolRegistry:
                 "requires_approval": tool.requires_approval,
                 "risk_level": tool.risk_level,
                 "side_effects": tool.side_effects,
+                "idempotent": tool.idempotent,
                 "input_schema": tool.input_schema,
                 "output_schema": tool.output_schema,
             }
@@ -139,12 +203,7 @@ class ToolRegistry:
             )
         try:
             policy.check(name, approvals)
-            approval_required = (
-                tool.requires_approval
-                or tool.risk_level == "high"
-                or tool.side_effects
-            )
-            if approval_required and name not in approvals:
+            if tool.approval_required and name not in approvals:
                 raise ToolPermissionError(f"Tool '{name}' requires explicit approval.")
             _validate_arguments(tool.input_schema, arguments)
             output = await tool.handler(arguments, session_id)

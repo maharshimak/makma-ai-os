@@ -1,0 +1,2 @@
+# The shared makma.v1 schema must stay byte-identical on every platform.
+*.schema.json -text
