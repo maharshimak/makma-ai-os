@@ -3,11 +3,12 @@ import pytest
 from makma.config import Settings
 from makma.memory import SQLiteMemory
 from makma.providers import LocalProvider
+from makma.reliability import BudgetExceeded, ExecutionBudget
 from makma.runtime import MakmaRuntime
 from makma.tools import PermissionPolicy, build_default_registry
 
 
-def make_runtime(provider=None) -> MakmaRuntime:
+def make_runtime(provider=None, execution_budget=None) -> MakmaRuntime:
     settings = Settings(database_path=":memory:", provider="local")
     memory = SQLiteMemory(":memory:")
     registry = build_default_registry(memory)
@@ -17,6 +18,7 @@ def make_runtime(provider=None) -> MakmaRuntime:
         provider=provider or LocalProvider(),
         registry=registry,
         policy=PermissionPolicy(allowed_tools=frozenset(registry.names)),
+        execution_budget=execution_budget,
     )
 
 
@@ -100,3 +102,46 @@ async def test_provider_failure_is_persisted_as_failed_run() -> None:
     assert len(runs) == 1
     assert runs[0].status == "failed"
     assert "RuntimeError" in (runs[0].error or "")
+
+
+@pytest.mark.asyncio
+async def test_tool_budget_is_enforced_and_failure_is_audited() -> None:
+    runtime = make_runtime(execution_budget=ExecutionBudget(max_tool_calls=1))
+    await runtime.memory.append("limited", "user", "remember atlas project budget")
+    with pytest.raises(BudgetExceeded, match="tool-call budget"):
+        await runtime.run("search my memory for atlas project and calculate 6 * 7", "limited")
+    runs = await runtime.memory.run_history("limited")
+    assert runs[0].status == "failed"
+    assert "BudgetExceeded" in (runs[0].error or "")
+
+
+@pytest.mark.asyncio
+async def test_stream_tool_budget_failure_is_audited() -> None:
+    runtime = make_runtime(execution_budget=ExecutionBudget(max_tool_calls=1))
+    await runtime.memory.append("stream-limit", "user", "remember atlas project budget")
+    with pytest.raises(BudgetExceeded, match="tool-call budget"):
+        _ = [chunk async for chunk in runtime.stream(
+            "search my memory for atlas project and calculate 6 * 7",
+            "stream-limit",
+        )]
+    runs = await runtime.memory.run_history("stream-limit")
+    assert runs[0].status == "failed"
+    assert "BudgetExceeded" in (runs[0].error or "")
+
+
+class SlowProvider(LocalProvider):
+    async def generate(self, messages, *, system_prompt, tool_results):
+        import asyncio
+        await asyncio.sleep(0.06)
+        return "late response"
+
+
+@pytest.mark.asyncio
+async def test_elapsed_deadline_blocks_slow_provider_and_audits_failure() -> None:
+    runtime = make_runtime(
+        SlowProvider(), execution_budget=ExecutionBudget(max_elapsed_ms=10),
+    )
+    with pytest.raises(TimeoutError):
+        await runtime.run("hello", "deadline")
+    runs = await runtime.memory.run_history("deadline")
+    assert runs[0].status == "failed"
