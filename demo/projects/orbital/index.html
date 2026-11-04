@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#05070a">
+  <meta name="description" content="MAK'MA Labs — a cinematic journey through nine real AI engineering systems by Maharshi Patel.">
+  <title>MAK'MA // Orbital Intelligence — Maharshi Patel</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+  <script src="./orbital-3d.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#chapter-01">Skip introduction</a>
+  <div class="loading-screen" id="loading-screen" aria-live="polite">
+    <div class="loading-center">
+      <span class="loading-eyebrow">MAK'MA STUDIO PRESENTS</span>
+      <div class="loading-wordmark" aria-label="MAK'MA">MAK<span class="mark-apostrophe">'</span>MA</div>
+      <div class="loading-rule"><span id="loading-rule"></span></div>
+      <p id="loading-status">Preparing the experience</p>
+    </div>
+  </div>
+  <div class="intro" id="intro" hidden>
+    <div class="intro-inner">
+      <p class="mono intro-eyebrow">A MAK'MA STUDIO PRODUCT / MAK'MA LABS</p>
+      <h1>INTELLIGENCE<br><span>AT SYSTEM SCALE.</span></h1>
+      <p class="intro-copy">Nine engineered AI systems. One connected vision. Enter the architecture of agents, knowledge, evidence, and machine learning.</p>
+      <button type="button" class="action-button" id="initiate"><span>INITIATE SYSTEM</span><span aria-hidden="true">↗</span></button>
+      <p class="mono headphone-note">OPTIONAL IMMERSIVE AUDIO · SOUND OFF BY DEFAULT</p>
+    </div>
+  </div>
+  <div class="experience" id="experience">
+    <div class="stage" aria-hidden="true">
+      <div class="stage-image stage-orbit is-active" data-background="orbit"></div>
+      <div class="stage-image stage-network" data-background="network"></div>
+      <div class="stage-image stage-datacenter" data-background="datacenter"></div>
+      <div class="stage-image stage-core" data-background="core"></div>
+      <div class="stage-image stage-void" data-background="void"></div>
+      <canvas id="world-canvas" aria-hidden="true"></canvas>
+      <canvas id="star-canvas"></canvas>
+      <div class="stage-scrim"></div>
+      <div class="stage-grain"></div>
+      <div class="stage-horizon"></div>
+    </div>
+    <header class="topbar">
+      <a href="../" class="brand" aria-label="Return to MAK'MA Labs"><span class="brand-glyph">M'</span><span>MAK'MA <small>LABS</small></span></a>
+      <div class="topbar-center mono" aria-hidden="true">AI SYSTEMS / <span id="chapter-counter">01</span> — 06</div>
+      <div class="topbar-actions">
+        <button type="button" id="audio-toggle" aria-label="Enable optional sound" aria-pressed="false"><span id="audio-label">SOUND OFF</span><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i></span></button>
+        <button type="button" id="systems-open" class="index-button"><span>EXPLORE SYSTEMS</span><span class="grid-glyph" aria-hidden="true">⊞</span></button>
+      </div>
+    </header>
+    <nav class="side-progress" aria-label="Experience chapters">
+      <span class="mono side-label">MISSION INDEX</span>
+      <a href="#chapter-01" class="is-current" aria-label="Chapter 1: Orbital Intelligence"><span>01</span><i></i></a>
+      <a href="#chapter-02" aria-label="Chapter 2: Knowledge Networks"><span>02</span><i></i></a>
+      <a href="#chapter-03" aria-label="Chapter 3: Secure Intelligence"><span>03</span><i></i></a>
+      <a href="#chapter-04" aria-label="Chapter 4: Model Governance"><span>04</span><i></i></a>
+      <a href="#chapter-05" aria-label="Chapter 5: Multimodal Frontier"><span>05</span><i></i></a>
+      <a href="#chapter-06" aria-label="Chapter 6: The Builder"><span>06</span><i></i></a>
+    </nav>
+    <main id="main">
+      <section class="chapter chapter-orbit" id="chapter-01" data-scene="orbit" data-index="01" aria-labelledby="title-01">
+        <div class="chapter-content chapter-left">
+          <div class="chapter-kicker mono"><span class="tiny-cross">+</span> SYS_001 / CENTRAL INTELLIGENCE LAYER</div>
+          <h2 id="title-01">ORBITAL<br><em>INTELLIGENCE.</em></h2>
+          <p class="chapter-summary">An intelligent operating layer that plans, remembers, coordinates tools, and makes its decisions inspectable.</p>
+          <div class="chapter-specs mono"><span>AGENT RUNTIME</span><span>PERMISSIONED TOOLS</span><span>SESSION MEMORY</span></div>
+          <a class="chapter-link" href="../../"><span>ENTER MAK'MA AI OS</span><span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="scene-aside mono">ORBITAL RELAY // SYSTEMS CONNECTED<br>AN ORIGINAL MAK'MA VISUALIZATION</p>
+        <span class="scroll-cue mono">SCROLL TO DESCEND <b>↓</b></span>
+      </section>
+      <section class="chapter chapter-network" id="chapter-02" data-scene="network" data-index="02" aria-labelledby="title-02">
+        <div class="chapter-content chapter-right">
+          <div class="chapter-kicker mono"><span class="tiny-cross">+</span> SYS_002—003 / CONTEXT LAYER</div>
+          <h2 id="title-02">KNOWLEDGE<br><em>NETWORKS.</em></h2>
+          <p class="chapter-summary">Retrieve the right evidence. Resolve entities and relationships. Turn scattered information into grounded context.</p>
+          <div class="project-pair">
+            <a href="../agentic-rag-engine/"><span class="pair-id mono">02 / RETRIEVAL</span><strong>Agentic RAG Engine</strong><span aria-hidden="true">↗</span></a>
+            <a href="../knowledge-twin/"><span class="pair-id mono">03 / GRAPH</span><strong>Knowledge Twin</strong><span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <p class="scene-aside mono">RETRIEVAL → EVIDENCE → RELATIONSHIPS</p>
+      </section>
+      <section class="chapter chapter-datacenter" id="chapter-03" data-scene="datacenter" data-index="03" aria-labelledby="title-03">
+        <div class="chapter-content chapter-left">
+          <div class="chapter-kicker mono"><span class="tiny-cross">+</span> SYS_004—005 / TRUST LAYER</div>
+          <h2 id="title-03">SECURE<br><em>INTELLIGENCE.</em></h2>
+          <p class="chapter-summary">Extract meaningful evidence from documents and explore business data through deliberate, bounded operations.</p>
+          <div class="project-pair">
+            <a href="../clinical-document-intelligence/"><span class="pair-id mono">04 / DOCUMENT AI</span><strong>Clinical Document Intelligence</strong><span aria-hidden="true">↗</span></a>
+            <a href="../secure-data-copilot/"><span class="pair-id mono">05 / DATA AGENT</span><strong>Secure Data Copilot</strong><span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <p class="scene-aside mono">VALIDATION / PROVENANCE / PRIVACY</p>
+      </section>
+      <section class="chapter chapter-core" id="chapter-04" data-scene="core" data-index="04" aria-labelledby="title-04">
+        <div class="chapter-content chapter-right">
+          <div class="chapter-kicker mono"><span class="tiny-cross">+</span> SYS_006—008 / GOVERNANCE LAYER</div>
+          <h2 id="title-04">MODEL<br><em>GOVERNANCE.</em></h2>
+          <p class="chapter-summary">Measure quality, detect regressions, validate artifacts, and make release decisions explainable.</p>
+          <div class="project-pair project-triple">
+            <a href="../llm-eval-observability/"><span class="pair-id mono">06 / EVALUATION</span><strong>LLM Eval &amp; Observability</strong><span aria-hidden="true">↗</span></a>
+            <a href="../mlops-control-plane/"><span class="pair-id mono">07 / CONTROL</span><strong>MLOps Control Plane</strong><span aria-hidden="true">↗</span></a>
+            <a href="../mlops-production-pipeline/"><span class="pair-id mono">08 / PIPELINE</span><strong>MLOps Production Pipeline</strong><span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <p class="scene-aside mono">EVALUATE → GATE → DEPLOY SAFELY</p>
+      </section>
+      <section class="chapter chapter-frontier" id="chapter-05" data-scene="void" data-index="05" aria-labelledby="title-05">
+        <div class="chapter-content chapter-center">
+          <div class="chapter-kicker mono"><span class="tiny-cross">+</span> SYS_009 / MULTIMODAL LAYER</div>
+          <h2 id="title-05">BEYOND<br><em>ONE MODALITY.</em></h2>
+          <p class="chapter-summary">From ideas to structured media operations: plan transformations, validate constraints, and inspect rendering feasibility.</p>
+          <a class="chapter-link" href="../multimodal-ai-studio/"><span>EXPLORE MULTIMODAL AI STUDIO</span><span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="orbital-rings" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
+      </section>
+      <section class="chapter chapter-builder" id="chapter-06" data-scene="void" data-index="06" aria-labelledby="title-06">
+        <div class="chapter-content chapter-center builder-content">
+          <div class="chapter-kicker mono"><span class="tiny-cross">+</span> THE HUMAN BEHIND THE SYSTEMS</div>
+          <h2 id="title-06">MAHARSHI<br><em>PATEL.</em></h2>
+          <p class="chapter-summary">AI / ML Engineer in Paris. Building the bridge between models and reliable products—from agentic workflows to production MLOps.</p>
+          <p class="builder-credentials mono">AIVANCITY · AI &amp; DATA SCIENCE FOR BUSINESS<br>AWS CERTIFIED MACHINE LEARNING ENGINEER — ASSOCIATE</p>
+          <div class="builder-links">
+            <a href="https://maharshipatel-portfolio.vercel.app/" target="_blank" rel="noopener noreferrer">PORTFOLIO ↗</a>
+            <a href="https://github.com/maharshimak" target="_blank" rel="noopener noreferrer">GITHUB ↗</a>
+            <a href="https://www.linkedin.com/in/maharshi-patel-6bb638298/" target="_blank" rel="noopener noreferrer">LINKEDIN ↗</a>
+          </div>
+          <button type="button" class="open-all" id="open-all">EXPLORE ALL NINE SYSTEMS <span aria-hidden="true">↗</span></button>
+          <p class="legal mono">AN ORIGINAL MAK'MA STUDIO PRODUCT · MAK'MA LABS · © 2026 MAHARSHI PATEL</p>
+        </div>
+      </section>
+    </main>
+    <div class="bottom-hud mono" aria-hidden="true"><span>MAKMA://SYSTEM_EXPERIENCE</span><span class="hud-line"></span><span id="hud-label">ORBITAL INTELLIGENCE</span><span id="hud-percent">000%</span></div>
+  </div>
+  <dialog class="systems-dialog" id="systems-dialog" aria-labelledby="systems-dialog-title">
+    <div class="dialog-head"><div><p class="mono">MAK'MA LABS / SYSTEM DIRECTORY</p><h2 id="systems-dialog-title">NINE SYSTEMS.<br>ONE ECOSYSTEM.</h2></div><button type="button" id="systems-close" aria-label="Close systems index">×</button></div>
+    <div class="dialog-search"><label for="system-search" class="mono">SEARCH SYSTEMS / CAPABILITIES</label><input type="search" id="system-search" placeholder="Type to filter projects…" autocomplete="off"></div>
+    <nav class="system-directory" id="system-directory" aria-label="All systems">
+      <a href="../../" data-search="makma ai os agents runtime memory tools"><span>01</span><strong>MAK'MA AI OS</strong><small>RUNTIME</small><b>↗</b></a>
+      <a href="../agentic-rag-engine/" data-search="agentic rag engine retrieval bm25 fusion"><span>02</span><strong>AGENTIC RAG ENGINE</strong><small>RETRIEVAL</small><b>↗</b></a>
+      <a href="../knowledge-twin/" data-search="knowledge twin graph entities evidence"><span>03</span><strong>KNOWLEDGE TWIN</strong><small>KNOWLEDGE</small><b>↗</b></a>
+      <a href="../clinical-document-intelligence/" data-search="clinical document intelligence extraction provenance"><span>04</span><strong>CLINICAL DOCUMENT INTELLIGENCE</strong><small>DOCUMENTS</small><b>↗</b></a>
+      <a href="../secure-data-copilot/" data-search="secure data copilot privacy query sql"><span>05</span><strong>SECURE DATA COPILOT</strong><small>DATA</small><b>↗</b></a>
+      <a href="../llm-eval-observability/" data-search="llm eval observability evaluation latency"><span>06</span><strong>LLM EVAL &amp; OBSERVABILITY</strong><small>EVALUATION</small><b>↗</b></a>
+      <a href="../mlops-control-plane/" data-search="mlops control plane canary policy rollout"><span>07</span><strong>MLOPS CONTROL PLANE</strong><small>GOVERNANCE</small><b>↗</b></a>
+      <a href="../mlops-production-pipeline/" data-search="mlops production pipeline training integrity"><span>08</span><strong>MLOPS PRODUCTION PIPELINE</strong><small>PIPELINE</small><b>↗</b></a>
+      <a href="../multimodal-ai-studio/" data-search="multimodal ai studio media render preflight"><span>09</span><strong>MULTIMODAL AI STUDIO</strong><small>MEDIA</small><b>↗</b></a>
+    </nav>
+    <p class="dialog-empty mono" id="dialog-empty" hidden>No matching systems. Try a different query.</p>
+    <div class="dialog-footer mono">ESC TO CLOSE <span>MAK'MA STUDIO / 2026</span></div>
+  </dialog>
+</body>
+</html>
