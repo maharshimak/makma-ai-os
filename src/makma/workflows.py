@@ -31,10 +31,12 @@ import json
 import re
 import sqlite3
 import threading
+from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
+from math import isfinite
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -51,6 +53,7 @@ from makma.contracts import (
 )
 from makma.resilience import RetryPolicy
 from makma.specialists import (
+    CapabilitySnapshot,
     OperationSpec,
     SpecialistOutcome,
     SpecialistRegistry,
@@ -62,6 +65,8 @@ _REF_RE = re.compile(
     r"^\$\{(?P<scope>steps|inputs)\.(?P<head>[A-Za-z0-9_-]+)(?P<path>(?:\.[A-Za-z0-9_-]+)*)\}$"
 )
 _MAX_ERROR_CHARS = 500
+_MAX_WORKFLOW_STEPS = 512
+_MAX_AUTOMATIC_REPLAYS = 1
 
 
 # =========================================================================== errors
@@ -306,6 +311,8 @@ class WorkflowSpec:
     def validate(self) -> None:
         if not self.name.strip() or not self.steps:
             raise WorkflowValidationError("Workflow requires a name and at least one step.")
+        if len(self.steps) > _MAX_WORKFLOW_STEPS:
+            raise WorkflowValidationError(f"Workflow exceeds {_MAX_WORKFLOW_STEPS} steps.")
         ids = [step.id for step in self.steps]
         if len(ids) != len(set(ids)) or any(not str(step_id).strip() for step_id in ids):
             raise WorkflowValidationError("Workflow step IDs must be unique non-empty strings.")
@@ -360,24 +367,26 @@ class WorkflowSpec:
 
     def topological_order(self) -> tuple[WorkflowStep, ...]:
         by_id = {step.id: step for step in self.steps}
-        remaining = set(by_id)
-        resolved: set[str] = set()
+        dependents: dict[str, list[str]] = defaultdict(list)
+        outstanding: dict[str, int] = {}
+        for step_id, step in by_id.items():
+            dependencies = set(step.depends_on)
+            outstanding[step_id] = len(dependencies)
+            for dependency in dependencies:
+                dependents[dependency].append(step_id)
+        ready = [step_id for step_id, count in outstanding.items() if count == 0]
         ordered: list[WorkflowStep] = []
-        while remaining:
-            ready = sorted(
-                (
-                    by_id[step_id]
-                    for step_id in remaining
-                    if set(by_id[step_id].depends_on) <= resolved
-                ),
-                key=lambda step: step.id,
-            )
-            if not ready:
-                raise WorkflowValidationError("Workflow dependency graph contains a cycle.")
-            for step in ready:
-                ordered.append(step)
-                resolved.add(step.id)
-                remaining.remove(step.id)
+        while ready:
+            next_wave = []
+            for step_id in sorted(ready):
+                ordered.append(by_id[step_id])
+                for child in dependents.get(step_id, ()):
+                    outstanding[child] -= 1
+                    if outstanding[child] == 0:
+                        next_wave.append(child)
+            ready = next_wave
+        if len(ordered) != len(by_id):
+            raise WorkflowValidationError("Workflow dependency graph contains a cycle.")
         return tuple(ordered)
 
     def permitted_actions(self) -> frozenset[str]:
@@ -668,6 +677,8 @@ class WorkflowEngine:
         self._retry_delay = retry_delay or RetryPolicy(
             max_attempts=10, base_delay_seconds=0.05, max_delay_seconds=1.0
         ).delay_for_attempt
+        if not isfinite(default_specialist_timeout_s) or default_specialist_timeout_s <= 0:
+            raise ValueError("default_specialist_timeout_s must be finite and positive.")
         self.default_specialist_timeout_s = default_specialist_timeout_s
         self._locks: dict[str, asyncio.Lock] = {}
         self._inflight: dict[str, asyncio.Task[_Outcome]] = {}
@@ -787,6 +798,13 @@ class WorkflowEngine:
                 if record["state"] != StepState.RUNNING:
                     continue
                 if await self._safe_to_repeat(step):
+                    replays = record.get("recovery_replays", 0)
+                    if replays >= _MAX_AUTOMATIC_REPLAYS:
+                        return self._fail(
+                            spec, checkpoint, step, events, "RECOVERY_BUDGET_EXHAUSTED",
+                            "The interrupted step has used its automatic recovery replay.",
+                        )
+                    record["recovery_replays"] = replays + 1
                     self._set_step(checkpoint, step, StepState.PENDING, events,
                                    "step_recovered", detail={"action": "re-execute"})
                 else:
@@ -912,6 +930,12 @@ class WorkflowEngine:
             raise ApprovalError("Approval must name exactly the step that is awaiting approval.")
         return pending
 
+    async def _lookup_operation(self, step: WorkflowStep) -> OperationSpec | CapabilitySnapshot:
+        async with asyncio.timeout(step.timeout_s or self.default_specialist_timeout_s):
+            return await self.specialists.get(step.specialist or "").operation_spec(
+                step.operation or ""
+            )
+
     async def _approval_required(
         self, step: WorkflowStep, spec_policy: PermissionPolicy
     ) -> bool | _Outcome:
@@ -921,9 +945,7 @@ class WorkflowEngine:
             tool = self.registry.get(step.tool_name)
             assert tool is not None  # pre-flighted
             return tool.approval_required
-        found = await self.specialists.get(step.specialist or "").operation_spec(
-            step.operation or ""
-        )
+        found = await self._lookup_operation(step)
         if isinstance(found, OperationSpec):
             return found.approval_required
         if not found.available:
@@ -945,9 +967,10 @@ class WorkflowEngine:
         if step.kind == "tool":
             tool = self.registry.get(step.tool_name)
             return tool is not None and (not tool.side_effects or tool.idempotent)
-        found = await self.specialists.get(step.specialist or "").operation_spec(
-            step.operation or ""
-        )
+        try:
+            found = await self._lookup_operation(step)
+        except TimeoutError:
+            return False
         # Specialist calls carry an Idempotency-Key, but receivers are not required to
         # honour it, so only declared read-only operations are repeated automatically.
         return isinstance(found, OperationSpec) and not found.side_effects
@@ -973,6 +996,11 @@ class WorkflowEngine:
             events: list[dict[str, Any]] = []
             if self.store.cancel_requested(checkpoint.run_id):
                 return self._cancel_run(spec, checkpoint, events)
+            if step.action not in policy.allowed_tools:
+                return self._fail(
+                    spec, checkpoint, step, events, "PERMISSION_DENIED",
+                    "The action is no longer permitted by the workflow policy.",
+                )
 
             try:
                 resolved = self._resolve(step.arguments, checkpoint)
@@ -980,7 +1008,13 @@ class WorkflowEngine:
                 return self._fail(spec, checkpoint, step, events, "INVALID_REFERENCE", str(error))
             digest = _digest(resolved)
 
-            gate = await self._approval_required(step, policy)
+            try:
+                gate = await self._approval_required(step, policy)
+            except TimeoutError:
+                return self._fail(
+                    spec, checkpoint, step, events, "TIMEOUT",
+                    "Specialist capability discovery exceeded its timeout.",
+                )
             if isinstance(gate, _Outcome):
                 return self._fail(spec, checkpoint, step, events, gate.code or "ERROR",
                                   gate.message or "", detail=gate.detail)
@@ -1151,10 +1185,15 @@ class WorkflowEngine:
             # Translation of an approval this engine recorded into the specialist's own
             # flag. Never taken from workflow arguments (rejected at validation).
             resolved = {**resolved, step.approval_argument: True}
-        found = await adapter.operation_spec(step.operation or "")
+        found = await self._lookup_operation(step)
         if not isinstance(found, OperationSpec):  # pragma: no cover - checked at gate
             return _Outcome(ok=False, code="SPECIALIST_UNAVAILABLE",
                             message="Specialist capabilities are unavailable.", retryable=True)
+        if step.retryable and found.side_effects:
+            return _Outcome(
+                ok=False, code="UNSAFE_RETRY",
+                message="A side-effecting specialist operation cannot be retried.",
+            )
         violations = sorted(
             f"{'/'.join(str(p) for p in error.absolute_path) or '<root>'}: "
             f"violates '{error.validator}'"
@@ -1174,9 +1213,10 @@ class WorkflowEngine:
             idempotency_key=key,
             trace=TraceContext(checkpoint.trace_id, span_id),
             timeout_s=timeout,
-            # Transport-level retries only for read-only operations; step-level retries
-            # are governed by the step's own ``retryable`` declaration.
-            retry_safe=step.retryable and not found.side_effects,
+            # The durable workflow is the sole retry owner for a workflow step.
+            # Each recorded attempt issues at most one specialist invocation.
+            # The adapter still supports independent retries outside workflows.
+            retry_safe=False,
         )
         detail: dict[str, Any] = {
             "specialist": outcome.system,

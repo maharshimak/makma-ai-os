@@ -69,14 +69,16 @@ Specialist approval translation (opt-in, specialist steps only):
   model output. Over HTTP, `/approve` requires the separate `MAKMA_APPROVAL_TOKEN`.
   Gates: tool `requires_approval`/`side_effects`/`risk_level == "high"`; specialist operation
   `side_effects`/`requires_approval` from its capabilities; policy `approval_required_tools`.
-* **Crash recovery:** `recover(run_id)` on a run left `running` re-executes interrupted
-  read-only (or `idempotent=True`) steps with the same idempotency key, and moves an
+* **Crash recovery:** `recover(run_id)` can replay an interrupted read-only or
+  `idempotent=True` step once with the same idempotency key. The replay allowance
+  is committed with the checkpoint. A second interrupted attempt fails with
+  `RECOVERY_BUDGET_EXHAUSTED`. Recovery moves an
   interrupted non-idempotent side-effecting step to `uncertain → awaiting_approval`
   (`pending_reason="uncertain_side_effect"`) instead of repeating it.
-* **Retries/timeouts:** timeouts and unexpected exceptions are retryable failures; schema and
-  permission rejections are not. Retries happen only for `retryable=True` steps, up to
-  `max_attempts`. An unexpected exception fails the run (`STEP_EXCEPTION`) instead of leaving it
-  `running`.
+* **Retries and timeouts.** The workflow owns normal retries up to `max_attempts` and
+  makes one specialist call per attempt. Specialist capability discovery uses the step timeout
+  or engine default. Side-effecting specialist operations reject retryable steps before
+  invocation. Resumed and recovered steps recheck the current action allowlist.
 * **Cancellation:** `cancel(run_id)` cancels a paused run immediately and an in-flight step in
   the same process (`step_interrupted` with `outcome_uncertain: true`).
 * **Trace:** `engine.trace(run_id)` returns events with `run_id`, `correlation_id`, `trace_id`
@@ -84,9 +86,12 @@ Specialist approval translation (opt-in, specialist steps only):
   (the run's root span), `step_id`, `attempt` and `detail` (output SHA-256, idempotency key,
   linked specialist `trace_id`/`span_id`).
 
-Limitations: steps run sequentially in topological order; one orchestrator process per
-SQLite store (the in-process lock rejects concurrent advances with `WorkflowBusy`, but there is
-no cross-process lease); execution budgets from PR #17 are not yet applied to workflows.
+Steps run sequentially in lexically ordered dependency waves. New library workflows are
+limited to 512 steps. The HTTP limit is 100 steps. Use one orchestrator process per SQLite
+store. The in-process lock rejects concurrent advances with `WorkflowBusy`. A timed-out
+in-process adapter may have work still running in its worker thread. Step timeouts and retry
+budgets bound orchestration attempts. A run-wide wall clock and cross-process lease remain
+outside this engine.
 A specialist answering `blocked` ends the run `blocked` with the specialist's own error code
 and policy reasons in the trace.
 
