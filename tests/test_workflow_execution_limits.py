@@ -144,6 +144,96 @@ async def test_retry_pauses_if_permission_newly_requires_approval():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("approval_escalation", [False, True])
+async def test_retry_revalidates_permission_changed_during_capability_check(
+    approval_escalation,
+):
+    adapter = TransientSpecialist()
+    engine = specialist_engine(adapter)
+    original = engine._approval_required
+    gate_calls = 0
+
+    async def change_policy_during_gate(step, policy):
+        nonlocal gate_calls
+        gate_calls += 1
+        outcome = await original(step, policy)
+        if gate_calls == 3:  # the retry's asynchronous pre-dispatch gate
+            engine.policy = PermissionPolicy(
+                allowed_tools=(
+                    frozenset({"agentic-rag-engine.retrieve"})
+                    if approval_escalation else frozenset()
+                ),
+                approval_required_tools=(
+                    frozenset({"agentic-rag-engine.retrieve"})
+                    if approval_escalation else frozenset()
+                ),
+            )
+        return outcome
+
+    engine._approval_required = change_policy_during_gate
+    try:
+        result = await engine.start(
+            specialist_workflow(retryable=True, max_attempts=2),
+            session_id="race",
+        )
+        assert len(adapter.calls) == 1
+        assert result.steps["one"]["attempts"] == 1
+        if approval_escalation:
+            assert result.status == "paused"
+            assert result.pending_step == "one"
+        else:
+            assert result.status == "failed"
+            assert result.error_code == "PERMISSION_DENIED"
+    finally:
+        engine.store.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("approval_escalation", [False, True])
+async def test_dispatch_fails_closed_if_policy_changes_during_final_specialist_lookup(
+    approval_escalation,
+):
+    adapter = TransientSpecialist()
+    engine = specialist_engine(adapter)
+    original = engine._lookup_operation
+    lookup_calls = 0
+
+    async def change_policy_at_dispatch(step):
+        nonlocal lookup_calls
+        lookup_calls += 1
+        found = await original(step)
+        if lookup_calls == 5:  # retry's second specialist capability lookup
+            engine.policy = PermissionPolicy(
+                allowed_tools=(
+                    frozenset({"agentic-rag-engine.retrieve"})
+                    if approval_escalation else frozenset()
+                ),
+                approval_required_tools=(
+                    frozenset({"agentic-rag-engine.retrieve"})
+                    if approval_escalation else frozenset()
+                ),
+            )
+        return found
+
+    engine._lookup_operation = change_policy_at_dispatch
+    try:
+        result = await engine.start(
+            specialist_workflow(retryable=True, max_attempts=2),
+            session_id="race",
+        )
+        assert len(adapter.calls) == 1
+        assert result.steps["one"]["attempts"] == 2  # intent recorded; no second dispatch
+        if approval_escalation:
+            assert result.status == "blocked"
+            assert result.error_code == "APPROVAL_REQUIRED"
+        else:
+            assert result.status == "failed"
+            assert result.error_code == "PERMISSION_DENIED"
+    finally:
+        engine.store.close()
+
+
+@pytest.mark.asyncio
 async def test_approval_does_not_permit_retrying_side_effecting_specialists():
     adapter = TransientSpecialist(mutates=True)
     engine = specialist_engine(adapter)
