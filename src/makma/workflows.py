@@ -1046,6 +1046,38 @@ class WorkflowEngine:
             )
             record["idempotency_key"] = key
             while True:
+                # Policy and capability gates may change between attempts (for
+                # example while backing off a transient failure). The original
+                # step-level preflight cannot authorize a later invocation.
+                attempt_policy = self._run_policy(spec)
+                if step.action not in attempt_policy.allowed_tools:
+                    return self._fail(
+                        spec, checkpoint, step, events, "PERMISSION_DENIED",
+                        "The action is no longer permitted by the workflow policy.",
+                    )
+                try:
+                    attempt_gate = await self._approval_required(step, attempt_policy)
+                except TimeoutError:
+                    return self._fail(
+                        spec, checkpoint, step, events, "TIMEOUT",
+                        "Specialist capability discovery exceeded its timeout.",
+                    )
+                if isinstance(attempt_gate, _Outcome):
+                    return self._fail(
+                        spec, checkpoint, step, events, attempt_gate.code or "ERROR",
+                        attempt_gate.message or "", detail=attempt_gate.detail,
+                    )
+                if attempt_gate and not is_approved:
+                    record["approval_digest"] = digest
+                    record["approved"] = False
+                    record["pending_reason"] = "approval_required"
+                    self._set_step(
+                        checkpoint, step, StepState.AWAITING_APPROVAL, events,
+                        "step_awaiting_approval", detail={"approval_digest": digest},
+                    )
+                    self._pause(checkpoint, step, "approval_required", events)
+                    self.store.save(spec, checkpoint, events)
+                    return checkpoint
                 attempt = record["attempts"] + 1
                 record["attempts"] = attempt
                 record["pending_reason"] = None
@@ -1057,7 +1089,9 @@ class WorkflowEngine:
                 events = []
 
                 task = asyncio.ensure_future(
-                    self._execute_once(step, resolved, checkpoint, policy, key, is_approved)
+                    self._execute_once(
+                        step, resolved, checkpoint, attempt_policy, key, is_approved
+                    )
                 )
                 self._inflight[checkpoint.run_id] = task
                 try:
