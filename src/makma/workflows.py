@@ -975,6 +975,37 @@ class WorkflowEngine:
         # honour it, so only declared read-only operations are repeated automatically.
         return isinstance(found, OperationSpec) and not found.side_effects
 
+    def _dispatch_denial(
+        self,
+        spec: WorkflowSpec,
+        step: WorkflowStep,
+        approved: bool,
+        *,
+        capability_approval: bool = False,
+    ) -> _Outcome | None:
+        """Fail closed if mutable permissions change during an awaited check.
+
+        Caller must invoke this immediately before dispatching an operation,
+        after its last asynchronous capability lookup.
+        """
+        policy = self._run_policy(spec)
+        if step.action not in policy.allowed_tools:
+            return _Outcome(
+                ok=False, code="PERMISSION_DENIED",
+                message="The action is no longer permitted by the workflow policy.",
+            )
+        if not approved and (
+            step.requires_approval
+            or step.action in policy.approval_required_tools
+            or capability_approval
+        ):
+            return _Outcome(
+                ok=False, code="APPROVAL_REQUIRED",
+                message="The action now requires approval; start a new approved run.",
+                blocked=True,
+            )
+        return None
+
     # ------------------------------------------------------------------ main loop
 
     async def _advance(
@@ -1067,6 +1098,16 @@ class WorkflowEngine:
                         spec, checkpoint, step, events, attempt_gate.code or "ERROR",
                         attempt_gate.message or "", detail=attempt_gate.detail,
                     )
+                # Capability discovery can await, allowing mutable permissions to
+                # change *during* the check. Refresh after the last await.
+                attempt_policy = self._run_policy(spec)
+                if step.action not in attempt_policy.allowed_tools:
+                    return self._fail(
+                        spec, checkpoint, step, events, "PERMISSION_DENIED",
+                        "The action is no longer permitted by the workflow policy.",
+                    )
+                if step.action in attempt_policy.approval_required_tools:
+                    attempt_gate = True
                 if attempt_gate and not is_approved:
                     record["approval_digest"] = digest
                     record["approved"] = False
@@ -1090,7 +1131,7 @@ class WorkflowEngine:
 
                 task = asyncio.ensure_future(
                     self._execute_once(
-                        step, resolved, checkpoint, attempt_policy, key, is_approved
+                        spec, step, resolved, checkpoint, attempt_policy, key, is_approved
                     )
                 )
                 self._inflight[checkpoint.run_id] = task
@@ -1150,6 +1191,7 @@ class WorkflowEngine:
 
     async def _execute_once(
         self,
+        spec: WorkflowSpec,
         step: WorkflowStep,
         resolved: dict[str, Any],
         checkpoint: WorkflowCheckpoint,
@@ -1158,9 +1200,16 @@ class WorkflowEngine:
         approved: bool,
     ) -> _Outcome:
         try:
+            denial = self._dispatch_denial(spec, step, approved)
+            if denial is not None:
+                return denial
             if step.kind == "tool":
-                return await self._execute_tool(step, resolved, checkpoint, policy, key, approved)
-            return await self._execute_specialist(step, resolved, checkpoint, key, approved)
+                return await self._execute_tool(
+                    spec, step, resolved, checkpoint, policy, key, approved
+                )
+            return await self._execute_specialist(
+                spec, step, resolved, checkpoint, key, approved
+            )
         except TimeoutError:
             return _Outcome(ok=False, code="TIMEOUT",
                             message=f"Step exceeded its {step.timeout_s}s timeout.",
@@ -1174,6 +1223,7 @@ class WorkflowEngine:
 
     async def _execute_tool(
         self,
+        spec: WorkflowSpec,
         step: WorkflowStep,
         resolved: dict[str, Any],
         checkpoint: WorkflowCheckpoint,
@@ -1183,6 +1233,9 @@ class WorkflowEngine:
     ) -> _Outcome:
         with idempotency_scope(key):
             async with asyncio.timeout(step.timeout_s):
+                denial = self._dispatch_denial(spec, step, approved)
+                if denial is not None:
+                    return denial
                 result = await self.registry.execute(
                     step.tool_name,
                     resolved,
@@ -1208,6 +1261,7 @@ class WorkflowEngine:
 
     async def _execute_specialist(
         self,
+        spec: WorkflowSpec,
         step: WorkflowStep,
         resolved: dict[str, Any],
         checkpoint: WorkflowCheckpoint,
@@ -1237,6 +1291,11 @@ class WorkflowEngine:
             return _Outcome(ok=False, code="INVALID_INPUT",
                             message="Arguments do not match the specialist input schema.",
                             detail={"violations": violations[:20]})
+        denial = self._dispatch_denial(
+            spec, step, approved, capability_approval=found.approval_required
+        )
+        if denial is not None:
+            return denial
         timeout = step.timeout_s or found.timeout_s or self.default_specialist_timeout_s
         span_id = checkpoint.steps[step.id]["span_id"]
         outcome: SpecialistOutcome = await adapter.call(
