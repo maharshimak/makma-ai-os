@@ -93,6 +93,57 @@ async def test_workflow_attempts_are_not_multiplied_by_adapter_retries():
 
 
 @pytest.mark.asyncio
+async def test_retry_stops_if_workflow_permission_is_revoked():
+    adapter = TransientSpecialist()
+    engine = specialist_engine(adapter)
+    original = adapter._invoke
+
+    async def revoke_after_first(*args, **kwargs):
+        outcome = await original(*args, **kwargs)
+        engine.policy = PermissionPolicy(allowed_tools=frozenset())
+        return outcome
+
+    adapter._invoke = revoke_after_first
+    try:
+        result = await engine.start(
+            specialist_workflow(retryable=True, max_attempts=3), session_id="s"
+        )
+        assert result.status == "failed"
+        assert result.error_code == "PERMISSION_DENIED"
+        assert result.steps["one"]["attempts"] == 1
+        assert len(adapter.calls) == 1
+    finally:
+        engine.store.close()
+
+
+@pytest.mark.asyncio
+async def test_retry_pauses_if_permission_newly_requires_approval():
+    adapter = TransientSpecialist()
+    engine = specialist_engine(adapter)
+    original = adapter._invoke
+
+    async def require_approval_after_first(*args, **kwargs):
+        outcome = await original(*args, **kwargs)
+        engine.policy = PermissionPolicy(
+            allowed_tools=frozenset({"agentic-rag-engine.retrieve"}),
+            approval_required_tools=frozenset({"agentic-rag-engine.retrieve"}),
+        )
+        return outcome
+
+    adapter._invoke = require_approval_after_first
+    try:
+        result = await engine.start(
+            specialist_workflow(retryable=True, max_attempts=3), session_id="s"
+        )
+        assert result.status == "paused"
+        assert result.pending_step == "one"
+        assert result.steps["one"]["attempts"] == 1
+        assert len(adapter.calls) == 1
+    finally:
+        engine.store.close()
+
+
+@pytest.mark.asyncio
 async def test_approval_does_not_permit_retrying_side_effecting_specialists():
     adapter = TransientSpecialist(mutates=True)
     engine = specialist_engine(adapter)
